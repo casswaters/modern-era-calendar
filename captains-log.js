@@ -7,7 +7,7 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=19';
+} from './mec.js?v=20';
 
 const KEY_PREFIX = 'mec-log:';
 const BDAY_KEY = 'mec-log-birthday';

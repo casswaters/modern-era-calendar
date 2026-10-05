@@ -1,5 +1,5 @@
-/* MEC service worker — network-first app shell, offline fallback (Aretoria Almanac v18) */
-const CACHE = 'mec-v19';
+/* MEC service worker — network-first app shell, offline fallback (Aretoria Almanac v20) */
+const CACHE = 'mec-v20';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './weather.js',
   './captains-log.js',
   './portal.js',
+  './scene.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

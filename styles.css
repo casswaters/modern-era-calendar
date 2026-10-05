@@ -944,3 +944,80 @@ body::after {
   .tri-cal .day-cell .mec-d { font-size: 1.2rem; }
   .tri-cal .day-cell .name, .tri-cal .day-cell .greg { font-size: .6rem; }
 }
+
+/* =========================================================
+   v20 — Ambient weather scene band (scene.js)
+   Decorative landscape above the three columns. Never overlays calendar text.
+   ========================================================= */
+.scene-band {
+  position: relative;
+  margin-top: 14px;
+  height: 112px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow), 0 0 30px rgba(241, 213, 142, .06);
+  background: linear-gradient(180deg, #1a1d3a, #2a2546); /* before first paint */
+  contain: layout paint;
+}
+.scene-band[hidden] { display: none; }
+.scene-band::after { /* inset gold hairline, Almanac frame */
+  content: ""; position: absolute; inset: 5px; border-radius: 12px; pointer-events: none; z-index: 6;
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+}
+.scene-band .sc-layer { position: absolute; inset: 0; pointer-events: none; }
+.scene-band .sc-land-wrap svg, .scene-band .sc-clouds svg { display: block; width: 100%; height: 100%; }
+.scene-band .sc-land-wrap { z-index: 1; }
+.scene-band .sc-clouds { z-index: 2; overflow: hidden; }
+.scene-band .sc-track { display: flex; width: 200%; height: 100%; }
+.scene-band .sc-track svg { width: 50%; flex: 0 0 50%; }
+.scene-band .sc-flash { z-index: 3; background: radial-gradient(70% 90% at 60% 10%, rgba(235, 240, 255, .9), transparent 70%); opacity: 0; }
+.scene-band .sc-canvas { z-index: 4; width: 100%; height: 100%; }
+.scene-band .sc-veil { /* melt the edges into the indigo page + keep the caption legible */
+  z-index: 5;
+  background:
+    linear-gradient(180deg, rgba(11, 13, 26, .22) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(11, 13, 26, .5) 0%, transparent 34%),
+    linear-gradient(90deg, rgba(11, 13, 26, .34) 0%, transparent 12%, transparent 88%, rgba(11, 13, 26, .34) 100%);
+}
+[data-theme="light"] .scene-band .sc-veil {
+  background:
+    linear-gradient(180deg, rgba(245, 240, 228, .28) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(20, 16, 30, .42) 0%, transparent 40%),
+    linear-gradient(90deg, rgba(245, 240, 228, .3) 0%, transparent 12%, transparent 88%, rgba(245, 240, 228, .3) 100%);
+}
+.scene-band .sc-caption {
+  position: absolute; left: 16px; bottom: 11px; right: 16px; z-index: 7;
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--serif); font-style: italic; font-size: .92rem; font-weight: 600;
+  color: #f6eedb; letter-spacing: .02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .75), 0 0 10px rgba(0, 0, 0, .45);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.scene-band .sc-caption .sc-text { overflow: hidden; text-overflow: ellipsis; }
+.scene-band .sc-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--gold-bright); box-shadow: 0 0 8px rgba(241, 213, 142, .9);
+}
+.scene-band[data-time="night"] .sc-dot { background: #cfd8ff; box-shadow: 0 0 8px rgba(190, 205, 255, .9); }
+
+@media (min-width: 640px) { .scene-band { height: 128px; } }
+@media (min-width: 1100px) { .scene-band { height: 148px; } .scene-band .sc-caption { font-size: 1rem; left: 20px; bottom: 13px; } }
+
+/* Loops — only when motion is welcome. Reduced motion = a still frame. */
+@media (prefers-reduced-motion: no-preference) {
+  .scene-band .sc-track { animation: sc-drift var(--sc-cloud-dur, 200s) linear infinite; }
+  .scene-band .sc-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: sc-sway 6s ease-in-out infinite alternate; }
+  .scene-band .sc-sway.sc-s1 { animation-duration: 7.5s; animation-delay: -2s; }
+  .scene-band .sc-sway.sc-s2 { animation-duration: 5.2s; animation-delay: -4s; }
+  .scene-band .sc-tw { animation: sc-twinkle 4.5s ease-in-out infinite alternate; }
+  .scene-band.sc-storm .sc-flash { animation: sc-flash 17s ease-out infinite; }
+}
+@keyframes sc-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes sc-sway { from { transform: skewX(-3deg); } to { transform: skewX(3deg); } }
+@keyframes sc-twinkle { from { opacity: .25; } to { opacity: .95; } }
+@keyframes sc-flash {
+  0%, 88% { opacity: 0; }
+  89% { opacity: .22; } 90% { opacity: .04; } 91.5% { opacity: .16; } 95%, 100% { opacity: 0; }
+}

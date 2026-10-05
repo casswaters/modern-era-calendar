@@ -58,10 +58,11 @@ export function open_meteo_url(lat, lon) {
   const p = new URLSearchParams({
     latitude: lat.toFixed(4),
     longitude: lon.toFixed(4),
-    current: 'temperature_2m,apparent_temperature,weather_code,is_day',
+    current: 'temperature_2m,apparent_temperature,weather_code,is_day,cloud_cover,precipitation,wind_speed_10m',
     daily: 'temperature_2m_max,temperature_2m_min',
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
+    precipitation_unit: 'inch',
     timezone: 'auto',
     forecast_days: '1'
   });
@@ -81,7 +82,12 @@ export function parse_open_meteo(json) {
     loF: Array.isArray(d.temperature_2m_min) ? Math.round(d.temperature_2m_min[0]) : null,
     code: c.weather_code,
     label,
-    icon
+    icon,
+    // Extra fields for the ambient scene (scene.js). Older cached readings may lack them.
+    isDay: c.is_day !== 0,
+    cloud: typeof c.cloud_cover === 'number' ? Math.round(c.cloud_cover) : null,
+    precipIn: typeof c.precipitation === 'number' ? c.precipitation : null,
+    windMph: typeof c.wind_speed_10m === 'number' ? Math.round(c.wind_speed_10m) : null
   };
 }
 
@@ -118,7 +124,11 @@ export function parse_wttr(json, hour = new Date().getHours()) {
     loF: day ? num(day.mintempF) : null,
     code: Number(c.weatherCode),
     label,
-    icon: wttr_icon(c.weatherCode, isDay)
+    icon: wttr_icon(c.weatherCode, isDay),
+    isDay,
+    cloud: num(c.cloudcover),
+    precipIn: c.precipInches == null || c.precipInches === '' || isNaN(+c.precipInches) ? null : +c.precipInches,
+    windMph: num(c.windspeedMiles)
   };
 }
 
@@ -217,6 +227,27 @@ export async function fetch_weather(lat, lon) {
 
 /* ---------------- DOM wiring ---------------- */
 
+/**
+ * Share the current sky state (place + coords + latest reading) with other modules — the ambient
+ * scene (scene.js) listens for this instead of fetching weather a second time. The last state is
+ * also parked on globalThis so a listener that loads later can pick it up immediately.
+ */
+function emitSky(state) {
+  const detail = {
+    place: state.place || FALLBACK_PLACE.name,
+    lat: state.lat, lon: state.lon,
+    source: state.source || 'fallback',
+    weather: state.weather || null,
+    fetchedAt: state.fetchedAt || 0
+  };
+  try {
+    globalThis.__mecSky = detail;
+    if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('mec:sky', { detail }));
+    }
+  } catch { /* ignore */ }
+}
+
 function load() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch { return null; }
 }
@@ -287,6 +318,7 @@ export function initSky() {
       el.cond.textContent = note || 'Weather unavailable';
       el.hilo.textContent = '';
     }
+    emitSky(state);
   }
 
   async function refreshWeather(force = false) {

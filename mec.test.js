@@ -15,6 +15,9 @@ import {
   format_place, place_from_bigdatacloud, place_from_nominatim,
   wttr_url, parse_wttr, place_from_wttr
 } from './weather.js';
+import {
+  is_desert, season_for, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
+} from './scene.js';
 
 let passed = 0;
 let failed = 0;
@@ -546,6 +549,62 @@ console.log('\n=== local sky (weather helpers) ===\n');
   assert('wttr place → St. George, UT', place_from_wttr(wj) === 'St. George, UT', place_from_wttr(wj));
   assert('wttr URL', wttr_url(37.0965, -113.5684) === 'https://wttr.in/37.0965,-113.5684?format=j1');
   assert('Nominatim mapping', place_from_nominatim({ address: { town: 'Springdale', state: 'Utah', country_code: 'us' } }) === 'Springdale, UT');
+}
+
+console.log('\n=== ambient weather scene ===\n');
+{
+  assert('St. George is desert terrain', is_desert(37.0965, -113.5684));
+  assert('Denver is not desert terrain', !is_desert(39.74, -104.99));
+  assert('London is not desert terrain', !is_desert(51.5, -0.12));
+  assert('Oct = fall (N)', season_for(new Date(2026, 9, 5), 37) === 'fall');
+  assert('Oct = spring (S)', season_for(new Date(2026, 9, 5), -33) === 'spring');
+  assert('Jan = winter, Jul = summer, Apr = spring', season_for(new Date(2026, 0, 10)) === 'winter' && season_for(new Date(2026, 6, 10)) === 'summer' && season_for(new Date(2026, 3, 10)) === 'spring');
+  // St. George solar noon ~13:30 MDT (19:30 UTC) on Oct 5 → elevation ≈ 48°
+  const noon = solar_position(new Date(Date.UTC(2026, 9, 5, 19, 30)), 37.0965, -113.5684);
+  assert('solar noon elevation ≈ 48°', Math.abs(noon.elevation - 48) < 2, noon.elevation.toFixed(1));
+  const midnight = solar_position(new Date(Date.UTC(2026, 9, 6, 7, 30)), 37.0965, -113.5684);
+  assert('midnight sun below horizon', midnight.elevation < -30, midnight.elevation.toFixed(1));
+  const sunset = solar_position(new Date(Date.UTC(2026, 9, 6, 1, 12)), 37.0965, -113.5684); // 7:12 PM MDT
+  assert('sunset elevation ≈ 0° → dusk', Math.abs(sunset.elevation) < 2.5 && time_of_day(sunset.elevation) === 'dusk', sunset.elevation.toFixed(1));
+  assert('time_of_day buckets', time_of_day(30) === 'day' && time_of_day(3) === 'dusk' && time_of_day(-20) === 'night');
+  assert('WMO 0 → clear', classify_weather({ code: 0 }).sky === 'clear');
+  assert('WMO 63 → rain', classify_weather({ code: 63 }).precip === 'rain');
+  assert('WMO 75 → heavy snow', classify_weather({ code: 75 }).precip === 'snow' && classify_weather({ code: 75 }).heavy);
+  assert('WMO 95 → storm', classify_weather({ code: 95 }).precip === 'storm');
+  assert('WMO 45 → fog', classify_weather({ code: 45, cloud: 100 }).sky === 'fog');
+  assert('wttr 113 → clear', classify_weather({ code: 113, cloud: 3 }).sky === 'clear');
+  assert('wttr 296 → drizzle', classify_weather({ code: 296 }).precip === 'drizzle');
+  assert('wttr 338 → heavy snow', classify_weather({ code: 338 }).precip === 'snow');
+  assert('wttr 389 → storm', classify_weather({ code: 389 }).precip === 'storm');
+  assert('cloud cover refines dry sky', classify_weather({ code: 1, cloud: 85 }).sky === 'overcast' && classify_weather({ code: 3, cloud: 10 }).sky === 'clear');
+  const sg = { tempF: 82, code: 113, cloud: 3, windMph: 2, isDay: true };
+  const day = pick_scene({ weather: sg, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)) });
+  assert('St. George Oct afternoon → summery desert fall, clear, day', day.terrain === 'desert' && day.season === 'fall' && day.sky === 'clear' && day.time === 'day' && day.warm, day.key);
+  assert('St. George 82°F clear → heat shimmer + dust', day.heat && day.particles === 'dust', day.key);
+  assert('label reads summery desert fall', /^Summery desert fall · clear/.test(day.label), day.label);
+  const night = pick_scene({ weather: { ...sg, tempF: 64, isDay: false }, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 6, 7, 0)) });
+  assert('St. George midnight → desert night, no shimmer', night.time === 'night' && !night.heat && night.terrain === 'desert', night.key);
+  const rain = pick_scene({ weather: { tempF: 61, code: 63, cloud: 100, windMph: 9 }, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)) });
+  assert('rain reading → rain particles, overcast', rain.precip === 'rain' && rain.particles === 'rain' && rain.sky === 'overcast');
+  const storm = pick_scene({ weather: { tempF: 70, code: 95 }, lat: 37.1, lon: -113.6, date: new Date(Date.UTC(2026, 7, 5, 22, 0)) });
+  assert('storm reading → lightning', storm.lightning && storm.particles === 'rain');
+  const nyc = pick_scene({ weather: { tempF: 58, code: 2, cloud: 50 }, lat: 40.71, lon: -74.0, date: new Date(Date.UTC(2026, 9, 5, 17, 0)) });
+  assert('non-desert location → meadow fall, leaves', nyc.terrain === 'meadow' && nyc.particles === 'leaves', nyc.key);
+  const sgNoWx = pick_scene({ weather: null, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)) });
+  assert('St. George before first reading → desert fall, season-only', sgNoWx.terrain === 'desert' && !sgNoWx.located && sgNoWx.season === 'fall' && sgNoWx.precip === 'none', sgNoWx.key);
+  const gen = (m) => pick_scene({ weather: null, date: new Date(2026, m, 12, 12) });
+  assert('no location → generic meadow', gen(9).terrain === 'meadow' && !gen(9).located);
+  assert('no location: spring blossoms', gen(3).season === 'spring' && gen(3).particles === 'petals');
+  assert('no location: summer green bright', gen(6).season === 'summer' && gen(6).sky === 'clear');
+  assert('no location: fall amber leaves', gen(9).season === 'fall' && gen(9).particles === 'leaves');
+  assert('no location: winter soft snow', gen(0).season === 'winter' && gen(0).precip === 'snow');
+  assert('override parse', JSON.stringify(parse_scene_override('desert-rain-night')) === JSON.stringify({ terrain: 'desert', precip: 'rain', time: 'night' }));
+  const ov = pick_scene({ weather: sg, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)), override: parse_scene_override('snow') });
+  assert('override snow applies', ov.precip === 'snow' && ov.particles === 'snow' && ov.sky === 'overcast');
+  const P = palette(day);
+  assert('palette yields hex colours', [P.top, P.sky, P.hor, P.far, P.mid, P.ground].every((c) => /^#[0-9a-f]{6}$/.test(c)), JSON.stringify(P));
+  const keys = ['desert', 'meadow'].flatMap((t) => ['spring', 'summer', 'fall', 'winter'].flatMap((se) => ['clear', 'partly', 'overcast', 'fog'].flatMap((sk) => ['day', 'dusk', 'night'].map((ti) => palette({ terrain: t, season: se, sky: sk, precip: 'none', time: ti, warm: false, cold: false })))));
+  assert('every palette combo valid', keys.every((p) => /^#[0-9a-f]{6}$/.test(p.far) && /^#[0-9a-f]{6}$/.test(p.top)));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
