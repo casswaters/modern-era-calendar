@@ -8,7 +8,7 @@ import {
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
   gregorian_holidays, holidays_on, format_mec_html, format_mec_parts, format_gregorian,
   jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note,
-  islamic_holidays, ISLAMIC_RANGE
+  islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
 } from './mec.js';
 
 let passed = 0;
@@ -187,6 +187,10 @@ assert('is_leap(2000)', is_leap(2000));
 assert('DAY_NAMES length 10', DAY_NAMES.length === 10);
 assert('DAY_NAMES[0] Primaday', DAY_NAMES[0] === 'Primaday');
 assert('DAY_NAMES[9] Centiday', DAY_NAMES[9] === 'Centiday');
+assert('REST_DAY is Centiday (no new day name)', REST_DAY === 'Centiday' && DAY_NAMES.includes(REST_DAY));
+assert('Dec 30 2026 Centiday is rest day', is_rest_day(gregorian_to_mec(2026, 12, 31)));
+assert('Primaday is not rest day', !is_rest_day(gregorian_to_mec(2026, 7, 4)));
+assert('Renaissance Day is not flagged as rest day', !is_rest_day(gregorian_to_mec(2026, 2, 1)));
 assert('REN has 6 holidays', Object.keys(REN).length === 6);
 
 // Round trip: pick several dates

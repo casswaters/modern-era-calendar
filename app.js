@@ -8,7 +8,7 @@ import {
   format_mec, format_mec_html, format_gregorian,
   next_renaissance_day, renaissance_after_month,
   gregorian_day_of_year, ordinal_to_gregorian,
-  holidays_on, holiday_map, market_note
+  holidays_on, holiday_map, market_note, is_rest_day
 } from './mec.js';
 
 const HOLIDAY_ICONS = {
@@ -150,6 +150,9 @@ function renderTodayBanner() {
   if (rec.kind === 'renaissance') {
     html += `<span class="chip">${HOLIDAY_ICONS[rec.mec_month] || '✦'} ${rec.holiday_name}</span>`;
   }
+  if (is_rest_day(rec)) {
+    html += `<span class="chip neutral">Rest day</span>`;
+  }
   if (next && next.days_until > 0) {
     const g = next.gregorian;
     const when = next.days_until === 1 ? 'tomorrow' : `in ${next.days_until} days`;
@@ -187,6 +190,7 @@ function renderDayDetail(rec, g, extra = '') {
       `</div>`;
     html += renderMarketNotes(ghols);
   }
+  if (!extra && is_rest_day(rec)) extra = 'Centiday · Rest day';
   if (extra) html += `<div class="detail-extra">${extra}</div>`;
   document.getElementById('day-detail').innerHTML = html;
 }
@@ -244,11 +248,11 @@ function renderMonth() {
       `<span class="greg">${g.month}/${g.day}</span>` +
       mark;
     const gholTitle = ghols.length ? ' · ' + ghols.map(h => h.name).join(', ') : '';
-    cell.title = `${MONTH_NAMES[month - 1]} ${slot.day} · ${slot.name} · Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}${gholTitle}`;
+    const restTitle = slot.name === 'Centiday' ? ' (rest day)' : '';
+    cell.title = `${MONTH_NAMES[month - 1]} ${slot.day} · ${slot.name}${restTitle} · Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}${gholTitle}`;
     cell.addEventListener('click', () => {
       const rec = gregorian_to_mec(g.year, g.month, g.day);
-      const extra = slot.name === 'Centiday' ? 'Centiday (rest-day candidate)' : '';
-      renderDayDetail(rec, g, extra);
+      renderDayDetail(rec, g);
     });
     grid.appendChild(cell);
   }

@@ -14,6 +14,13 @@ export const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+/** Centiday (10th day of each cycle) is the MEC rest day. */
+export const REST_DAY = "Centiday";
+
+export function is_rest_day(rec) {
+  return !!rec && rec.kind !== "renaissance" && rec.day_name === REST_DAY;
+}
+
 /** month -> holiday. Month 10 only if leap. */
 export const REN = {
   1: "Local Area Network Day",
