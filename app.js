@@ -67,13 +67,11 @@ const GHOLIDAY_ICONS = {
 };
 
 
-const MARKET_DISCLAIMER = 'Typical/historical patterns only — not trading advice or predictions.';
-
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/** Compact market-note block for one or more holidays (day detail / converter). */
+/** Compact bank-status block for one or more holidays (day detail / converter / Today). */
 function renderMarketNotes(ghols, { compact = false } = {}) {
   const notes = ghols
     .map(h => ({ name: h.name, note: h.market || market_note(h.id) }))
@@ -81,11 +79,10 @@ function renderMarketNotes(ghols, { compact = false } = {}) {
   if (!notes.length) return '';
   const items = notes.map(n =>
     compact
-      ? `<div class="market-note-item"><span class="market-label">Markets (typical)</span> · ${escapeHtml(n.note)}</div>`
-      : `<div class="market-note-item"><strong>${escapeHtml(n.name)}</strong> — <span class="market-label">typical pattern:</span> ${escapeHtml(n.note)}</div>`
+      ? `<div class="market-note-item">${escapeHtml(n.note)}</div>`
+      : `<div class="market-note-item"><strong>${escapeHtml(n.name)}</strong> — ${escapeHtml(n.note)}</div>`
   ).join('');
-  return `<div class="market-notes" title="${escapeHtml(MARKET_DISCLAIMER)}">${items}` +
-    `<div class="market-disclaimer">${escapeHtml(MARKET_DISCLAIMER)}</div></div>`;
+  return `<div class="market-notes">${items}</div>`;
 }
 
 /* ---------- Theme ---------- */

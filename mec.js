@@ -374,54 +374,53 @@ const DIWALI = {
 
 
 /**
- * Typical / historical money-market notes for Gregorian holiday markers.
- * Educational context only — not trading advice or predictions.
+ * Concise bank open/closed status for Gregorian holiday markers.
  * Keys match holiday `id` values from gregorian_holidays().
  */
 export const MARKET_NOTES = {
-  new_year: "US, UK, Canada, and Mexico equity markets typically closed. Nearby sessions often see thin year-start liquidity.",
-  epiphany: "US and UK markets usually open as normal; some Continental Europe calendars observe a public holiday.",
-  mlk: "US equity markets (e.g. NYSE/Nasdaq) typically closed for Martin Luther King Jr. Day.",
-  valentine: "Markets usually open as normal.",
-  presidents: "US equity markets typically closed for Presidents’ Day (Washington’s Birthday observed).",
-  womens_day: "US and UK markets usually open as normal; some countries treat the day as a public holiday.",
-  st_patrick: "US and UK markets usually open as normal.",
-  ash_wednesday: "Markets usually open as normal.",
-  good_friday: "US and UK equity markets typically closed.",
-  easter: "Sunday — major equity markets are already closed for the weekend.",
-  easter_monday: "UK, Canada, and many European markets typically closed; US equity markets usually open.",
-  earth_day: "Markets usually open as normal.",
-  ascension: "US and UK markets usually open as normal; some Continental Europe exchanges close for Ascension Day.",
-  pentecost: "US and UK markets usually open as normal; some Europe calendars close for Whit Monday.",
-  may_day_uk: "UK equity markets typically closed (Early May Bank Holiday).",
-  victoria_day: "Canadian markets typically closed; US markets usually open.",
-  cinco_de_mayo: "Markets usually open as normal (widely marked culturally; not a standard US/Mexico exchange holiday).",
-  mothers: "Markets usually open as normal.",
-  memorial: "US markets typically closed (Memorial Day). UK Spring Bank Holiday — London markets typically closed the same Monday.",
-  juneteenth: "US equity markets typically closed for Juneteenth National Independence Day.",
-  fathers: "Markets usually open as normal.",
-  canada_day: "Canadian markets typically closed; US markets usually open.",
-  independence: "US equity markets typically closed for Independence Day (observed weekday if weekend).",
-  summer_bank: "UK equity markets typically closed (Summer Bank Holiday).",
-  labor: "US equity markets typically closed for Labor Day.",
-  mexico_independence: "Mexican markets typically closed; US and UK markets usually open.",
-  canada_thanksgiving: "Canadian markets typically closed; US markets usually open.",
-  un_day: "Markets usually open as normal.",
-  halloween: "US and most major markets usually open as normal.",
-  muertos_1: "Markets usually open as normal (cultural observance; not a standard US/Mexico exchange holiday).",
-  muertos_2: "Markets usually open as normal (cultural observance; not a standard US/Mexico exchange holiday).",
-  veterans: "US and Canadian equity markets usually open as normal (not a standard exchange holiday).",
-  thanksgiving: "US equity markets typically closed. The Friday after often has an early close and thinner liquidity.",
-  xmas_eve: "US markets often close early; holiday-week liquidity is typically thinner.",
-  christmas: "US and UK equity markets typically closed.",
-  boxing_day: "UK markets typically closed (Boxing Day). US markets usually open.",
-  new_years_eve: "US markets often close early; year-end flows and thinner liquidity are common historical patterns.",
-  rosh_hashanah: "US markets typically open; Israel markets closed. Some desks may run lighter staffing.",
-  yom_kippur: "US markets typically open; Israel markets closed. Some desks may run lighter staffing.",
-  passover: "US markets typically open; Israel markets often closed for the first days of Passover.",
-  hanukkah: "Markets usually open as normal.",
-  chinese_new_year: "China and Hong Kong markets typically closed for the Lunar New Year holiday week; US/UK usually open, with thinner Asia-linked liquidity.",
-  diwali: "India equity markets typically closed on the main Diwali day (sometimes with a special Muhurat session); US/UK usually open."
+  new_year: "Banks closed in the US, UK, Canada, and Mexico",
+  epiphany: "Banks open",
+  mlk: "Banks closed in the US",
+  valentine: "Banks open",
+  presidents: "Banks closed in the US",
+  womens_day: "Banks open",
+  st_patrick: "Banks open",
+  ash_wednesday: "Banks open",
+  good_friday: "Banks closed in the US and UK",
+  easter: "Banks closed (weekend)",
+  easter_monday: "Banks closed in the UK and Canada",
+  earth_day: "Banks open",
+  ascension: "Banks open",
+  pentecost: "Banks open",
+  may_day_uk: "Banks closed in the UK",
+  victoria_day: "Banks closed in Canada",
+  cinco_de_mayo: "Banks open",
+  mothers: "Banks open",
+  memorial: "Banks closed in the US and UK",
+  juneteenth: "Banks closed in the US",
+  fathers: "Banks open",
+  canada_day: "Banks closed in Canada",
+  independence: "Banks closed in the US",
+  summer_bank: "Banks closed in the UK",
+  labor: "Banks closed in the US",
+  mexico_independence: "Banks closed in Mexico",
+  canada_thanksgiving: "Banks closed in Canada",
+  un_day: "Banks open",
+  halloween: "Banks open",
+  muertos_1: "Banks open",
+  muertos_2: "Banks open",
+  veterans: "Banks open",
+  thanksgiving: "Banks closed in the US",
+  xmas_eve: "Banks open; early close in the US",
+  christmas: "Banks closed in the US and UK",
+  boxing_day: "Banks closed in the UK and Canada",
+  new_years_eve: "Banks open; early close in the US",
+  rosh_hashanah: "Banks open in the US; closed in Israel",
+  yom_kippur: "Banks open in the US; closed in Israel",
+  passover: "Banks open in the US; closed in Israel",
+  hanukkah: "Banks open",
+  chinese_new_year: "Banks closed in China and Hong Kong",
+  diwali: "Banks closed in India"
 };
 
 export function market_note(id) {
@@ -497,7 +496,7 @@ export function gregorian_holidays(year) {
     list.push({ month: m, day: d, name: "Diwali", id: "diwali" });
   }
 
-  // Attach typical market notes (educational), then stable chronological order
+  // Attach bank-status notes, then stable chronological order
   for (const h of list) {
     const note = MARKET_NOTES[h.id];
     if (note) h.market = note;

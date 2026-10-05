@@ -356,17 +356,24 @@ console.log('\n=== Market notes (holiday metadata) ===\n');
 {
   assert('MARKET_NOTES covers Halloween', !!MARKET_NOTES.halloween);
   assert('MARKET_NOTES covers Christmas', !!MARKET_NOTES.christmas);
-  assert('Halloween note says usually open',
-    /usually open/i.test(MARKET_NOTES.halloween), MARKET_NOTES.halloween);
-  assert('Christmas note says closed',
-    /closed/i.test(MARKET_NOTES.christmas), MARKET_NOTES.christmas);
-  assert('Boxing Day notes UK closed / US open',
-    /UK.*closed/i.test(MARKET_NOTES.boxing_day) && /US.*open/i.test(MARKET_NOTES.boxing_day),
+  assert('MARKET_NOTES covers UN Day', !!MARKET_NOTES.un_day);
+  assert('UN Day note is Banks open',
+    MARKET_NOTES.un_day === 'Banks open', MARKET_NOTES.un_day);
+  assert('Halloween note is Banks open',
+    MARKET_NOTES.halloween === 'Banks open', MARKET_NOTES.halloween);
+  assert('Christmas note closed US and UK',
+    /Banks closed in the US and UK/.test(MARKET_NOTES.christmas), MARKET_NOTES.christmas);
+  assert('Boxing Day notes UK and Canada closed',
+    /Banks closed in the UK and Canada/.test(MARKET_NOTES.boxing_day),
     MARKET_NOTES.boxing_day);
+  assert('Christmas Eve notes early close',
+    /early close in the US/.test(MARKET_NOTES.xmas_eve), MARKET_NOTES.xmas_eve);
   assert('Chinese New Year notes China/HK closed',
     /China|Hong Kong/i.test(MARKET_NOTES.chinese_new_year), MARKET_NOTES.chinese_new_year);
   assert('Diwali notes India',
     /India/i.test(MARKET_NOTES.diwali), MARKET_NOTES.diwali);
+  assert('no typical-pattern phrasing in notes',
+    !Object.values(MARKET_NOTES).some(n => /typical|usually open as normal|trading advice/i.test(n)));
   assert('market_note(halloween) matches map',
     market_note('halloween') === MARKET_NOTES.halloween);
   assert('market_note(unknown) is null', market_note('not_a_holiday') === null);

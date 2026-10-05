@@ -433,17 +433,6 @@ body {
 }
 .market-note-item + .market-note-item { margin-top: 6px; }
 .market-note-item strong { color: var(--text); font-weight: 650; }
-.market-label {
-  color: var(--ghol);
-  font-weight: 650;
-  text-transform: none;
-}
-.market-disclaimer {
-  margin-top: 6px;
-  font-size: 0.68rem;
-  opacity: 0.85;
-  font-style: italic;
-}
 .today-market .market-notes {
   margin-top: 0;
 }
