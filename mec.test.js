@@ -6,7 +6,7 @@ import {
   DAY_NAMES, REN, is_leap, slots, mec_year,
   gregorian_to_mec, mec_to_gregorian, format_mec,
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
-  gregorian_holidays, holidays_on, format_mec_html, format_mec_parts,
+  gregorian_holidays, holidays_on, format_mec_html, format_mec_parts, format_gregorian,
   jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note
 } from './mec.js';
 
@@ -408,6 +408,13 @@ console.log('\n=== format_mec wrap parts ===\n');
     html.includes('mec-line1') && html.includes('mec-line2'), html);
   assert('format_mec plain uses middots',
     format_mec(rec).includes('·') && !format_mec(rec).includes(','), format_mec(rec));
+}
+
+console.log('\n=== format_gregorian weekday ===\n');
+{
+  assert('format_gregorian includes weekday',
+    format_gregorian(2026, 10, 5) === 'Monday, October 5, 2026',
+    format_gregorian(2026, 10, 5));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

@@ -187,9 +187,13 @@ export function format_mec_short(rec) {
   return `${rec.month_name.slice(0, 3)} ${rec.mec_day}`;
 }
 
+export const GREGORIAN_WEEKDAYS = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+];
+
 export function format_gregorian(y, m, d) {
-  const names = MONTH_NAMES;
-  return `${names[m - 1]} ${d}, ${y}`;
+  const wd = GREGORIAN_WEEKDAYS[new Date(y, m - 1, d).getDay()];
+  return `${wd}, ${MONTH_NAMES[m - 1]} ${d}, ${y}`;
 }
 
 /* ---------- Gregorian / civil / religious holidays (computed per year) ---------- */
