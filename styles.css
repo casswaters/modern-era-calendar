@@ -129,7 +129,7 @@ body {
   color: var(--text-muted); font-weight: 600; margin-bottom: 6px;
 }
 .today-banner .greg {
-  font-size: 1.05rem; color: var(--text-muted); margin-bottom: 4px;
+  font-size: 0.9rem; color: var(--text-muted); margin-top: 12px;
 }
 .today-banner .mec {
   font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;

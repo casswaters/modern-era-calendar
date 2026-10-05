@@ -78,7 +78,7 @@ function renderTodayBanner() {
   const t = todayParts();
   const rec = gregorian_to_mec(t.y, t.m, t.d);
   document.getElementById('header-year').textContent = String(rec.mec_year);
-  document.getElementById('today-greg').textContent = format_gregorian(t.y, t.m, t.d);
+  document.getElementById('today-greg').textContent = `Gregorian: ${format_gregorian(t.y, t.m, t.d)}`;
   const mecEl = document.getElementById('today-mec');
   mecEl.innerHTML = format_mec_html(rec);
 
