@@ -7,7 +7,8 @@ import {
   gregorian_to_mec, mec_to_gregorian, format_mec,
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
   gregorian_holidays, holidays_on, format_mec_html, format_mec_parts, format_gregorian,
-  jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note
+  jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note,
+  islamic_holidays, ISLAMIC_RANGE
 } from './mec.js';
 
 let passed = 0;
@@ -312,7 +313,73 @@ assert('Presidents\' Day 2026 = Feb 16',
   assert('Passover 2026 Apr 2', pesach.some(x => x.id === 'passover'), JSON.stringify(pesach));
   const han = holidays_on(2026, 12, 5);
   assert('Hanukkah 2026 Dec 5', han.some(x => x.id === 'hanukkah'), JSON.stringify(han));
-  assert('jewish_holidays(2026) has 4', jewish_holidays(2026).length === 4);
+  assert('jewish_holidays(2026) has 14', jewish_holidays(2026).length === 14,
+    String(jewish_holidays(2026).length));
+}
+function hasOn(y, m, d, id) {
+  return holidays_on(y, m, d).some(x => x.id === id);
+}
+{
+  // Expanded Jewish set (Israeli calendar; cross-checked against Hebcal i=on)
+  const cases2026 = [
+    ['purim', 3, 3], ['erev_passover', 4, 1], ['passover', 4, 2], ['passover_last', 4, 8],
+    ['shavuot', 5, 22], ['tisha_bav', 7, 23], ['erev_rosh_hashanah', 9, 11],
+    ['rosh_hashanah', 9, 12], ['rosh_hashanah_2', 9, 13], ['erev_yom_kippur', 9, 20],
+    ['yom_kippur', 9, 21], ['sukkot', 9, 26], ['simchat_torah', 10, 3], ['hanukkah', 12, 5]
+  ];
+  for (const [id, m, d] of cases2026) {
+    assert(`2026 ${id} = ${m}/${d}`, hasOn(2026, m, d, id), JSON.stringify(holidays_on(2026, m, d)));
+  }
+  // 2027 is a Hebrew leap year (5787): Purim in Adar II
+  const cases2027 = [
+    ['purim', 3, 23], ['erev_passover', 4, 21], ['passover', 4, 22], ['passover_last', 4, 28],
+    ['shavuot', 6, 11], ['tisha_bav', 8, 12], ['erev_rosh_hashanah', 10, 1],
+    ['rosh_hashanah', 10, 2], ['rosh_hashanah_2', 10, 3], ['erev_yom_kippur', 10, 10],
+    ['yom_kippur', 10, 11], ['sukkot', 10, 16], ['simchat_torah', 10, 23], ['hanukkah', 12, 25]
+  ];
+  for (const [id, m, d] of cases2027) {
+    assert(`2027 ${id} = ${m}/${d}`, hasOn(2027, m, d, id), JSON.stringify(holidays_on(2027, m, d)));
+  }
+  // Tisha B'Av postponed from Shabbat: 9 Av 5785 = Sat Aug 2, 2025 -> observed Sun Aug 3
+  assert('Tisha B\'Av 2025 postponed to Sun Aug 3', hasOn(2025, 8, 3, 'tisha_bav'),
+    JSON.stringify(jewish_holidays(2025).find(h => h.id === 'tisha_bav')));
+  assert('Jewish market notes say US banks open',
+    ['passover', 'shavuot', 'rosh_hashanah_2', 'sukkot', 'simchat_torah'].every(
+      id => /Banks open in the US; closed in Israel/.test(MARKET_NOTES[id])));
+}
+
+console.log('\n=== Islamic Eids (Umm al-Qura table) ===\n');
+{
+  assert('ISLAMIC_RANGE 2024-2037', ISLAMIC_RANGE.from === 2024 && ISLAMIC_RANGE.to === 2037);
+  // Saudi Supreme Court announcements
+  assert('Eid al-Fitr 2024 Apr 10', hasOn(2024, 4, 10, 'eid_al_fitr'));
+  assert('Eid al-Adha 2024 Jun 16', hasOn(2024, 6, 16, 'eid_al_adha'));
+  assert('Eid al-Fitr 2025 Mar 30', hasOn(2025, 3, 30, 'eid_al_fitr'));
+  assert('Eid al-Adha 2025 Jun 6', hasOn(2025, 6, 6, 'eid_al_adha'));
+  assert('Eid al-Fitr 2026 Mar 20', hasOn(2026, 3, 20, 'eid_al_fitr'));
+  assert('Eid al-Adha 2026 May 27', hasOn(2026, 5, 27, 'eid_al_adha'));
+  // Umm al-Qura table
+  assert('Eid al-Fitr 2027 Mar 9', hasOn(2027, 3, 9, 'eid_al_fitr'));
+  assert('Eid al-Adha 2027 May 16', hasOn(2027, 5, 16, 'eid_al_adha'));
+  const f33 = islamic_holidays(2033).filter(h => h.id === 'eid_al_fitr');
+  assert('2033 has two Eid al-Fitr (Jan 2, Dec 23)',
+    f33.length === 2 && f33[0].month === 1 && f33[0].day === 2 && f33[1].month === 12 && f33[1].day === 23,
+    JSON.stringify(f33));
+  assert('Eid al-Adha 2037 Jan 26', hasOn(2037, 1, 26, 'eid_al_adha'));
+  for (let y = ISLAMIC_RANGE.from; y <= ISLAMIC_RANGE.to; y++) {
+    const ids = islamic_holidays(y).map(h => h.id);
+    if (!ids.includes('eid_al_fitr') || !ids.includes('eid_al_adha')) {
+      assert(`${y} has both Eids`, false, ids.join(','));
+    }
+  }
+  assert('every year in range has both Eids', true);
+  assert('2023 has no invented Eid', islamic_holidays(2023).length === 0);
+  assert('2038 has no invented Eid', islamic_holidays(2038).length === 0);
+  assert('Eid notes: open US/UK, closed Saudi/UAE',
+    /Banks open in the US and UK; closed in Saudi Arabia, UAE/.test(MARKET_NOTES.eid_al_fitr) &&
+    MARKET_NOTES.eid_al_adha === MARKET_NOTES.eid_al_fitr, MARKET_NOTES.eid_al_fitr);
+  const eid = holidays_on(2026, 3, 20).find(h => h.id === 'eid_al_fitr');
+  assert('holidays_on attaches Eid market note', eid && eid.market === MARKET_NOTES.eid_al_fitr);
 }
 {
   const h = holidays_on(2026, 2, 17);
@@ -391,6 +458,9 @@ console.log('\n=== Market notes (holiday metadata) ===\n');
   assert('every 2026 holiday has a market note',
     missing.length === 0,
     missing.map(h => h.id).join(', '));
+  const missing27 = gregorian_holidays(2027).concat(gregorian_holidays(2033)).filter(h => !h.market);
+  assert('every 2027/2033 holiday has a market note', missing27.length === 0,
+    missing27.map(h => h.id).join(', '));
   const ids = Object.keys(MARKET_NOTES);
   assert('MARKET_NOTES has 40+ entries', ids.length >= 40, String(ids.length));
 }

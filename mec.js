@@ -341,23 +341,77 @@ export function hebrew_to_gregorian(hy, hm, hd) {
   return rd_to_gregorian(hebrew_to_rd(hy, hm, hd));
 }
 
+const HEB_SIVAN = 3;
+const HEB_AV = 5;
+const HEB_ADAR_II = 13;
+
 /**
- * Major Jewish observances that fall in Gregorian `year`.
- * Fall holidays use Hebrew year Y+3761; spring (Passover) uses Y+3760.
+ * Major / market-relevant Jewish observances that fall in Gregorian `year`.
+ * Dates are the first full (daytime) day; observance begins the prior sundown.
+ * Israeli calendar (one-day yom tov): Passover 7th day = 21 Nisan, Shavuot = 6 Sivan,
+ * Shemini Atzeret / Simchat Torah = 22 Tishrei. These match TASE closures; US banks
+ * stay open on all of them. Diaspora second days are not marked.
+ * Fall months (Tishrei–Kislev) use Hebrew year Y+3761; spring/summer (Adar–Elul) use Y+3760.
  */
 export function jewish_holidays(year) {
   const fallHy = year + 3761;
   const springHy = year + 3760;
+  const purimMonth = hebrew_is_leap(springHy) ? HEB_ADAR_II : HEB_ADAR_I;
+  // Tisha B'Av: 9 Av, postponed to 10 Av when 9 Av is Shabbat (R.D. % 7 === 6 is Saturday)
+  const avRd = hebrew_to_rd(springHy, HEB_AV, 9);
+  const tishaRd = avRd % 7 === 6 ? avRd + 1 : avRd;
+  const rhRd = hebrew_to_rd(fallHy, HEB_TISHREI, 1);
   const specs = [
-    { hy: fallHy, hm: HEB_TISHREI, hd: 1, name: "Rosh Hashanah", id: "rosh_hashanah" },
-    { hy: fallHy, hm: HEB_TISHREI, hd: 10, name: "Yom Kippur", id: "yom_kippur" },
-    { hy: springHy, hm: HEB_NISAN, hd: 15, name: "Passover", id: "passover" },
-    { hy: fallHy, hm: HEB_KISLEV, hd: 25, name: "Hanukkah", id: "hanukkah" }
+    { rd: hebrew_to_rd(springHy, purimMonth, 14), name: "Purim", id: "purim" },
+    { rd: hebrew_to_rd(springHy, HEB_NISAN, 14), name: "Erev Passover", id: "erev_passover" },
+    { rd: hebrew_to_rd(springHy, HEB_NISAN, 15), name: "Passover", id: "passover" },
+    { rd: hebrew_to_rd(springHy, HEB_NISAN, 21), name: "Passover (7th day)", id: "passover_last" },
+    { rd: hebrew_to_rd(springHy, HEB_SIVAN, 6), name: "Shavuot", id: "shavuot" },
+    { rd: tishaRd, name: "Tisha B\u2019Av", id: "tisha_bav" },
+    { rd: rhRd - 1, name: "Erev Rosh Hashanah", id: "erev_rosh_hashanah" },
+    { rd: rhRd, name: "Rosh Hashanah", id: "rosh_hashanah" },
+    { rd: rhRd + 1, name: "Rosh Hashanah (Day 2)", id: "rosh_hashanah_2" },
+    { rd: hebrew_to_rd(fallHy, HEB_TISHREI, 9), name: "Erev Yom Kippur", id: "erev_yom_kippur" },
+    { rd: hebrew_to_rd(fallHy, HEB_TISHREI, 10), name: "Yom Kippur", id: "yom_kippur" },
+    { rd: hebrew_to_rd(fallHy, HEB_TISHREI, 15), name: "Sukkot", id: "sukkot" },
+    { rd: hebrew_to_rd(fallHy, HEB_TISHREI, 22), name: "Shemini Atzeret / Simchat Torah", id: "simchat_torah" },
+    { rd: hebrew_to_rd(fallHy, HEB_KISLEV, 25), name: "Hanukkah", id: "hanukkah" }
   ];
   const out = [];
   for (const s of specs) {
-    const g = hebrew_to_gregorian(s.hy, s.hm, s.hd);
+    const g = rd_to_gregorian(s.rd);
     if (g.year === year) out.push({ month: g.month, day: g.day, name: s.name, id: s.id });
+  }
+  return out;
+}
+
+/**
+ * Eid dates (Gregorian) from the Saudi Umm al-Qura calendar, AH 1445–1459.
+ * Published civil-date table (not arithmetic); 2024–2026 match the Saudi Supreme
+ * Court announcements. Local sighting elsewhere can shift a day. Keyed by Gregorian
+ * year; a year can hold two Eid al-Fitr dates (2033).
+ */
+export const ISLAMIC_RANGE = { from: 2024, to: 2037 };
+const EID_AL_FITR = {
+  2024: [[4, 10]], 2025: [[3, 30]], 2026: [[3, 20]], 2027: [[3, 9]], 2028: [[2, 26]],
+  2029: [[2, 14]], 2030: [[2, 4]], 2031: [[1, 24]], 2032: [[1, 14]],
+  2033: [[1, 2], [12, 23]], 2034: [[12, 12]], 2035: [[12, 1]], 2036: [[11, 19]],
+  2037: [[11, 8]]
+};
+const EID_AL_ADHA = {
+  2024: [[6, 16]], 2025: [[6, 6]], 2026: [[5, 27]], 2027: [[5, 16]], 2028: [[5, 5]],
+  2029: [[4, 24]], 2030: [[4, 13]], 2031: [[4, 2]], 2032: [[3, 22]], 2033: [[3, 11]],
+  2034: [[3, 1]], 2035: [[2, 18]], 2036: [[2, 7]], 2037: [[1, 26]]
+};
+
+/** Eid al-Fitr / Eid al-Adha in Gregorian `year` (empty outside ISLAMIC_RANGE). */
+export function islamic_holidays(year) {
+  const out = [];
+  for (const [m, d] of EID_AL_FITR[year] || []) {
+    out.push({ month: m, day: d, name: "Eid al-Fitr", id: "eid_al_fitr" });
+  }
+  for (const [m, d] of EID_AL_ADHA[year] || []) {
+    out.push({ month: m, day: d, name: "Eid al-Adha", id: "eid_al_adha" });
   }
   return out;
 }
@@ -419,10 +473,22 @@ export const MARKET_NOTES = {
   christmas: "Banks closed in the US and UK",
   boxing_day: "Banks closed in the UK and Canada",
   new_years_eve: "Banks open; early close in the US",
-  rosh_hashanah: "Banks open in the US; closed in Israel",
-  yom_kippur: "Banks open in the US; closed in Israel",
+  purim: "Banks open; Tel Aviv Stock Exchange closed",
+  erev_passover: "Banks open in the US; Tel Aviv Stock Exchange closed",
   passover: "Banks open in the US; closed in Israel",
-  hanukkah: "Banks open",
+  passover_last: "Banks open in the US; closed in Israel",
+  shavuot: "Banks open in the US; closed in Israel",
+  tisha_bav: "Banks open; Tel Aviv Stock Exchange closed",
+  erev_rosh_hashanah: "Banks open in the US; Tel Aviv Stock Exchange closed",
+  rosh_hashanah: "Banks open in the US; closed in Israel",
+  rosh_hashanah_2: "Banks open in the US; closed in Israel",
+  erev_yom_kippur: "Banks open in the US; Tel Aviv Stock Exchange closed",
+  yom_kippur: "Banks open in the US; closed in Israel",
+  sukkot: "Banks open in the US; closed in Israel",
+  simchat_torah: "Banks open in the US; closed in Israel",
+  hanukkah: "Banks open (US and Israel)",
+  eid_al_fitr: "Banks open in the US and UK; closed in Saudi Arabia, UAE, and other Muslim-majority markets",
+  eid_al_adha: "Banks open in the US and UK; closed in Saudi Arabia, UAE, and other Muslim-majority markets",
   chinese_new_year: "Banks closed in China and Hong Kong",
   diwali: "Banks closed in India"
 };
@@ -434,7 +500,7 @@ export function market_note(id) {
 /**
  * All major traditional holidays for a Gregorian year.
  * Returns array of { month, day, name, id }.
- * Islamic movable Eids omitted (no reliable offline Umm al-Qura table here).
+ * Islamic Eids come from a hardcoded Umm al-Qura table (ISLAMIC_RANGE only).
  */
 export function gregorian_holidays(year) {
   const easter = easter_western(year);
@@ -489,6 +555,9 @@ export function gregorian_holidays(year) {
 
   // Jewish (computed)
   list.push(...jewish_holidays(year));
+
+  // Islamic (Umm al-Qura lookup table)
+  list.push(...islamic_holidays(year));
 
   // Lookups
   if (CHINESE_NEW_YEAR[year]) {
