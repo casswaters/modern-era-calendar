@@ -1,5 +1,5 @@
 /* MEC service worker — offline cache */
-const CACHE = 'mec-v7';
+const CACHE = 'mec-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -25,13 +25,35 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+function isShell(url) {
+  const p = url.pathname;
+  return p.endsWith('.js') || p.endsWith('.css') || p.endsWith('.html') || p.endsWith('/') || p.endsWith('/modern-era-calendar');
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for app shell so updates show after a refresh
+  if (isShell(url)) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, clone));
+        }
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((cached) => {
       const fetched = fetch(req).then((res) => {
-        if (res && res.ok && new URL(req.url).origin === self.location.origin) {
+        if (res && res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then((c) => c.put(req, clone));
         }
