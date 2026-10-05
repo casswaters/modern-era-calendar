@@ -1,0 +1,369 @@
+/**
+ * MEC unit tests — PDF Section 7 acceptance checks + leap/slot extras.
+ * Run: node mec.test.js
+ */
+import {
+  DAY_NAMES, REN, is_leap, slots, mec_year,
+  gregorian_to_mec, mec_to_gregorian, format_mec,
+  easter_western, nth_weekday, last_weekday, monday_on_or_before,
+  gregorian_holidays, holidays_on, format_mec_html, format_mec_parts,
+  jewish_holidays, hebrew_to_gregorian
+} from './mec.js';
+
+let passed = 0;
+let failed = 0;
+const results = [];
+
+function assert(name, cond, detail = '') {
+  if (cond) {
+    passed++;
+    results.push({ name, ok: true });
+    console.log(`  PASS  ${name}`);
+  } else {
+    failed++;
+    results.push({ name, ok: false, detail });
+    console.log(`  FAIL  ${name}${detail ? ' — ' + detail : ''}`);
+  }
+}
+
+function eq(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function checkGreg(name, y, m, d, expect) {
+  const rec = gregorian_to_mec(y, m, d);
+  const parts = [];
+  if (expect.kind) parts.push(['kind', rec.kind, expect.kind]);
+  if (expect.mec_year != null) parts.push(['mec_year', rec.mec_year, expect.mec_year]);
+  if (expect.mec_month != null) parts.push(['mec_month', rec.mec_month, expect.mec_month]);
+  if (expect.mec_day != null) parts.push(['mec_day', rec.mec_day, expect.mec_day]);
+  if (expect.day_name != null) parts.push(['day_name', rec.day_name, expect.day_name]);
+  if (expect.cycle != null) parts.push(['cycle', rec.cycle, expect.cycle]);
+  if (expect.holiday_name != null) parts.push(['holiday_name', rec.holiday_name, expect.holiday_name]);
+  if ('cycle' in expect && expect.cycle === null) parts.push(['cycle', rec.cycle, null]);
+  if ('day_name' in expect && expect.day_name === null) parts.push(['day_name', rec.day_name, null]);
+
+  const bad = parts.filter(([, a, e]) => a !== e);
+  if (bad.length === 0) {
+    assert(name, true);
+  } else {
+    assert(name, false, bad.map(([k, a, e]) => `${k}=${a} (want ${e})`).join('; ') +
+      ` | got: ${format_mec(rec)}`);
+  }
+}
+
+console.log('\n=== Section 7 acceptance checks (2026) ===\n');
+
+checkGreg('Jan 1, 2026 → January 1, Primaday, Cycle 1, Year 250',
+  2026, 1, 1, {
+    kind: 'regular', mec_year: 250, mec_month: 1, mec_day: 1,
+    day_name: 'Primaday', cycle: 1
+  });
+
+checkGreg('Jan 31, 2026 → Local Area Network Day, Year 250',
+  2026, 1, 31, {
+    kind: 'renaissance', mec_year: 250, holiday_name: 'Local Area Network Day',
+    cycle: null, day_name: null
+  });
+
+checkGreg('Feb 1, 2026 → February 1, Primaday, Cycle 1',
+  2026, 2, 1, {
+    kind: 'regular', mec_month: 2, mec_day: 1, day_name: 'Primaday', cycle: 1
+  });
+
+checkGreg('Mar 1, 2026 → February 29, Noviday, Cycle 3',
+  2026, 3, 1, {
+    kind: 'regular', mec_month: 2, mec_day: 29, day_name: 'Noviday', cycle: 3
+  });
+
+checkGreg('Apr 1, 2026 → March 30, Centiday — day before Global Society Day',
+  2026, 4, 1, {
+    kind: 'regular', mec_month: 3, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Apr 2, 2026 → Global Society Day, Year 250',
+  2026, 4, 2, {
+    kind: 'renaissance', holiday_name: 'Global Society Day', mec_year: 250
+  });
+
+checkGreg('Jun 1, 2026 → May 30, Centiday',
+  2026, 6, 1, {
+    kind: 'regular', mec_month: 5, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Jun 2, 2026 → Nature Harmony Day, Year 250',
+  2026, 6, 2, {
+    kind: 'renaissance', holiday_name: 'Nature Harmony Day', mec_year: 250
+  });
+
+checkGreg('Aug 1, 2026 → July 30, Centiday',
+  2026, 8, 1, {
+    kind: 'regular', mec_month: 7, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Aug 2, 2026 → Tesla Day, Year 250',
+  2026, 8, 2, {
+    kind: 'renaissance', holiday_name: 'Tesla Day', mec_year: 250
+  });
+
+checkGreg('Sep 1, 2026 → August 30, Centiday',
+  2026, 9, 1, {
+    kind: 'regular', mec_month: 8, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Sep 2, 2026 → Theology Day, Year 250',
+  2026, 9, 2, {
+    kind: 'renaissance', holiday_name: 'Theology Day', mec_year: 250
+  });
+
+checkGreg('Sep 3, 2026 → September 1, Primaday, Cycle 1',
+  2026, 9, 3, {
+    kind: 'regular', mec_month: 9, mec_day: 1, day_name: 'Primaday', cycle: 1
+  });
+
+checkGreg('Dec 31, 2026 → December 30, Centiday, Cycle 3',
+  2026, 12, 31, {
+    kind: 'regular', mec_month: 12, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Jan 1, 2027 → January 1, Primaday, Year 251 — reset',
+  2027, 1, 1, {
+    kind: 'regular', mec_year: 251, mec_month: 1, mec_day: 1,
+    day_name: 'Primaday', cycle: 1
+  });
+
+console.log('\n=== Leap year 2028 extras ===\n');
+
+const s2028 = slots(2028);
+const hermes = s2028.find(s => s.name === 'Hermes Trismegistus Day');
+assert('2028 inserts Hermes Trismegistus Day after October 30',
+  hermes && hermes.month === 10 && hermes.day === 31 && hermes.kind === 'renaissance');
+
+const s2026 = slots(2026);
+assert('2026 does NOT include Hermes Trismegistus Day',
+  !s2026.some(s => s.name === 'Hermes Trismegistus Day'));
+
+// Section 5 slots(): Mar 1 2028 DOY=61 → Feb 30 Centiday (PDF §7 prose wrongly said Feb 29)
+checkGreg('Mar 1, 2028 → February 30 MEC (Section 5 algorithm)',
+  2028, 3, 1, {
+    kind: 'regular', mec_month: 2, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+checkGreg('Dec 31, 2028 → December 30 MEC',
+  2028, 12, 31, {
+    kind: 'regular', mec_month: 12, mec_day: 30, day_name: 'Centiday', cycle: 3
+  });
+
+// Hermes placement: after Oct 30 in leap year
+{
+  const list = slots(2028);
+  const oct30idx = list.findIndex(s => s.month === 10 && s.day === 30 && s.kind === 'regular');
+  const hermesIdx = list.findIndex(s => s.name === 'Hermes Trismegistus Day');
+  assert('Hermes is immediately after October 30 in 2028',
+    hermesIdx === oct30idx + 1,
+    `oct30=${oct30idx} hermes=${hermesIdx}`);
+}
+
+console.log('\n=== Slot counts ===\n');
+
+assert('2026 slots length === 365', slots(2026).length === 365, `got ${slots(2026).length}`);
+assert('2027 slots length === 365', slots(2027).length === 365, `got ${slots(2027).length}`);
+assert('2028 slots length === 366', slots(2028).length === 366, `got ${slots(2028).length}`);
+assert('2024 slots length === 366', slots(2024).length === 366, `got ${slots(2024).length}`);
+assert('1900 slots length === 365 (not leap)', slots(1900).length === 365);
+assert('2000 slots length === 366 (leap)', slots(2000).length === 366);
+
+console.log('\n=== Round-trip & helpers ===\n');
+
+assert('mec_year(2026) === 250', mec_year(2026) === 250);
+assert('mec_year(2027) === 251', mec_year(2027) === 251);
+assert('mec_year(1776) === 0 (formula Y-1776; epoch narrative Year 1)', mec_year(1776) === 0);
+assert('is_leap(2028)', is_leap(2028));
+assert('!is_leap(2026)', !is_leap(2026));
+assert('!is_leap(1900)', !is_leap(1900));
+assert('is_leap(2000)', is_leap(2000));
+
+assert('DAY_NAMES length 10', DAY_NAMES.length === 10);
+assert('DAY_NAMES[0] Primaday', DAY_NAMES[0] === 'Primaday');
+assert('DAY_NAMES[9] Centiday', DAY_NAMES[9] === 'Centiday');
+assert('REN has 6 holidays', Object.keys(REN).length === 6);
+
+// Round trip: pick several dates
+for (const [y, m, d] of [[2026, 1, 1], [2026, 10, 5], [2026, 4, 2], [2028, 10, 31], [2026, 12, 31]]) {
+  // For renaissance, mec day is 31
+  const rec = gregorian_to_mec(y, m, d);
+  const back = mec_to_gregorian(y, rec.mec_month, rec.mec_day);
+  assert(`round-trip ${y}-${m}-${d}`,
+    back.year === y && back.month === m && back.day === d,
+    `got ${back.year}-${back.month}-${back.day}`);
+}
+
+// Apr 1 is day before Global Society — confirm Apr 2 is holiday
+{
+  const gsd = gregorian_to_mec(2026, 4, 2);
+  assert('Apr 2 is Global Society Day', gsd.holiday_name === 'Global Society Day');
+}
+
+console.log('\n=== Gregorian holidays (computed) ===\n');
+
+{
+  const e = easter_western(2026);
+  assert('Easter 2026 = April 5', e.month === 4 && e.day === 5, JSON.stringify(e));
+}
+{
+  const e = easter_western(2025);
+  assert('Easter 2025 = April 20', e.month === 4 && e.day === 20, JSON.stringify(e));
+}
+{
+  const e = easter_western(2024);
+  assert('Easter 2024 = March 31', e.month === 3 && e.day === 31, JSON.stringify(e));
+}
+
+assert('Thanksgiving 2026 = Nov 26',
+  nth_weekday(2026, 11, 4, 4) === 26, String(nth_weekday(2026, 11, 4, 4)));
+assert('MLK 2026 = Jan 19',
+  nth_weekday(2026, 1, 1, 3) === 19, String(nth_weekday(2026, 1, 1, 3)));
+assert('Memorial Day 2026 = May 25',
+  last_weekday(2026, 5, 1) === 25, String(last_weekday(2026, 5, 1)));
+assert('Labor Day 2026 = Sep 7',
+  nth_weekday(2026, 9, 1, 1) === 7, String(nth_weekday(2026, 9, 1, 1)));
+assert('Mother\'s Day 2026 = May 10',
+  nth_weekday(2026, 5, 0, 2) === 10, String(nth_weekday(2026, 5, 0, 2)));
+assert('Father\'s Day 2026 = Jun 21',
+  nth_weekday(2026, 6, 0, 3) === 21, String(nth_weekday(2026, 6, 0, 3)));
+assert('Presidents\' Day 2026 = Feb 16',
+  nth_weekday(2026, 2, 1, 3) === 16, String(nth_weekday(2026, 2, 1, 3)));
+
+{
+  const h = holidays_on(2026, 10, 31);
+  assert('Halloween 2026 Oct 31', h.some(x => x.id === 'halloween'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 11, 26);
+  assert('Thanksgiving 2026 on Nov 26', h.some(x => x.id === 'thanksgiving'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 4, 5);
+  assert('Easter 2026 on Apr 5', h.some(x => x.id === 'easter'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 12, 26);
+  assert('Boxing Day 2026 Dec 26', h.some(x => x.id === 'boxing_day'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 5, 5);
+  assert('Cinco de Mayo 2026 May 5', h.some(x => x.id === 'cinco_de_mayo'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 1, 6);
+  assert('Epiphany 2026 Jan 6', h.some(x => x.id === 'epiphany'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 3, 8);
+  assert("Women's Day 2026 Mar 8", h.some(x => x.id === 'womens_day'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 7, 1);
+  assert('Canada Day 2026 Jul 1', h.some(x => x.id === 'canada_day'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 9, 16);
+  assert('Mexican Independence 2026 Sep 16', h.some(x => x.id === 'mexico_independence'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 11, 1);
+  assert('Día de los Muertos 2026 Nov 1', h.some(x => x.id === 'muertos_1'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 11, 11);
+  assert('Veterans/Remembrance 2026 Nov 11', h.some(x => x.id === 'veterans'), JSON.stringify(h));
+}
+{
+  assert('Early May Bank Holiday 2026 = May 4',
+    nth_weekday(2026, 5, 1, 1) === 4, String(nth_weekday(2026, 5, 1, 1)));
+  assert('Victoria Day 2026 = May 18',
+    monday_on_or_before(2026, 5, 24) === 18, String(monday_on_or_before(2026, 5, 24)));
+  assert('Summer Bank Holiday 2026 = Aug 31',
+    last_weekday(2026, 8, 1) === 31, String(last_weekday(2026, 8, 1)));
+  assert('Canadian Thanksgiving 2026 = Oct 12',
+    nth_weekday(2026, 10, 1, 2) === 12, String(nth_weekday(2026, 10, 1, 2)));
+}
+{
+  const h = holidays_on(2026, 4, 3);
+  assert('Good Friday 2026 Apr 3', h.some(x => x.id === 'good_friday'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 4, 6);
+  assert('Easter Monday 2026 Apr 6', h.some(x => x.id === 'easter_monday'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 2, 18);
+  assert('Ash Wednesday 2026 Feb 18', h.some(x => x.id === 'ash_wednesday'), JSON.stringify(h));
+}
+{
+  // Jewish 2026
+  const rh = hebrew_to_gregorian(5787, 7, 1);
+  assert('Rosh Hashanah 2026 = Sep 12', rh.month === 9 && rh.day === 12, JSON.stringify(rh));
+  const h = holidays_on(2026, 9, 12);
+  assert('Rosh Hashanah marked 2026', h.some(x => x.id === 'rosh_hashanah'), JSON.stringify(h));
+  const yk = holidays_on(2026, 9, 21);
+  assert('Yom Kippur 2026 Sep 21', yk.some(x => x.id === 'yom_kippur'), JSON.stringify(yk));
+  const pesach = holidays_on(2026, 4, 2);
+  assert('Passover 2026 Apr 2', pesach.some(x => x.id === 'passover'), JSON.stringify(pesach));
+  const han = holidays_on(2026, 12, 5);
+  assert('Hanukkah 2026 Dec 5', han.some(x => x.id === 'hanukkah'), JSON.stringify(han));
+  assert('jewish_holidays(2026) has 4', jewish_holidays(2026).length === 4);
+}
+{
+  const h = holidays_on(2026, 2, 17);
+  assert('Chinese New Year 2026 Feb 17', h.some(x => x.id === 'chinese_new_year'), JSON.stringify(h));
+}
+{
+  const h = holidays_on(2026, 11, 8);
+  assert('Diwali 2026 Nov 8', h.some(x => x.id === 'diwali'), JSON.stringify(h));
+}
+{
+  const all = gregorian_holidays(2026);
+  assert('2026 has many major holidays (>= 40)', all.length >= 40, String(all.length));
+  const ids = new Set(all.map(h => h.id));
+  assert('2026 includes boxing_day and cinco_de_mayo',
+    ids.has('boxing_day') && ids.has('cinco_de_mayo'));
+  // Halloween maps onto an MEC October slot
+  const rec = gregorian_to_mec(2026, 10, 31);
+  assert('Halloween 2026 falls in MEC October', rec.mec_month === 10,
+    `mec_month=${rec.mec_month} day=${rec.mec_day}`);
+}
+{
+  const all27 = gregorian_holidays(2027);
+  assert('2027 holidays recomputed (not hard-coded 2026)', all27.length >= 40, String(all27.length));
+  assert('Thanksgiving 2027 = Nov 25',
+    nth_weekday(2027, 11, 4, 4) === 25);
+  assert('Easter 2027 = Mar 28', (() => {
+    const e = easter_western(2027);
+    return e.month === 3 && e.day === 28;
+  })(), JSON.stringify(easter_western(2027)));
+  // Outside lookup range — CNY/Diwali simply absent, not wrong
+  const far = gregorian_holidays(2040);
+  assert('2040 has no invented Chinese New Year',
+    !far.some(h => h.id === 'chinese_new_year'));
+  assert('2040 has no invented Diwali',
+    !far.some(h => h.id === 'diwali'));
+}
+
+console.log('\n=== format_mec wrap parts ===\n');
+{
+  const rec = gregorian_to_mec(2026, 10, 3);
+  const parts = format_mec_parts(rec);
+  assert('format_mec_parts line1 has middot weekday',
+    parts.line1.includes('·') && parts.line1.includes(rec.day_name), parts.line1);
+  assert('format_mec_parts line2 has Cycle and Year',
+    /Cycle \d+ · Year \d+/.test(parts.line2), parts.line2);
+  const html = format_mec_html(rec);
+  assert('format_mec_html has mec-line1 and mec-line2',
+    html.includes('mec-line1') && html.includes('mec-line2'), html);
+  assert('format_mec plain uses middots',
+    format_mec(rec).includes('·') && !format_mec(rec).includes(','), format_mec(rec));
+}
+
+console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
+if (failed > 0) process.exit(1);
