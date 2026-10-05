@@ -514,7 +514,16 @@ body::after {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   cursor: pointer; border-radius: 12px;
 }
-.tab .ti { font-size: 1.15rem; }
+.tab .ti { font-size: 1.15rem; line-height: 1; }
+.tab .ti-info {
+  width: 1.2em; height: 1.2em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; font-family: var(--font);
+  line-height: 1; box-sizing: border-box;
+}
+.tab .ti-info::before { content: "i"; transform: translateY(-0.02em); }
 .tab.active { color: var(--gold-bright); background: var(--accent-soft); }
 
 .panel { display: none; }
