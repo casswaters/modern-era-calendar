@@ -7,7 +7,7 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=18';
+} from './mec.js?v=19';
 
 const KEY_PREFIX = 'mec-log:';
 const BDAY_KEY = 'mec-log-birthday';
@@ -19,91 +19,90 @@ const SECTIONS = [
   {
     id: 'gratitude', title: 'Gratitude exercise', open: true,
     fields: [
-      { id: 'g1', type: 'text', label: '1. A person I’m grateful for' },
-      { id: 'g2', type: 'text', label: '2. Something about my health or body' },
-      { id: 'g3', type: 'text', label: '3. Something about my home or surroundings' },
-      { id: 'g4', type: 'text', label: '4. A small pleasure from yesterday' },
-      { id: 'g5', type: 'text', label: '5. Something I’m learning' },
-      { id: 'g6', type: 'text', label: '6. An opportunity in front of me' },
-      { id: 'g7', type: 'text', label: '7. A challenge that’s shaping me' },
-      { id: 'g8', type: 'text', label: '8. Something I appreciate about myself' }
+      { id: 'g1', type: 'area', label: '1. What am I grateful for?', rows: 2, placeholder: 'S.C.O.R.E.' },
+      { id: 'g2', type: 'area', label: '2. Who do I love?', rows: 2, placeholder: 'Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.' },
+      { id: 'g3', type: 'area', label: '3. Why am I so happy?', rows: 2 },
+      { id: 'g4', type: 'area', label: '4. What am I committed to?', rows: 2, placeholder: 'Navigate consciously. Don’t over promise.' },
+      { id: 'g5', type: 'text', label: '5. How committed am I?' },
+      { id: 'g6', type: 'area', label: '6. What is my intention today?', rows: 2 },
+      { id: 'g7', type: 'area', label: '7. What is my wish for today?', rows: 2 },
+      { id: 'g8', type: 'area', label: '8. Why am I here?', rows: 2, placeholder: 'Stay grounded in the miracle. Compound efforts. Create. Build.' }
     ]
   },
   {
     id: 'grounding', title: 'Grounding exercise',
     fields: [
-      { id: 'q1', type: 'text', label: '1. Where am I, right now?' },
-      { id: 'q2', type: 'text', label: '2. What do I feel in my body?' },
-      { id: 'q3', type: 'text', label: '3. What emotion is here?' },
-      { id: 'q4', type: 'text', label: '4. What do I need?' },
-      { id: 'q5', type: 'text', label: '5. What is in my control today?' },
-      { id: 'q6', type: 'text', label: '6. What can I let go of?' },
-      { id: 'q7', type: 'text', label: '7. What matters most today?' },
-      { id: 'q8', type: 'text', label: '8. How does this fit my real circumstances?' }
+      { id: 'gr1', type: 'area', label: 'What am I being influenced by?', rows: 2 },
+      { id: 'gr2', type: 'area', label: 'What’s working?', rows: 2 },
+      { id: 'gr3', type: 'area', label: 'What’s not working?', rows: 2 },
+      { id: 'gr4', type: 'text', label: 'Am I taking care of myself?' },
+      { id: 'gr5', type: 'text', label: 'Is my plan working?' },
+      { id: 'gr6', type: 'text', label: 'Am I having fun?' },
+      { id: 'gr7', type: 'text', label: 'Is it sustainable?' },
+      { id: 'gr8', type: 'area', label: 'What can be done right now?', rows: 2 }
     ]
   },
   {
-    id: 'three', title: 'Default to: the three questions',
+    id: 'defaults', title: 'Default to',
     fields: [
-      { id: 't1', type: 'text', label: 'What is the most important time? (Now)' },
-      { id: 't2', type: 'text', label: 'Who is the most important person? (The one in front of me)' },
-      { id: 't3', type: 'text', label: 'What is the most important thing to do? (Good for them)' }
+      { id: 'd1', type: 'area', label: '“What would it require to…”', rows: 2 },
+      { id: 'd2', type: 'area', label: '“How does that work?”', rows: 2 },
+      { id: 'd3', type: 'area', label: '“Tell me more.”', rows: 2 }
     ]
   },
   {
-    id: 'tracker', title: 'Daily Tracker · 6am / 10pm',
+    id: 'tracker', title: 'Daily Tracker',
     fields: [
       { id: 'am_head', type: 'head', label: '6am' },
-      { id: 'am_wake', type: 'text', label: 'Woke at', half: true },
-      { id: 'am_sleep', type: 'scale', label: 'Sleep quality', half: true },
-      { id: 'am_energy', type: 'scale', label: 'Energy', half: true },
-      { id: 'am_mood', type: 'scale', label: 'Mood', half: true },
-      { id: 'am_intent', type: 'text', label: 'Intention for today' },
+      { id: 'am_note', type: 'area', label: 'Good morning ☀️', rows: 2 },
       { id: 'pm_head', type: 'head', label: '10pm' },
-      { id: 'pm_energy', type: 'scale', label: 'Energy', half: true },
-      { id: 'pm_mood', type: 'scale', label: 'Mood', half: true },
-      { id: 'pm_win', type: 'text', label: 'Win of the day' },
-      { id: 'pm_lesson', type: 'text', label: 'Lesson / adjust tomorrow' }
+      { id: 'pm_note', type: 'area', label: 'Good night 💤', rows: 2 }
     ]
   },
   {
-    id: 'life', title: 'Life Journal · Captain’s Log check-in',
-    fields: [ { id: 'log', type: 'area', label: 'Captain’s Log', rows: 5, placeholder: 'Captain’s Log, supplemental…' } ]
+    id: 'life', title: 'Life Journal · Captain’s Log Review',
+    fields: [ { id: 'log', type: 'area', label: 'Check in', rows: 4, placeholder: 'Captain’s Log…' } ]
   },
   {
     id: 'career', title: 'Career',
     fields: [
-      { id: 'cw', type: 'area', label: 'CW Enterprises', rows: 3 },
-      { id: 'anam', type: 'area', label: 'Anam pipeline', rows: 3 }
+      { id: 'cw_head', type: 'head', label: 'CW Enterprises' },
+      { id: 'cw_checkin', type: 'area', label: 'Check in — Schedule · Emails · Deals', rows: 3 },
+      { id: 'anam_head', type: 'head', label: 'Anam' },
+      { id: 'anam_pipeline', type: 'area', label: 'Pipeline — Introductions · Submissions · Outbound · Inbound', rows: 3 },
+      { id: 'anam_other', type: 'area', label: 'Business chats · Organization · News', rows: 2 }
     ]
   },
   {
     id: 'notes', title: 'Notes · Communication · Social · Care',
     fields: [
       { id: 'notes', type: 'area', label: 'Notes', rows: 3 },
-      { id: 'comm', type: 'area', label: 'Personal communication', rows: 2 },
-      { id: 'social', type: 'area', label: 'Social', rows: 2 },
-      { id: 'care', type: 'area', label: 'Personal care', rows: 2 }
+      { id: 'comm_out', type: 'area', label: 'Personal Communication — Outbound', rows: 2 },
+      { id: 'comm_in', type: 'area', label: 'Personal Communication — Inbound', rows: 2 },
+      { id: 'social_fam', type: 'text', label: 'Social — Family' },
+      { id: 'social_friends', type: 'text', label: 'Social — Friends' },
+      { id: 'social_col', type: 'text', label: 'Social — Colleagues & Associates' },
+      { id: 'social_adv', type: 'text', label: 'Social — To Adventure & Fellowship' },
+      { id: 'care', type: 'area', label: 'Personal Care & Activities', rows: 2 }
     ]
   },
   {
     id: 'io', title: 'Inputs & Outputs',
     fields: [
       { id: 'supp_head', type: 'head', label: 'Supplements' },
-      { id: 'supp_am', type: 'check', label: 'Morning', third: true },
-      { id: 'supp_mid', type: 'check', label: 'Midday', third: true },
-      { id: 'supp_pm', type: 'check', label: 'Evening', third: true },
-      { id: 'supp_note', type: 'text', label: 'Schedule / notes' },
-      { id: 'drank', type: 'text', label: 'Drank' },
-      { id: 'ate', type: 'area', label: 'Ate', rows: 2 },
-      { id: 'dreams', type: 'area', label: 'Dreams', rows: 2 },
-      { id: 'media', type: 'text', label: 'Media' },
-      { id: 'purchases', type: 'text', label: 'Purchases' },
-      { id: 'workout', type: 'text', label: 'Workout' },
-      { id: 'health', type: 'text', label: 'Health' }
+      { id: 'supp_620', type: 'check', label: '6:20am — OptimalAmino · Electrolytes · Creatine 10g' },
+      { id: 'supp_930', type: 'check', label: '9:30am — AG1 · Omega 3 · Vitamin D3 + K2' },
+      { id: 'supp_9pm', type: 'check', label: '9pm — OptimalAmino · Psyllium Husk' },
+      { id: 'drank', type: 'area', label: '💧 Drank', rows: 2 },
+      { id: 'ate', type: 'area', label: '🥩 Ate', rows: 2 },
+      { id: 'dreams', type: 'area', label: '🛌 Dreams', rows: 2, placeholder: 'Physical setting, mental perspective, emotional feelings, themes, messages, symbols, thoughts' },
+      { id: 'media', type: 'area', label: '🔊 Listened / watched / read', rows: 2 },
+      { id: 'purchases', type: 'text', label: '💸 Purchases' },
+      { id: 'workout', type: 'area', label: '💪🏼 Workout', rows: 2 },
+      { id: 'health', type: 'text', label: '👨🏼‍⚕️ Health', placeholder: 'Great' }
     ]
   }
-];
+]
 
 /* ---------- Helpers ---------- */
 const $ = (id) => document.getElementById(id);

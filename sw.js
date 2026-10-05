@@ -1,5 +1,5 @@
 /* MEC service worker — network-first app shell, offline fallback (Aretoria Almanac v18) */
-const CACHE = 'mec-v18';
+const CACHE = 'mec-v19';
 const ASSETS = [
   './',
   './index.html',
