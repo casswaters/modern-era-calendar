@@ -740,6 +740,20 @@ body::after {
 .log-beliefs p { margin: 0; font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--gold-bright); line-height: 1.3; }
 .log-beliefs p + p { margin-top: 4px; font-size: .94rem; color: var(--pearl); }
 
+.log-cue {
+  flex: 1 1 100%;
+  padding: 8px 10px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+  background: linear-gradient(180deg, rgba(241,213,142,.06), transparent);
+}
+.log-cue-q {
+  margin: 0; font-family: var(--serif); font-style: italic;
+  font-size: .98rem; color: var(--gold-bright); line-height: 1.35;
+}
+.log-cue-hint {
+  margin: 4px 0 0; font-size: .78rem; color: var(--text-muted); line-height: 1.35;
+}
+
 .log-body { padding: 4px 0; }
 .log-sec { border-bottom: 1px solid var(--border); }
 .log-sec:last-child { border-bottom: 0; }

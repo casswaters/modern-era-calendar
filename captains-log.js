@@ -7,61 +7,55 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=20';
+} from './mec.js?v=21';
 
 const KEY_PREFIX = 'mec-log:';
 const BDAY_KEY = 'mec-log-birthday';
 const OPEN_KEY = 'mec-log-open';
 
 /* ---------- Template (edit here to change prompts) ----------
-   field types: text (one line), area (multi-line), check (tick box), scale (1–10) */
+   field types: cue (read-only standing prompt), text, area, check, scale (1–10), head */
 const SECTIONS = [
   {
     id: 'gratitude', title: 'Gratitude exercise', open: true,
     fields: [
-      { id: 'g1', type: 'area', label: '1. What am I grateful for?', rows: 2, placeholder: 'S.C.O.R.E.' },
-      { id: 'g2', type: 'area', label: '2. Who do I love?', rows: 2, placeholder: 'Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.' },
-      { id: 'g3', type: 'area', label: '3. Why am I so happy?', rows: 2 },
-      { id: 'g4', type: 'area', label: '4. What am I committed to?', rows: 2, placeholder: 'Navigate consciously. Don’t over promise.' },
-      { id: 'g5', type: 'text', label: '5. How committed am I?' },
-      { id: 'g6', type: 'area', label: '6. What is my intention today?', rows: 2 },
-      { id: 'g7', type: 'area', label: '7. What is my wish for today?', rows: 2 },
-      { id: 'g8', type: 'area', label: '8. Why am I here?', rows: 2, placeholder: 'Stay grounded in the miracle. Compound efforts. Create. Build.' }
+      { id: 'g1', type: 'cue', label: '1. What am I grateful for?', cue: 'S.C.O.R.E.' },
+      { id: 'g2', type: 'cue', label: '2. Who do I love?', cue: 'Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.' },
+      { id: 'g3', type: 'cue', label: '3. Why am I so happy?' },
+      { id: 'g4', type: 'cue', label: '4. What am I committed to?', cue: 'Navigate consciously. Don’t over promise.' },
+      { id: 'g5', type: 'cue', label: '5. How committed am I?' },
+      { id: 'g6', type: 'cue', label: '6. What is my intention today?' },
+      { id: 'g7', type: 'cue', label: '7. What is my wish for today?' },
+      { id: 'g8', type: 'cue', label: '8. Why am I here?', cue: 'Stay grounded in the miracle. Compound efforts. Create. Build.' }
     ]
   },
   {
     id: 'grounding', title: 'Grounding exercise',
     fields: [
-      { id: 'gr1', type: 'area', label: 'What am I being influenced by?', rows: 2 },
-      { id: 'gr2', type: 'area', label: 'What’s working?', rows: 2 },
-      { id: 'gr3', type: 'area', label: 'What’s not working?', rows: 2 },
-      { id: 'gr4', type: 'text', label: 'Am I taking care of myself?' },
-      { id: 'gr5', type: 'text', label: 'Is my plan working?' },
-      { id: 'gr6', type: 'text', label: 'Am I having fun?' },
-      { id: 'gr7', type: 'text', label: 'Is it sustainable?' },
-      { id: 'gr8', type: 'area', label: 'What can be done right now?', rows: 2 }
+      { id: 'gr1', type: 'cue', label: 'What am I being influenced by?' },
+      { id: 'gr2', type: 'cue', label: 'What’s working?' },
+      { id: 'gr3', type: 'cue', label: 'What’s not working?' },
+      { id: 'gr4', type: 'cue', label: 'Am I taking care of myself?' },
+      { id: 'gr5', type: 'cue', label: 'Is my plan working?' },
+      { id: 'gr6', type: 'cue', label: 'Am I having fun?' },
+      { id: 'gr7', type: 'cue', label: 'Is it sustainable?' },
+      { id: 'gr8', type: 'cue', label: 'What can be done right now?' }
     ]
   },
   {
     id: 'defaults', title: 'Default to',
     fields: [
-      { id: 'd1', type: 'area', label: '“What would it require to…”', rows: 2 },
-      { id: 'd2', type: 'area', label: '“How does that work?”', rows: 2 },
-      { id: 'd3', type: 'area', label: '“Tell me more.”', rows: 2 }
+      { id: 'd1', type: 'cue', label: '“What would it require to…”' },
+      { id: 'd2', type: 'cue', label: '“How does that work?”' },
+      { id: 'd3', type: 'cue', label: '“Tell me more.”' }
     ]
   },
   {
     id: 'tracker', title: 'Daily Tracker',
     fields: [
-      { id: 'am_head', type: 'head', label: '6am' },
-      { id: 'am_note', type: 'area', label: 'Good morning ☀️', rows: 2 },
-      { id: 'pm_head', type: 'head', label: '10pm' },
-      { id: 'pm_note', type: 'area', label: 'Good night 💤', rows: 2 }
+      { id: 'wake', type: 'text', label: '6am ☀️', placeholder: 'Wake time' },
+      { id: 'bed', type: 'text', label: '10pm 💤', placeholder: 'Bedtime' }
     ]
-  },
-  {
-    id: 'life', title: 'Life Journal · Captain’s Log Review',
-    fields: [ { id: 'log', type: 'area', label: 'Check in', rows: 4, placeholder: 'Captain’s Log…' } ]
   },
   {
     id: 'career', title: 'Career',
@@ -74,9 +68,9 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'notes', title: 'Notes · Communication · Social · Care',
+    id: 'notes', title: 'Life Journal · Notes · Communication · Social · Care',
     fields: [
-      { id: 'notes', type: 'area', label: 'Notes', rows: 3 },
+      { id: 'notes', type: 'area', label: 'Life Journal / Notes', rows: 5, placeholder: 'Freeform notes…' },
       { id: 'comm_out', type: 'area', label: 'Personal Communication — Outbound', rows: 2 },
       { id: 'comm_in', type: 'area', label: 'Personal Communication — Inbound', rows: 2 },
       { id: 'social_fam', type: 'text', label: 'Social — Family' },
@@ -116,8 +110,12 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function load(iso) {
-  try { return JSON.parse(localStorage.getItem(KEY_PREFIX + iso) || '{}') || {}; }
-  catch { return {}; }
+  try {
+    const data = JSON.parse(localStorage.getItem(KEY_PREFIX + iso) || '{}') || {};
+    // Prior Life Journal field id was `log`; fold into Notes if present.
+    if (data.log && !data.notes) data.notes = data.log;
+    return data;
+  } catch { return {}; }
 }
 function store(iso, data) {
   const has = Object.values(data).some(v => v !== '' && v !== false && v != null);
@@ -148,6 +146,10 @@ function fieldHtml(f) {
   const id = `log-f-${f.id}`;
   const cls = 'log-field' + (f.half ? ' half' : '') + (f.third ? ' third' : '');
   if (f.type === 'head') return `<div class="log-subhead">${esc(f.label)}</div>`;
+  if (f.type === 'cue') {
+    const hint = f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '';
+    return `<div class="log-cue"><p class="log-cue-q">${esc(f.label)}</p>${hint}</div>`;
+  }
   if (f.type === 'check') {
     return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(f.label)}</span></label>`;
   }
@@ -189,7 +191,7 @@ function readForm() {
 
 function updateCounts(data) {
   for (const s of SECTIONS) {
-    const keys = s.fields.filter(f => f.type !== 'head').map(f => f.id);
+    const keys = s.fields.filter(f => f.type !== 'head' && f.type !== 'cue').map(f => f.id);
     const filled = keys.filter(k => data[k] && data[k] !== '').length;
     const el = form.querySelector(`[data-count="${s.id}"]`);
     if (el) {
@@ -266,6 +268,10 @@ function asText() {
     lines.push('', s.title.toUpperCase());
     for (const f of s.fields) {
       if (f.type === 'head') { lines.push(`[${f.label}]`); continue; }
+      if (f.type === 'cue') {
+        lines.push(f.cue ? `${f.label} — ${f.cue}` : f.label);
+        continue;
+      }
       const v = data[f.id];
       const out = f.type === 'check' ? (v ? '☑' : '☐') : (v || '');
       lines.push(`${f.label}: ${out}`);
