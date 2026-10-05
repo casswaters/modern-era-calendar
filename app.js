@@ -8,7 +8,7 @@ import {
   format_mec, format_mec_html, format_gregorian,
   next_renaissance_day, renaissance_after_month,
   gregorian_day_of_year, ordinal_to_gregorian,
-  holidays_on, holiday_map
+  holidays_on, holiday_map, market_note
 } from './mec.js';
 
 const HOLIDAY_ICONS = {
@@ -65,6 +65,28 @@ const GHOLIDAY_ICONS = {
   chinese_new_year: '🧧',
   diwali: '🪔'
 };
+
+
+const MARKET_DISCLAIMER = 'Typical/historical patterns only — not trading advice or predictions.';
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Compact market-note block for one or more holidays (day detail / converter). */
+function renderMarketNotes(ghols, { compact = false } = {}) {
+  const notes = ghols
+    .map(h => ({ name: h.name, note: h.market || market_note(h.id) }))
+    .filter(x => x.note);
+  if (!notes.length) return '';
+  const items = notes.map(n =>
+    compact
+      ? `<div class="market-note-item"><span class="market-label">Markets (typical)</span> · ${escapeHtml(n.note)}</div>`
+      : `<div class="market-note-item"><strong>${escapeHtml(n.name)}</strong> — <span class="market-label">typical pattern:</span> ${escapeHtml(n.note)}</div>`
+  ).join('');
+  return `<div class="market-notes" title="${escapeHtml(MARKET_DISCLAIMER)}">${items}` +
+    `<div class="market-disclaimer">${escapeHtml(MARKET_DISCLAIMER)}</div></div>`;
+}
 
 /* ---------- Theme ---------- */
 const themeToggle = document.getElementById('theme-toggle');
@@ -129,6 +151,16 @@ function renderTodayBanner() {
     html += `<span class="chip neutral">today · ${format_gregorian(next.gregorian.year, next.gregorian.month, next.gregorian.day)}</span>`;
   }
   box.innerHTML = html;
+  // Compact market strip under Today chips (no extra chips clutter)
+  let marketEl = document.getElementById('today-market');
+  if (!marketEl) {
+    marketEl = document.createElement('div');
+    marketEl.id = 'today-market';
+    marketEl.className = 'today-market';
+    box.insertAdjacentElement('afterend', marketEl);
+  }
+  marketEl.innerHTML = todayGhols.length ? renderMarketNotes(todayGhols, { compact: true }) : '';
+  marketEl.hidden = !todayGhols.length || !marketEl.innerHTML;
 }
 
 function renderDayDetail(rec, g, extra = '') {
@@ -144,6 +176,7 @@ function renderDayDetail(rec, g, extra = '') {
         `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`
       ).join('') +
       `</div>`;
+    html += renderMarketNotes(ghols);
   }
   if (extra) html += `<div class="detail-extra">${extra}</div>`;
   document.getElementById('day-detail').innerHTML = html;
@@ -305,7 +338,7 @@ document.getElementById('g-to-mec').addEventListener('click', () => {
       (ghols.length
         ? `<div class="detail-tags" style="margin-top:8px">` +
           ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
-          `</div>`
+          `</div>` + renderMarketNotes(ghols)
         : '');
   } catch (e) {
     out.textContent = 'Invalid date: ' + e.message;
@@ -326,7 +359,7 @@ document.getElementById('m-to-g').addEventListener('click', () => {
       (ghols.length
         ? `<div class="detail-tags" style="margin-top:8px">` +
           ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
-          `</div>`
+          `</div>` + renderMarketNotes(ghols)
         : '');
   } catch (e) {
     out.textContent = 'Invalid MEC date: ' + e.message;

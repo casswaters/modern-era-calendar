@@ -7,7 +7,7 @@ import {
   gregorian_to_mec, mec_to_gregorian, format_mec,
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
   gregorian_holidays, holidays_on, format_mec_html, format_mec_parts,
-  jewish_holidays, hebrew_to_gregorian
+  jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note
 } from './mec.js';
 
 let passed = 0;
@@ -348,6 +348,44 @@ assert('Presidents\' Day 2026 = Feb 16',
     !far.some(h => h.id === 'chinese_new_year'));
   assert('2040 has no invented Diwali',
     !far.some(h => h.id === 'diwali'));
+}
+
+
+console.log('\n=== Market notes (holiday metadata) ===\n');
+
+{
+  assert('MARKET_NOTES covers Halloween', !!MARKET_NOTES.halloween);
+  assert('MARKET_NOTES covers Christmas', !!MARKET_NOTES.christmas);
+  assert('Halloween note says usually open',
+    /usually open/i.test(MARKET_NOTES.halloween), MARKET_NOTES.halloween);
+  assert('Christmas note says closed',
+    /closed/i.test(MARKET_NOTES.christmas), MARKET_NOTES.christmas);
+  assert('Boxing Day notes UK closed / US open',
+    /UK.*closed/i.test(MARKET_NOTES.boxing_day) && /US.*open/i.test(MARKET_NOTES.boxing_day),
+    MARKET_NOTES.boxing_day);
+  assert('Chinese New Year notes China/HK closed',
+    /China|Hong Kong/i.test(MARKET_NOTES.chinese_new_year), MARKET_NOTES.chinese_new_year);
+  assert('Diwali notes India',
+    /India/i.test(MARKET_NOTES.diwali), MARKET_NOTES.diwali);
+  assert('market_note(halloween) matches map',
+    market_note('halloween') === MARKET_NOTES.halloween);
+  assert('market_note(unknown) is null', market_note('not_a_holiday') === null);
+
+  const hall = holidays_on(2026, 10, 31).find(h => h.id === 'halloween');
+  assert('holidays_on attaches market for Halloween',
+    hall && hall.market === MARKET_NOTES.halloween,
+    hall ? JSON.stringify(hall.market) : 'missing');
+  const xmas = holidays_on(2026, 12, 25).find(h => h.id === 'christmas');
+  assert('holidays_on attaches market for Christmas',
+    xmas && xmas.market === MARKET_NOTES.christmas);
+
+  const all = gregorian_holidays(2026);
+  const missing = all.filter(h => !h.market);
+  assert('every 2026 holiday has a market note',
+    missing.length === 0,
+    missing.map(h => h.id).join(', '));
+  const ids = Object.keys(MARKET_NOTES);
+  assert('MARKET_NOTES has 40+ entries', ids.length >= 40, String(ids.length));
 }
 
 console.log('\n=== format_mec wrap parts ===\n');
