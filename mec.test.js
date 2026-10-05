@@ -7,7 +7,7 @@ import {
   gregorian_to_mec, mec_to_gregorian, format_mec,
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
   gregorian_holidays, holidays_on, format_mec_html, format_mec_parts, format_gregorian,
-  jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note,
+  jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note, HOLIDAY_ORIGINS, holiday_origin,
   islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
 } from './mec.js';
 
@@ -489,6 +489,21 @@ console.log('\n=== format_gregorian weekday ===\n');
   assert('format_gregorian includes weekday',
     format_gregorian(2026, 10, 5) === 'Monday, October 5, 2026',
     format_gregorian(2026, 10, 5));
+}
+
+
+console.log('\n=== holiday origins ===\n');
+{
+  assert('Yom Kippur origin Jewish', holiday_origin('yom_kippur') === 'Jewish');
+  assert('Christmas origin Christian', holiday_origin('christmas') === 'Christian');
+  assert('Eid origin Islamic', holiday_origin('eid_al_fitr') === 'Islamic');
+  assert('MLK origin US civil', holiday_origin('mlk') === 'US civil');
+  const yk = holidays_on(2026, 9, 21).find(h => h.id === 'yom_kippur');
+  assert('holidays_on attaches origin', yk && yk.origin === 'Jewish', yk && yk.origin);
+  const missing = Object.keys(HOLIDAY_ORIGINS).filter(id => !MARKET_NOTES[id]);
+  // origins may be subset; check every 2026 holiday has origin
+  const noOrigin = gregorian_holidays(2026).filter(h => !h.origin);
+  assert('every 2026 holiday has origin', noOrigin.length === 0, noOrigin.map(h => h.id).join(','));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

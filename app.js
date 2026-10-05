@@ -84,6 +84,14 @@ function escapeHtml(s) {
 }
 
 /** Compact bank-status block for one or more holidays (day detail / converter / Today). */
+
+function holidayChipLabel(h) {
+  const origin = h.origin || '';
+  const icon = GHOLIDAY_ICONS[h.id] || '📅';
+  if (origin) return `${icon} ${h.name} · ${origin}`;
+  return `${icon} ${h.name}`;
+}
+
 function renderMarketNotes(ghols, { compact = false } = {}) {
   const notes = ghols
     .map(h => ({ name: h.name, note: h.market || market_note(h.id) }))
@@ -144,7 +152,7 @@ function renderTodayBanner() {
   let html = '';
   if (todayGhols.length) {
     html += todayGhols.map(h =>
-      `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`
+      `<span class="chip ghol">${holidayChipLabel(h)}</span>`
     ).join('');
   }
   if (rec.kind === 'renaissance') {
@@ -185,7 +193,7 @@ function renderDayDetail(rec, g, extra = '') {
   if (ghols.length) {
     html += `<div class="detail-tags">` +
       ghols.map(h =>
-        `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`
+        `<span class="chip ghol">${holidayChipLabel(h)}</span>`
       ).join('') +
       `</div>`;
     html += renderMarketNotes(ghols);
@@ -240,14 +248,14 @@ function renderMonth() {
     if (ghols.length) cell.classList.add('has-ghol');
     const shortName = slot.name.slice(0, 3);
     const mark = ghols.length
-      ? `<span class="ghol-mark" title="${ghols.map(h => h.name).join(', ')}">${GHOLIDAY_ICONS[ghols[0].id] || '•'}</span>`
+      ? `<span class="ghol-mark" title="${ghols.map(h => h.origin ? `${h.name} (${h.origin})` : h.name).join(', ')}">${GHOLIDAY_ICONS[ghols[0].id] || '•'}</span>`
       : '';
     cell.innerHTML =
       `<span class="mec-d">${slot.day}</span>` +
       `<span class="name">${shortName}</span>` +
       `<span class="greg">${g.month}/${g.day}</span>` +
       mark;
-    const gholTitle = ghols.length ? ' · ' + ghols.map(h => h.name).join(', ') : '';
+    const gholTitle = ghols.length ? ' · ' + ghols.map(h => h.origin ? `${h.name} (${h.origin})` : h.name).join(', ') : '';
     const restTitle = slot.name === 'Centiday' ? ' (rest day)' : '';
     cell.title = `${MONTH_NAMES[month - 1]} ${slot.day} · ${slot.name}${restTitle} · Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}${gholTitle}`;
     cell.addEventListener('click', () => {
@@ -350,7 +358,7 @@ document.getElementById('g-to-mec').addEventListener('click', () => {
     out.innerHTML = `<div class="detail-mec">${format_mec_html(rec)}</div>` +
       (ghols.length
         ? `<div class="detail-tags" style="margin-top:8px">` +
-          ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
+          ghols.map(h => `<span class="chip ghol">${holidayChipLabel(h)}</span>`).join('') +
           `</div>` + renderMarketNotes(ghols)
         : '');
   } catch (e) {
@@ -371,7 +379,7 @@ document.getElementById('m-to-g').addEventListener('click', () => {
       `<div class="detail-mec" style="margin-top:6px">${format_mec_html(rec)}</div>` +
       (ghols.length
         ? `<div class="detail-tags" style="margin-top:8px">` +
-          ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
+          ghols.map(h => `<span class="chip ghol">${holidayChipLabel(h)}</span>`).join('') +
           `</div>` + renderMarketNotes(ghols)
         : '');
   } catch (e) {

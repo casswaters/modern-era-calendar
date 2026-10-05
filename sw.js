@@ -1,5 +1,5 @@
 /* MEC service worker — offline cache */
-const CACHE = 'mec-v14';
+const CACHE = 'mec-v15';
 const ASSETS = [
   './',
   './index.html',

@@ -438,6 +438,72 @@ const DIWALI = {
 };
 
 
+
+/**
+ * Origin label for each holiday id (shown on chips / detail).
+ */
+export const HOLIDAY_ORIGINS = {
+  new_year: "Civil",
+  epiphany: "Christian",
+  mlk: "US civil",
+  valentine: "Cultural",
+  presidents: "US civil",
+  womens_day: "International",
+  st_patrick: "Cultural",
+  ash_wednesday: "Christian",
+  good_friday: "Christian",
+  easter: "Christian",
+  easter_monday: "Christian / UK bank",
+  earth_day: "International",
+  ascension: "Christian",
+  pentecost: "Christian",
+  may_day_uk: "UK bank",
+  victoria_day: "Canadian",
+  cinco_de_mayo: "Mexican",
+  mothers: "US cultural",
+  memorial: "US / UK bank",
+  juneteenth: "US civil",
+  fathers: "US cultural",
+  canada_day: "Canadian",
+  independence: "US civil",
+  summer_bank: "UK bank",
+  labor: "US civil",
+  mexico_independence: "Mexican",
+  canada_thanksgiving: "Canadian",
+  un_day: "International",
+  halloween: "Cultural",
+  muertos_1: "Mexican",
+  muertos_2: "Mexican",
+  veterans: "US / Commonwealth",
+  thanksgiving: "US civil",
+  xmas_eve: "Christian",
+  christmas: "Christian",
+  boxing_day: "UK / cultural",
+  new_years_eve: "Civil",
+  purim: "Jewish",
+  erev_passover: "Jewish",
+  passover: "Jewish",
+  passover_last: "Jewish",
+  shavuot: "Jewish",
+  tisha_bav: "Jewish",
+  erev_rosh_hashanah: "Jewish",
+  rosh_hashanah: "Jewish",
+  rosh_hashanah_2: "Jewish",
+  erev_yom_kippur: "Jewish",
+  yom_kippur: "Jewish",
+  sukkot: "Jewish",
+  simchat_torah: "Jewish",
+  hanukkah: "Jewish",
+  eid_al_fitr: "Islamic",
+  eid_al_adha: "Islamic",
+  chinese_new_year: "Chinese",
+  diwali: "Hindu"
+};
+
+export function holiday_origin(id) {
+  return HOLIDAY_ORIGINS[id] || null;
+}
+
 /**
  * Concise bank open/closed status for Gregorian holiday markers.
  * Keys match holiday `id` values from gregorian_holidays().
@@ -576,8 +642,10 @@ export function gregorian_holidays(year) {
     list.push({ month: m, day: d, name: "Diwali", id: "diwali" });
   }
 
-  // Attach bank-status notes, then stable chronological order
+  // Attach origin + bank-status notes, then stable chronological order
   for (const h of list) {
+    const origin = HOLIDAY_ORIGINS[h.id];
+    if (origin) h.origin = origin;
     const note = MARKET_NOTES[h.id];
     if (note) h.market = note;
   }
