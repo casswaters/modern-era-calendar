@@ -9,7 +9,8 @@ import {
   next_renaissance_day, renaissance_after_month,
   gregorian_day_of_year, ordinal_to_gregorian,
   holidays_on, holiday_map, market_note, is_rest_day
-} from './mec.js';
+} from './mec.js?v=16';
+import { initSky } from './weather.js?v=16';
 
 const HOLIDAY_ICONS = {
   1: '🌐',
@@ -110,13 +111,13 @@ const themeToggle = document.getElementById('theme-toggle');
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute('content', t === 'light' ? '#f4f6fb' : '#0f1117');
+  meta?.setAttribute('content', t === 'light' ? '#f5f0e4' : '#0b0d1a');
   localStorage.setItem('mec-theme', t);
 }
 {
   const saved = localStorage.getItem('mec-theme');
-  const prefer = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  applyTheme(saved || prefer);
+  // Aretoria indigo is the default; the pearl/dawn variant is one tap away.
+  applyTheme(saved === 'light' || saved === 'dark' ? saved : 'dark');
 }
 themeToggle.addEventListener('click', () => {
   const cur = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -159,7 +160,7 @@ function renderTodayBanner() {
     html += `<span class="chip">${HOLIDAY_ICONS[rec.mec_month] || '✦'} ${rec.holiday_name}</span>`;
   }
   if (is_rest_day(rec)) {
-    html += `<span class="chip neutral">Rest day</span>`;
+    html += `<span class="chip rest">✦ Centiday · Rest day</span>`;
   }
   if (next && next.days_until > 0) {
     const g = next.gregorian;
@@ -259,6 +260,8 @@ function renderMonth() {
     const restTitle = slot.name === 'Centiday' ? ' (rest day)' : '';
     cell.title = `${MONTH_NAMES[month - 1]} ${slot.day} · ${slot.name}${restTitle} · Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}${gholTitle}`;
     cell.addEventListener('click', () => {
+      grid.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
       const rec = gregorian_to_mec(g.year, g.month, g.day);
       renderDayDetail(rec, g);
     });
@@ -405,7 +408,7 @@ installBtn.addEventListener('click', async () => {
 
 /* ---------- Service worker ---------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=14').then((reg) => {
+  navigator.serviceWorker.register('./sw.js?v=16').then((reg) => {
     reg.update().catch(() => {});
   }).catch(() => {});
   let refreshing = false;
@@ -427,6 +430,7 @@ if ('serviceWorker' in navigator) {
 /* ---------- Init ---------- */
 renderTodayBanner();
 renderMonth();
+try { initSky(); } catch (e) { console.warn('Local sky unavailable', e); }
 
 // Auto-convert on load for converter panel defaults
 document.getElementById('g-to-mec').click();

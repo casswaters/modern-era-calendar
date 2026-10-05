@@ -1,11 +1,12 @@
-/* MEC service worker — offline cache */
-const CACHE = 'mec-v15';
+/* MEC service worker — network-first app shell, offline fallback (Aretoria Almanac v16) */
+const CACHE = 'mec-v16';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './mec.js',
+  './weather.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -45,7 +46,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((c) => c.put(req, clone));
         }
         return res;
-      }).catch(() => caches.match(req))
+      }).catch(() => caches.match(req, { ignoreSearch: true }))
     );
     return;
   }

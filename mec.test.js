@@ -10,6 +10,11 @@ import {
   jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note, HOLIDAY_ORIGINS, holiday_origin,
   islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
 } from './mec.js';
+import {
+  FALLBACK_PLACE, weather_label, open_meteo_url, parse_open_meteo,
+  format_place, place_from_bigdatacloud, place_from_nominatim,
+  wttr_url, parse_wttr, place_from_wttr
+} from './weather.js';
 
 let passed = 0;
 let failed = 0;
@@ -504,6 +509,43 @@ console.log('\n=== holiday origins ===\n');
   // origins may be subset; check every 2026 holiday has origin
   const noOrigin = gregorian_holidays(2026).filter(h => !h.origin);
   assert('every 2026 holiday has origin', noOrigin.length === 0, noOrigin.map(h => h.id).join(','));
+}
+
+console.log('\n=== local sky (weather helpers) ===\n');
+{
+  assert('fallback is St. George, UT', FALLBACK_PLACE.name === 'St. George, UT');
+  assert('fallback coords near St. George', Math.abs(FALLBACK_PLACE.lat - 37.1) < 0.1 && Math.abs(FALLBACK_PLACE.lon + 113.57) < 0.1);
+  const url = open_meteo_url(37.0965, -113.5684);
+  assert('Open-Meteo URL uses Fahrenheit', url.includes('temperature_unit=fahrenheit'), url);
+  assert('Open-Meteo URL has lat/lon', url.includes('latitude=37.0965') && url.includes('longitude=-113.5684'), url);
+  assert('Open-Meteo host', url.startsWith('https://api.open-meteo.com/v1/forecast?'));
+  assert('WMO 0 day = Clear sun', eq(weather_label(0, true), { label: 'Clear', icon: '☀️' }));
+  assert('WMO 0 night = moon', weather_label(0, false).icon === '🌙');
+  assert('WMO 95 thunderstorm', weather_label(95).label === 'Thunderstorm');
+  assert('WMO unknown graceful', weather_label(1234).label === 'Weather');
+  const r = parse_open_meteo({
+    current: { temperature_2m: 78.4, apparent_temperature: 76.1, weather_code: 2, is_day: 1 },
+    daily: { temperature_2m_max: [84.6], temperature_2m_min: [58.2] }
+  });
+  assert('parse temp rounds', r.tempF === 78 && r.hiF === 85 && r.loF === 58, JSON.stringify(r));
+  assert('parse label', r.label === 'Partly cloudy' && r.icon === '⛅');
+  let threw = false; try { parse_open_meteo({}); } catch { threw = true; }
+  assert('parse rejects empty payload', threw);
+  assert('US place abbreviates state', format_place({ city: 'St. George', region: 'Utah', countryCode: 'US' }) === 'St. George, UT');
+  assert('UK place uses region', format_place({ city: 'York', region: 'England', country: 'United Kingdom', countryCode: 'GB' }) === 'York, England');
+  assert('BigDataCloud mapping', place_from_bigdatacloud({ city: 'Hurricane', principalSubdivision: 'Utah', countryName: 'United States of America', countryCode: 'US' }) === 'Hurricane, UT');
+  assert('BigDataCloud locality fallback', place_from_bigdatacloud({ city: '', locality: 'Ivins', principalSubdivision: 'Utah', countryCode: 'US' }) === 'Ivins, UT');
+  const wj = {
+    current_condition: [{ temp_F: '82', FeelsLikeF: '79', weatherCode: '113', weatherDesc: [{ value: 'Sunny' }] }],
+    weather: [{ maxtempF: '86', mintempF: '57' }],
+    nearest_area: [{ areaName: [{ value: 'Saint George' }], region: [{ value: 'Utah' }], country: [{ value: 'United States of America' }] }]
+  };
+  const wr = parse_wttr(wj, 12);
+  assert('wttr fallback parse', wr.tempF === 82 && wr.hiF === 86 && wr.loF === 57 && wr.label === 'Sunny' && wr.icon === '☀️', JSON.stringify(wr));
+  assert('wttr night sunny → Clear moon', parse_wttr(wj, 23).label === 'Clear' && parse_wttr(wj, 23).icon === '🌙');
+  assert('wttr place → St. George, UT', place_from_wttr(wj) === 'St. George, UT', place_from_wttr(wj));
+  assert('wttr URL', wttr_url(37.0965, -113.5684) === 'https://wttr.in/37.0965,-113.5684?format=j1');
+  assert('Nominatim mapping', place_from_nominatim({ address: { town: 'Springdale', state: 'Utah', country_code: 'us' } }) === 'Springdale, UT');
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

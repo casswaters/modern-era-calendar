@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f1117" />
+  <meta name="theme-color" content="#0b0d1a" />
   <meta name="description" content="Modern Era Calendar — twelve 30-day months, ten-day cycles, Renaissance Days." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -12,7 +12,10 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Modern Era Calendar</title>
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=16" />
 </head>
 <body>
   <div class="app">
@@ -30,8 +33,19 @@
 
     <!-- Calendar panel -->
     <section id="panel-calendar" class="panel active" data-panel="calendar">
+      <div class="sky-strip" id="sky-strip" role="status" aria-live="polite">
+        <span class="sky-icon" id="sky-icon" aria-hidden="true">✦</span>
+        <div class="sky-main">
+          <span class="sky-place" id="sky-place"><span class="pin" aria-hidden="true">◈</span>St. George, UT</span>
+          <span class="sky-cond" id="sky-cond">Reading the sky…</span>
+          <span class="sky-hilo" id="sky-hilo"></span>
+        </div>
+        <button class="sky-btn" id="sky-locate" type="button" hidden title="Use my current location for weather">📍 Use my location</button>
+        <span class="sky-temp" id="sky-temp">—</span>
+      </div>
+
       <div class="today-banner" id="today-banner">
-        <div class="label">Today</div>
+        <div class="label">Today <span class="realm-dots" aria-hidden="true" title="Realms"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
         <div class="mec" id="today-mec">—</div>
         <div class="countdown" id="next-ren"></div>
         <div class="greg" id="today-greg">—</div>
@@ -45,6 +59,7 @@
         </div>
         <button class="icon-btn" id="next-month" type="button" aria-label="Next month">›</button>
       </div>
+      <div class="thread-divider" aria-hidden="true">✦</div>
 
       <div class="year-jump">
         <button class="btn" id="jump-today" type="button">Jump to today</button>
@@ -149,10 +164,10 @@
         <div class="card">
           <h2>Holiday markers</h2>
           <p>
-            Orange chips mark major bank holidays and widely observed festivals on the
+            Amber chips mark major bank holidays and widely observed festivals on the
             underlying Gregorian date (US, UK/Commonwealth, Canada, Mexico, Christian,
             Jewish, Islamic Eids, plus Chinese New Year and Diwali where a lookup covers the year).
-            Pink chips are MEC Renaissance Days. Each orange chip names its origin (Jewish, Christian, US civil, UK bank, and so on). Jewish dates are computed from the Hebrew
+            Rose chips are MEC Renaissance Days, and gold marks Centiday, the rest day. Each amber chip names its origin (Jewish, Christian, US civil, UK bank, and so on). Jewish dates are computed from the Hebrew
             calendar and mark the first full day (observance starts the evening before);
             they follow the Israeli one-day festival calendar used by the Tel Aviv Stock
             Exchange. Eid dates come from a fixed Saudi Umm al-Qura table for 2024–2037 only
@@ -174,6 +189,16 @@
           </ul>
         </div>
         <div class="card">
+          <h2>Local sky</h2>
+          <p>
+            The strip above Today shows the place, current conditions and temperature (°F) from
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener" style="color:var(--gold)">Open-Meteo</a>
+            (free, no key). It defaults to St. George, UT. Tap “Use my location” to let your browser share
+            your position; the weather then follows you. Your coordinates stay in this browser and are only sent to the weather and place-name lookups.
+            If you deny permission or are offline, the last reading (or St. George) is shown instead.
+          </p>
+        </div>
+        <div class="card">
           <h2>Install</h2>
           <p>
             This app is an installable PWA. Use your browser’s “Add to Home Screen” or the
@@ -190,6 +215,6 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=15"></script>
+  <script type="module" src="app.js?v=16"></script>
 </body>
 </html>
