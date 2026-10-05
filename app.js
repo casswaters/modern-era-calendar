@@ -5,9 +5,10 @@ import {
   DAY_NAMES, MONTH_NAMES, REN,
   is_leap, slots, mec_year,
   gregorian_to_mec, mec_to_gregorian,
-  format_mec, format_gregorian,
+  format_mec, format_mec_html, format_gregorian,
   next_renaissance_day, renaissance_after_month,
-  gregorian_day_of_year, ordinal_to_gregorian
+  gregorian_day_of_year, ordinal_to_gregorian,
+  holidays_on, holiday_map
 } from './mec.js';
 
 const HOLIDAY_ICONS = {
@@ -17,6 +18,27 @@ const HOLIDAY_ICONS = {
   7: '⚡',
   8: '✨',
   10: '🔮'
+};
+
+const GHOLIDAY_ICONS = {
+  new_year: '🎊',
+  mlk: '✊',
+  valentine: '❤️',
+  presidents: '🇺🇸',
+  st_patrick: '☘️',
+  easter: '🐰',
+  mothers: '💐',
+  memorial: '🎖️',
+  juneteenth: '🖤',
+  fathers: '👔',
+  independence: '🎆',
+  labor: '🛠️',
+  halloween: '🎃',
+  veterans: '🪖',
+  thanksgiving: '🦃',
+  xmas_eve: '🎄',
+  christmas: '🎄',
+  new_years_eve: '🥂'
 };
 
 /* ---------- Theme ---------- */
@@ -58,26 +80,48 @@ function renderTodayBanner() {
   document.getElementById('header-year').textContent = String(rec.mec_year);
   document.getElementById('today-greg').textContent = format_gregorian(t.y, t.m, t.d);
   const mecEl = document.getElementById('today-mec');
-  if (rec.kind === 'renaissance') {
-    mecEl.innerHTML = `<span class="accent">${rec.holiday_name}</span>, Year ${rec.mec_year}`;
-  } else {
-    mecEl.innerHTML =
-      `${rec.month_name} ${rec.mec_day}, <span class="accent">${rec.day_name}</span>, ` +
-      `Cycle ${rec.cycle}, Year ${rec.mec_year}`;
-  }
+  mecEl.innerHTML = format_mec_html(rec);
 
+  const todayGhols = holidays_on(t.y, t.m, t.d);
   const next = next_renaissance_day(t.y, t.m, t.d);
   const box = document.getElementById('next-ren');
-  if (!next) { box.innerHTML = ''; return; }
-  const g = next.gregorian;
-  const when = next.days_until === 0
-    ? 'today'
-    : next.days_until === 1
-      ? 'tomorrow'
-      : `in ${next.days_until} days`;
-  box.innerHTML =
-    `<span class="chip">${HOLIDAY_ICONS[next.month] || '✦'} ${next.name}</span>` +
-    `<span class="chip neutral">${when} · ${format_gregorian(g.year, g.month, g.day)}</span>`;
+  let html = '';
+  if (todayGhols.length) {
+    html += todayGhols.map(h =>
+      `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`
+    ).join('');
+  }
+  if (rec.kind === 'renaissance') {
+    html += `<span class="chip">${HOLIDAY_ICONS[rec.mec_month] || '✦'} ${rec.holiday_name}</span>`;
+  }
+  if (next && next.days_until > 0) {
+    const g = next.gregorian;
+    const when = next.days_until === 1 ? 'tomorrow' : `in ${next.days_until} days`;
+    html +=
+      `<span class="chip">${HOLIDAY_ICONS[next.month] || '✦'} ${next.name}</span>` +
+      `<span class="chip neutral">${when} · ${format_gregorian(g.year, g.month, g.day)}</span>`;
+  } else if (next && next.days_until === 0) {
+    html += `<span class="chip neutral">today · ${format_gregorian(next.gregorian.year, next.gregorian.month, next.gregorian.day)}</span>`;
+  }
+  box.innerHTML = html;
+}
+
+function renderDayDetail(rec, g, extra = '') {
+  const ghols = holidays_on(g.year, g.month, g.day);
+  let html = `<div class="detail-mec">${format_mec_html(rec)}</div>`;
+  html += `<div class="detail-greg">Gregorian: ${format_gregorian(g.year, g.month, g.day)}</div>`;
+  if (rec.kind === 'renaissance') {
+    html += `<div class="detail-tags"><span class="chip">${HOLIDAY_ICONS[rec.mec_month] || '✦'} ${rec.holiday_name}</span></div>`;
+  }
+  if (ghols.length) {
+    html += `<div class="detail-tags">` +
+      ghols.map(h =>
+        `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`
+      ).join('') +
+      `</div>`;
+  }
+  if (extra) html += `<div class="detail-extra">${extra}</div>`;
+  document.getElementById('day-detail').innerHTML = html;
 }
 
 /* ---------- Month grid ---------- */
@@ -104,6 +148,13 @@ function renderMonth() {
   const today = todayParts();
   const days = mecMonthSlots(year, month);
 
+  // Holiday maps cover this Gregorian year and neighbors (MEC month can spill)
+  const maps = {
+    [year - 1]: holiday_map(year - 1),
+    [year]: holiday_map(year),
+    [year + 1]: holiday_map(year + 1)
+  };
+
   for (const slot of days) {
     const g = gregorianForSlot(year, month, slot.day);
     const cell = document.createElement('button');
@@ -114,18 +165,23 @@ function renderMonth() {
     if (g.year === today.y && g.month === today.m && g.day === today.d) {
       cell.classList.add('today');
     }
+    const ghols = (maps[g.year] || holiday_map(g.year)).get(`${g.month}-${g.day}`) || [];
+    if (ghols.length) cell.classList.add('has-ghol');
     const shortName = slot.name.slice(0, 3);
+    const mark = ghols.length
+      ? `<span class="ghol-mark" title="${ghols.map(h => h.name).join(', ')}">${GHOLIDAY_ICONS[ghols[0].id] || '•'}</span>`
+      : '';
     cell.innerHTML =
       `<span class="mec-d">${slot.day}</span>` +
       `<span class="name">${shortName}</span>` +
-      `<span class="greg">${g.month}/${g.day}</span>`;
-    cell.title = `${MONTH_NAMES[month - 1]} ${slot.day}, ${slot.name}, Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}`;
+      `<span class="greg">${g.month}/${g.day}</span>` +
+      mark;
+    const gholTitle = ghols.length ? ' · ' + ghols.map(h => h.name).join(', ') : '';
+    cell.title = `${MONTH_NAMES[month - 1]} ${slot.day} · ${slot.name} · Cycle ${slot.cycle} · ${format_gregorian(g.year, g.month, g.day)}${gholTitle}`;
     cell.addEventListener('click', () => {
       const rec = gregorian_to_mec(g.year, g.month, g.day);
-      document.getElementById('day-detail').innerHTML =
-        `<strong>${format_mec(rec)}</strong><br>` +
-        `Gregorian: ${format_gregorian(g.year, g.month, g.day)}` +
-        (slot.name === 'Centiday' ? ' · Centiday (rest-day candidate)' : '');
+      const extra = slot.name === 'Centiday' ? 'Centiday (rest-day candidate)' : '';
+      renderDayDetail(rec, g, extra);
     });
     grid.appendChild(cell);
   }
@@ -219,8 +275,13 @@ document.getElementById('g-to-mec').addEventListener('click', () => {
   const out = document.getElementById('g-result');
   try {
     const rec = gregorian_to_mec(y, m, d);
-    out.innerHTML = `<strong>${format_mec(rec)}</strong>` +
-      (rec.kind === 'renaissance' ? '' : ` · ${rec.month_name} day ${rec.mec_day}`);
+    const ghols = holidays_on(y, m, d);
+    out.innerHTML = `<div class="detail-mec">${format_mec_html(rec)}</div>` +
+      (ghols.length
+        ? `<div class="detail-tags" style="margin-top:8px">` +
+          ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
+          `</div>`
+        : '');
   } catch (e) {
     out.textContent = 'Invalid date: ' + e.message;
   }
@@ -234,8 +295,14 @@ document.getElementById('m-to-g').addEventListener('click', () => {
   try {
     const g = mec_to_gregorian(y, m, d);
     const rec = gregorian_to_mec(g.year, g.month, g.day);
+    const ghols = holidays_on(g.year, g.month, g.day);
     out.innerHTML = `<strong>${format_gregorian(g.year, g.month, g.day)}</strong>` +
-      `<br><span style="color:var(--text-muted);font-size:0.85em">${format_mec(rec)}</span>`;
+      `<div class="detail-mec" style="margin-top:6px">${format_mec_html(rec)}</div>` +
+      (ghols.length
+        ? `<div class="detail-tags" style="margin-top:8px">` +
+          ghols.map(h => `<span class="chip ghol">${GHOLIDAY_ICONS[h.id] || '📅'} ${h.name}</span>`).join('') +
+          `</div>`
+        : '');
   } catch (e) {
     out.textContent = 'Invalid MEC date: ' + e.message;
   }
@@ -259,7 +326,7 @@ installBtn.addEventListener('click', async () => {
 
 /* ---------- Service worker ---------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', { scope: '/modern-era-calendar/' }).catch(() => {});
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
 /* ---------- Init ---------- */
