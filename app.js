@@ -397,7 +397,7 @@ installBtn.addEventListener('click', async () => {
 
 /* ---------- Service worker ---------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then((reg) => {
+  navigator.serviceWorker.register('./sw.js?v=14').then((reg) => {
     reg.update().catch(() => {});
   }).catch(() => {});
   let refreshing = false;
@@ -406,6 +406,14 @@ if ('serviceWorker' in navigator) {
     refreshing = true;
     location.reload();
   });
+  // One-shot hard refresh when opened with ?fresh=1
+  if (new URLSearchParams(location.search).has('fresh') && 'caches' in window) {
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).then(() => {
+      const u = new URL(location.href);
+      u.searchParams.delete('fresh');
+      location.replace(u.toString());
+    });
+  }
 }
 
 /* ---------- Init ---------- */
