@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=17" />
+  <link rel="stylesheet" href="styles.css?v=18" />
 </head>
 <body>
   <div class="app">
@@ -33,6 +33,9 @@
 
     <!-- Calendar panel -->
     <section id="panel-calendar" class="panel active" data-panel="calendar">
+      <div class="tri">
+      <!-- Column 1: Calendar (unchanged grid + data) -->
+      <div class="tri-col tri-cal" aria-label="Calendar">
       <div class="sky-strip" id="sky-strip" role="status" aria-live="polite">
         <span class="sky-icon" id="sky-icon" aria-hidden="true">✦</span>
         <div class="sky-main">
@@ -74,6 +77,62 @@
 
       <div class="holiday-chip-wrap" id="holiday-wrap" hidden></div>
       <div class="day-detail" id="day-detail">Tap a day for dual-date detail.</div>
+      </div><!-- /tri-cal -->
+
+      <!-- Column 2: Captain's Log (local daily journal) -->
+      <aside class="tri-col tri-log" id="captains-log" aria-label="Captain's Log">
+        <div class="log-card">
+          <div class="log-head">
+            <div class="log-kicker">Captain’s Log</div>
+            <div class="log-datebar">
+              <button class="icon-btn sm" id="log-prev" type="button" aria-label="Previous day">‹</button>
+              <div class="log-date">
+                <div class="log-weekday" id="log-weekday">—</div>
+                <div class="log-meta" id="log-meta">—</div>
+              </div>
+              <button class="icon-btn sm" id="log-next" type="button" aria-label="Next day">›</button>
+            </div>
+            <div class="log-actions">
+              <button class="btn xs" id="log-today" type="button">Today</button>
+              <button class="btn xs" id="log-copy" type="button" title="Copy this entry as plain text">Copy text</button>
+              <button class="btn xs" id="log-settings-btn" type="button" aria-expanded="false" aria-controls="log-settings">Birthday</button>
+            </div>
+            <div class="log-settings" id="log-settings" hidden>
+              <label for="log-birthday">Birthday (optional, shows your life-day count)</label>
+              <div class="log-settings-row">
+                <input type="date" id="log-birthday" />
+                <button class="btn xs" id="log-birthday-clear" type="button">Clear</button>
+              </div>
+            </div>
+            <div class="log-beliefs">
+              <p>Belief creates consequence.</p>
+              <p>Mutual confidence is the foundation of all satisfactory human relationships.</p>
+            </div>
+          </div>
+          <form class="log-body" id="log-form" autocomplete="off" onsubmit="return false"></form>
+          <div class="log-foot">
+            <span id="log-status">Saved in this browser only</span>
+            <button class="btn xs ghost" id="log-clear" type="button">Clear day</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Column 3: Aretoria portal -->
+      <aside class="tri-col tri-portal" aria-label="Aretoria portal">
+        <div class="portal-card" id="portal-card">
+          <div class="portal-arch">
+            <div class="portal-nebula" aria-hidden="true"></div>
+            <div class="portal-ring" id="portal-ring" aria-hidden="true"></div>
+            <div class="portal-core" aria-hidden="true">✦</div>
+          </div>
+          <div class="portal-title">Aretoria</div>
+          <div class="portal-sub">The Seven Realms</div>
+          <ul class="realm-legend" id="realm-legend"></ul>
+          <button class="btn primary portal-enter" id="portal-enter" type="button" aria-expanded="false" aria-controls="portal-realms">Enter the Realms</button>
+          <div class="portal-realms" id="portal-realms" hidden></div>
+        </div>
+      </aside>
+      </div><!-- /tri -->
     </section>
 
     <!-- Converter panel -->
@@ -199,6 +258,16 @@
           </p>
         </div>
         <div class="card">
+          <h2>Captain’s Log &amp; Aretoria</h2>
+          <p>
+            On wide screens the Calendar view shows three columns: the calendar, a blank
+            Captain’s Log for the day, and the Aretoria portal. On phones they stack in that order.
+            Log entries and realm reflections are saved only in this browser (one entry per
+            Gregorian date). They are not synced to Apple Notes or any other device; use
+            “Copy text” to paste an entry elsewhere.
+          </p>
+        </div>
+        <div class="card">
           <h2>Install</h2>
           <p>
             This app is an installable PWA. Use your browser’s “Add to Home Screen” or the
@@ -215,6 +284,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=17"></script>
+  <script type="module" src="app.js?v=18"></script>
+  <script type="module" src="captains-log.js?v=18"></script>
+  <script type="module" src="portal.js?v=18"></script>
 </body>
 </html>

@@ -1,0 +1,325 @@
+/**
+ * Captain's Log — a blank daily journal that lives beside the calendar.
+ * Entries are stored only in this browser (localStorage), one record per
+ * Gregorian date: key "mec-log:YYYY-MM-DD". Nothing is synced anywhere.
+ * Date labels reuse mec.js helpers; no calendar math is done here.
+ */
+import {
+  format_gregorian, gregorian_day_of_year, is_leap,
+  gregorian_to_mec, format_mec, add_gregorian_days
+} from './mec.js?v=18';
+
+const KEY_PREFIX = 'mec-log:';
+const BDAY_KEY = 'mec-log-birthday';
+const OPEN_KEY = 'mec-log-open';
+
+/* ---------- Template (edit here to change prompts) ----------
+   field types: text (one line), area (multi-line), check (tick box), scale (1–10) */
+const SECTIONS = [
+  {
+    id: 'gratitude', title: 'Gratitude exercise', open: true,
+    fields: [
+      { id: 'g1', type: 'text', label: '1. A person I’m grateful for' },
+      { id: 'g2', type: 'text', label: '2. Something about my health or body' },
+      { id: 'g3', type: 'text', label: '3. Something about my home or surroundings' },
+      { id: 'g4', type: 'text', label: '4. A small pleasure from yesterday' },
+      { id: 'g5', type: 'text', label: '5. Something I’m learning' },
+      { id: 'g6', type: 'text', label: '6. An opportunity in front of me' },
+      { id: 'g7', type: 'text', label: '7. A challenge that’s shaping me' },
+      { id: 'g8', type: 'text', label: '8. Something I appreciate about myself' }
+    ]
+  },
+  {
+    id: 'grounding', title: 'Grounding exercise',
+    fields: [
+      { id: 'q1', type: 'text', label: '1. Where am I, right now?' },
+      { id: 'q2', type: 'text', label: '2. What do I feel in my body?' },
+      { id: 'q3', type: 'text', label: '3. What emotion is here?' },
+      { id: 'q4', type: 'text', label: '4. What do I need?' },
+      { id: 'q5', type: 'text', label: '5. What is in my control today?' },
+      { id: 'q6', type: 'text', label: '6. What can I let go of?' },
+      { id: 'q7', type: 'text', label: '7. What matters most today?' },
+      { id: 'q8', type: 'text', label: '8. How does this fit my real circumstances?' }
+    ]
+  },
+  {
+    id: 'three', title: 'Default to: the three questions',
+    fields: [
+      { id: 't1', type: 'text', label: 'What is the most important time? (Now)' },
+      { id: 't2', type: 'text', label: 'Who is the most important person? (The one in front of me)' },
+      { id: 't3', type: 'text', label: 'What is the most important thing to do? (Good for them)' }
+    ]
+  },
+  {
+    id: 'tracker', title: 'Daily Tracker · 6am / 10pm',
+    fields: [
+      { id: 'am_head', type: 'head', label: '6am' },
+      { id: 'am_wake', type: 'text', label: 'Woke at', half: true },
+      { id: 'am_sleep', type: 'scale', label: 'Sleep quality', half: true },
+      { id: 'am_energy', type: 'scale', label: 'Energy', half: true },
+      { id: 'am_mood', type: 'scale', label: 'Mood', half: true },
+      { id: 'am_intent', type: 'text', label: 'Intention for today' },
+      { id: 'pm_head', type: 'head', label: '10pm' },
+      { id: 'pm_energy', type: 'scale', label: 'Energy', half: true },
+      { id: 'pm_mood', type: 'scale', label: 'Mood', half: true },
+      { id: 'pm_win', type: 'text', label: 'Win of the day' },
+      { id: 'pm_lesson', type: 'text', label: 'Lesson / adjust tomorrow' }
+    ]
+  },
+  {
+    id: 'life', title: 'Life Journal · Captain’s Log check-in',
+    fields: [ { id: 'log', type: 'area', label: 'Captain’s Log', rows: 5, placeholder: 'Captain’s Log, supplemental…' } ]
+  },
+  {
+    id: 'career', title: 'Career',
+    fields: [
+      { id: 'cw', type: 'area', label: 'CW Enterprises', rows: 3 },
+      { id: 'anam', type: 'area', label: 'Anam pipeline', rows: 3 }
+    ]
+  },
+  {
+    id: 'notes', title: 'Notes · Communication · Social · Care',
+    fields: [
+      { id: 'notes', type: 'area', label: 'Notes', rows: 3 },
+      { id: 'comm', type: 'area', label: 'Personal communication', rows: 2 },
+      { id: 'social', type: 'area', label: 'Social', rows: 2 },
+      { id: 'care', type: 'area', label: 'Personal care', rows: 2 }
+    ]
+  },
+  {
+    id: 'io', title: 'Inputs & Outputs',
+    fields: [
+      { id: 'supp_head', type: 'head', label: 'Supplements' },
+      { id: 'supp_am', type: 'check', label: 'Morning', third: true },
+      { id: 'supp_mid', type: 'check', label: 'Midday', third: true },
+      { id: 'supp_pm', type: 'check', label: 'Evening', third: true },
+      { id: 'supp_note', type: 'text', label: 'Schedule / notes' },
+      { id: 'drank', type: 'text', label: 'Drank' },
+      { id: 'ate', type: 'area', label: 'Ate', rows: 2 },
+      { id: 'dreams', type: 'area', label: 'Dreams', rows: 2 },
+      { id: 'media', type: 'text', label: 'Media' },
+      { id: 'purchases', type: 'text', label: 'Purchases' },
+      { id: 'workout', type: 'text', label: 'Workout' },
+      { id: 'health', type: 'text', label: 'Health' }
+    ]
+  }
+];
+
+/* ---------- Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const isoOf = (g) => `${g.year}-${pad(g.month)}-${pad(g.day)}`;
+function todayG() {
+  const n = new Date();
+  return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() };
+}
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function load(iso) {
+  try { return JSON.parse(localStorage.getItem(KEY_PREFIX + iso) || '{}') || {}; }
+  catch { return {}; }
+}
+function store(iso, data) {
+  const has = Object.values(data).some(v => v !== '' && v !== false && v != null);
+  try {
+    if (has) localStorage.setItem(KEY_PREFIX + iso, JSON.stringify(data));
+    else localStorage.removeItem(KEY_PREFIX + iso);
+    return true;
+  } catch { return false; }
+}
+function openState() {
+  try { return JSON.parse(localStorage.getItem(OPEN_KEY) || 'null'); } catch { return null; }
+}
+
+/** Life day: 1 on the birthday itself (calendar days, timezone-safe via UTC). */
+function lifeDay(g) {
+  const b = localStorage.getItem(BDAY_KEY);
+  if (!b || !/^\d{4}-\d{2}-\d{2}$/.test(b)) return null;
+  const [by, bm, bd] = b.split('-').map(Number);
+  const n = Math.round((Date.UTC(g.year, g.month - 1, g.day) - Date.UTC(by, bm - 1, bd)) / 86400000) + 1;
+  return n >= 1 ? n : null;
+}
+
+/* ---------- Render ---------- */
+let current = todayG();
+const form = $('log-form');
+
+function fieldHtml(f) {
+  const id = `log-f-${f.id}`;
+  const cls = 'log-field' + (f.half ? ' half' : '') + (f.third ? ' third' : '');
+  if (f.type === 'head') return `<div class="log-subhead">${esc(f.label)}</div>`;
+  if (f.type === 'check') {
+    return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(f.label)}</span></label>`;
+  }
+  if (f.type === 'scale') {
+    const opts = ['<option value="">—</option>'].concat(
+      Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`)).join('');
+    return `<div class="${cls}"><label for="${id}">${esc(f.label)} <span class="log-hint">1–10</span></label><select id="${id}" data-k="${f.id}">${opts}</select></div>`;
+  }
+  if (f.type === 'area') {
+    return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><textarea id="${id}" data-k="${f.id}" rows="${f.rows || 2}" placeholder="${esc(f.placeholder || '')}"></textarea></div>`;
+  }
+  return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><input type="text" id="${id}" data-k="${f.id}" placeholder="${esc(f.placeholder || '')}" /></div>`;
+}
+
+function buildForm() {
+  const saved = openState() || {};
+  form.innerHTML = SECTIONS.map(s => {
+    const open = s.id in saved ? saved[s.id] : !!s.open;
+    return `<details class="log-sec" data-sec="${s.id}"${open ? ' open' : ''}>` +
+      `<summary><span class="log-sec-title">${esc(s.title)}</span><span class="log-count" data-count="${s.id}"></span></summary>` +
+      `<div class="log-grid">${s.fields.map(fieldHtml).join('')}</div></details>`;
+  }).join('');
+  form.querySelectorAll('details.log-sec').forEach(d => {
+    d.addEventListener('toggle', () => {
+      const st = openState() || {};
+      st[d.dataset.sec] = d.open;
+      try { localStorage.setItem(OPEN_KEY, JSON.stringify(st)); } catch {}
+    });
+  });
+}
+
+function readForm() {
+  const data = {};
+  form.querySelectorAll('[data-k]').forEach(el => {
+    data[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  return data;
+}
+
+function updateCounts(data) {
+  for (const s of SECTIONS) {
+    const keys = s.fields.filter(f => f.type !== 'head').map(f => f.id);
+    const filled = keys.filter(k => data[k] && data[k] !== '').length;
+    const el = form.querySelector(`[data-count="${s.id}"]`);
+    if (el) {
+      el.textContent = filled ? `${filled}/${keys.length}` : '';
+      el.classList.toggle('done', filled === keys.length);
+    }
+  }
+}
+
+function renderHeader() {
+  const g = current;
+  const greg = format_gregorian(g.year, g.month, g.day);
+  const doy = gregorian_day_of_year(g.year, g.month, g.day);
+  const total = is_leap(g.year) ? 366 : 365;
+  const parts = [`Day ${doy} of ${total}`];
+  const ld = lifeDay(g);
+  if (ld) parts.unshift(`Life day ${ld.toLocaleString()}`);
+  let mec = '';
+  try { mec = format_mec(gregorian_to_mec(g.year, g.month, g.day)); } catch {}
+  $('log-weekday').textContent = greg;
+  $('log-meta').innerHTML = esc(parts.join(' · ')) + (mec ? `<span class="log-mec">${esc(mec)}</span>` : '');
+  const t = todayG();
+  $('log-today').disabled = isoOf(t) === isoOf(g);
+}
+
+function fillForm() {
+  const data = load(isoOf(current));
+  form.querySelectorAll('[data-k]').forEach(el => {
+    const v = data[el.dataset.k];
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = v == null ? '' : v;
+  });
+  updateCounts(data);
+  setStatus(Object.keys(data).length ? 'Saved in this browser only' : 'Blank entry · saves in this browser only');
+}
+
+function setStatus(msg) { $('log-status').textContent = msg; }
+
+function show(g) {
+  current = { year: g.year, month: g.month, day: g.day };
+  renderHeader();
+  fillForm();
+}
+
+/* ---------- Save (debounced) ---------- */
+let timer = null;
+function scheduleSave() {
+  clearTimeout(timer);
+  setStatus('Saving…');
+  const iso = isoOf(current);
+  timer = setTimeout(() => {
+    const data = readForm();
+    const ok = store(iso, data);
+    updateCounts(data);
+    const t = new Date();
+    setStatus(ok ? `Saved locally · ${t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Could not save (storage full or blocked)');
+  }, 350);
+}
+function flush() {
+  if (!timer) return;
+  clearTimeout(timer); timer = null;
+  store(isoOf(current), readForm());
+}
+
+/* ---------- Plain-text export ---------- */
+function asText() {
+  const g = current;
+  const data = readForm();
+  const lines = [];
+  lines.push(`Captain’s Log — ${format_gregorian(g.year, g.month, g.day)}`);
+  lines.push($('log-meta').textContent.replace(/(Day \d+ of \d+)/, '$1 · '));
+  lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
+  for (const s of SECTIONS) {
+    lines.push('', s.title.toUpperCase());
+    for (const f of s.fields) {
+      if (f.type === 'head') { lines.push(`[${f.label}]`); continue; }
+      const v = data[f.id];
+      const out = f.type === 'check' ? (v ? '☑' : '☐') : (v || '');
+      lines.push(`${f.label}: ${out}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+/* ---------- Wire up ---------- */
+buildForm();
+form.addEventListener('input', scheduleSave);
+form.addEventListener('change', scheduleSave);
+
+$('log-prev').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, -1)); });
+$('log-next').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, 1)); });
+$('log-today').addEventListener('click', () => { flush(); show(todayG()); });
+document.addEventListener('mec:dayselect', (e) => { flush(); show(e.detail); });
+
+$('log-copy').addEventListener('click', async () => {
+  const txt = asText();
+  try { await navigator.clipboard.writeText(txt); setStatus('Copied entry as plain text'); }
+  catch { setStatus('Copy blocked by the browser'); }
+});
+
+$('log-clear').addEventListener('click', () => {
+  const g = current;
+  if (!confirm(`Clear the Captain’s Log entry for ${format_gregorian(g.year, g.month, g.day)}? This only affects this browser.`)) return;
+  clearTimeout(timer); timer = null;
+  try { localStorage.removeItem(KEY_PREFIX + isoOf(g)); } catch {}
+  fillForm();
+  setStatus('Entry cleared');
+});
+
+const settingsBtn = $('log-settings-btn');
+const settings = $('log-settings');
+const bdayInput = $('log-birthday');
+bdayInput.value = localStorage.getItem(BDAY_KEY) || '';
+settingsBtn.addEventListener('click', () => {
+  settings.hidden = !settings.hidden;
+  settingsBtn.setAttribute('aria-expanded', String(!settings.hidden));
+});
+bdayInput.addEventListener('change', () => {
+  if (bdayInput.value) localStorage.setItem(BDAY_KEY, bdayInput.value);
+  else localStorage.removeItem(BDAY_KEY);
+  renderHeader();
+});
+$('log-birthday-clear').addEventListener('click', () => {
+  bdayInput.value = '';
+  localStorage.removeItem(BDAY_KEY);
+  renderHeader();
+});
+
+window.addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+
+show(current);
