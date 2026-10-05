@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="description" content="Modern Era Calendar — twelve 30-day months, ten-day cycles, Renaissance Days." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MEC" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Modern Era Calendar</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">ME</div>
+        <div>
+          <h1>Modern Era Calendar</h1>
+          <div class="sub">Year <span id="header-year">—</span> · Civil redesign</div>
+        </div>
+      </div>
+      <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+      <button class="icon-btn" id="install-btn" type="button" title="Install app" aria-label="Install" hidden>↓</button>
+    </header>
+
+    <!-- Calendar panel -->
+    <section id="panel-calendar" class="panel active" data-panel="calendar">
+      <div class="today-banner" id="today-banner">
+        <div class="label">Today</div>
+        <div class="greg" id="today-greg">—</div>
+        <div class="mec" id="today-mec">—</div>
+        <div class="countdown" id="next-ren"></div>
+      </div>
+
+      <div class="month-nav">
+        <button class="icon-btn" id="prev-month" type="button" aria-label="Previous month">‹</button>
+        <div class="title">
+          <span id="month-title">—</span>
+          <span class="year" id="month-year">—</span>
+        </div>
+        <button class="icon-btn" id="next-month" type="button" aria-label="Next month">›</button>
+      </div>
+
+      <div class="year-jump">
+        <button class="btn" id="jump-today" type="button">Jump to today</button>
+      </div>
+
+      <div class="cycle-legend" aria-hidden="true">
+        <span>Pri</span><span>Tue</span><span>Wed</span><span>Qua</span><span>Fun</span>
+        <span>Vid</span><span>Sun</span><span>Oct</span><span>Nov</span><span>Cen</span>
+      </div>
+
+      <div class="month-grid" id="month-grid" role="grid" aria-label="MEC month"></div>
+
+      <div class="holiday-chip-wrap" id="holiday-wrap" hidden></div>
+      <div class="day-detail" id="day-detail">Tap a day for dual-date detail.</div>
+    </section>
+
+    <!-- Converter panel -->
+    <section id="panel-convert" class="panel" data-panel="convert">
+      <div class="converter">
+        <div class="card">
+          <h2>Gregorian → MEC</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="g-y">Year</label>
+              <input id="g-y" type="number" min="1776" max="9999" />
+            </div>
+            <div class="field">
+              <label for="g-m">Month</label>
+              <select id="g-m"></select>
+            </div>
+            <div class="field">
+              <label for="g-d">Day</label>
+              <input id="g-d" type="number" min="1" max="31" />
+            </div>
+          </div>
+          <button class="btn primary" id="g-to-mec" type="button">Convert</button>
+          <div class="result-box" id="g-result">—</div>
+        </div>
+
+        <div class="card">
+          <h2>MEC → Gregorian</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="m-y">Greg. year</label>
+              <input id="m-y" type="number" min="1776" max="9999" title="Gregorian year (MEC year = this − 1776)" />
+            </div>
+            <div class="field">
+              <label for="m-m">Month</label>
+              <select id="m-m"></select>
+            </div>
+            <div class="field">
+              <label for="m-d">Day (1–30, or 31 = Renaissance)</label>
+              <input id="m-d" type="number" min="1" max="31" />
+            </div>
+          </div>
+          <button class="btn primary" id="m-to-g" type="button">Convert</button>
+          <div class="result-box" id="m-result">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About panel -->
+    <section id="panel-about" class="panel" data-panel="about">
+      <div class="about">
+        <div class="card">
+          <h2>About MEC</h2>
+          <p>
+            The Modern Era Calendar is a <strong>designed civil calendar</strong>.
+            It is not nationally adopted. It keeps the Gregorian year length and leap rule,
+            replaces uneven months with twelve months of thirty days, replaces the seven-day
+            week with a ten-day cycle, and parks leftover days as named Renaissance Days.
+          </p>
+          <div class="epoch">Epoch: July 4, 1776 = Primaday, July 1, Year 1</div>
+          <p style="margin-top:10px">
+            For app display, Gregorian year Y maps to MEC Year (Y − 1776).
+            January 1 of each Gregorian year aligns with January 1, Primaday of that MEC year.
+            Day-to-day conversion uses the Section 5 slot algorithm — never a fixed lag.
+          </p>
+        </div>
+        <div class="card">
+          <h2>Structure</h2>
+          <ul>
+            <li><strong>12 months</strong> of exactly 30 regular days each</li>
+            <li><strong>3 cycles</strong> of 10 days per month (Cycle 1: 1–10, Cycle 2: 11–20, Cycle 3: 21–30)</li>
+            <li><strong>Day names:</strong> Primaday, Tuesday, Wednesday, Quartiday, Funfday, Viday, Sunday, Octiday, Noviday, Centiday</li>
+            <li><strong>Centiday</strong> is the natural rest-day candidate (not required as a day off)</li>
+            <li><strong>Common year:</strong> 360 + 5 Renaissance Days = 365</li>
+            <li><strong>Leap year:</strong> + Hermes Trismegistus Day after October = 366</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Renaissance Days</h2>
+          <ul>
+            <li>Local Area Network Day — after January</li>
+            <li>Global Society Day — after March</li>
+            <li>Nature Harmony Day — after May</li>
+            <li>Tesla Day — after July</li>
+            <li>Theology Day — after August</li>
+            <li>Hermes Trismegistus Day — after October (leap years only)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Install</h2>
+          <p>
+            This app is an installable PWA. Use your browser’s “Add to Home Screen” or the
+            install button in the header when available. Offline caching is provided by a service worker.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="calendar" type="button"><span class="ti">📅</span>Calendar</button>
+      <button class="tab" data-tab="convert" type="button"><span class="ti">⇄</span>Convert</button>
+      <button class="tab" data-tab="about" type="button"><span class="ti">ⓘ</span>About</button>
+      <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
+    </nav>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
