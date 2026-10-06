@@ -4,27 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0d1a" />
-  <meta name="description" content="Modern Era Calendar — twelve 30-day months, ten-day cycles, Renaissance Days." />
+  <meta name="description" content="Captain’s Log — a daily journal with the Modern Era Calendar, Aretoria, and more." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="MEC" />
+  <meta name="apple-mobile-web-app-title" content="Captain’s Log" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>Modern Era Calendar</title>
+  <title>Captain’s Log</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=27" />
+  <link rel="stylesheet" href="styles.css?v=cl1" />
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">ME</div>
+        <div class="brand-mark" aria-hidden="true">CL</div>
         <div>
-          <h1>Modern Era Calendar</h1>
-          <div class="sub">Year <span id="header-year">—</span> · MEC</div>
+          <h1>Captain’s Log</h1>
+          <div class="sub">Year <span id="header-year">—</span> · Modern Era Calendar &amp; more</div>
         </div>
       </div>
       <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
@@ -131,6 +131,7 @@
           <div class="portal-sub">The Seven Realms</div>
           <ul class="realm-legend" id="realm-legend"></ul>
           <button class="btn primary portal-enter" id="portal-enter" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="portal-realms">Enter the Realms</button>
+          <a class="portal-standalone" href="https://casswaters.github.io/aretoria/" title="Open Aretoria as its own app">Open standalone Aretoria ↗</a>
           <div class="portal-realms" id="portal-realms" hidden></div>
         </div>
       </aside>
@@ -186,7 +187,14 @@
     <section id="panel-about" class="panel" data-panel="about">
       <div class="about">
         <div class="card">
-          <h2>About MEC</h2>
+          <h2>About Captain’s Log</h2>
+          <p>
+            <strong>Captain’s Log</strong> is a personal daily companion: a journal for the day,
+            the <strong>Modern Era Calendar</strong> as a dating tool, local sky weather, and the
+            enterable <strong>Aretoria</strong> portal (also available as its own site).
+            Nothing here syncs to Apple Notes or another device — entries stay in this browser;
+            use “Copy text” to paste elsewhere.
+          </p>
           <p>
             The Modern Era Calendar is a <strong>designed civil calendar</strong>.
             It is not nationally adopted. It keeps the Gregorian year length and leap rule,
@@ -286,6 +294,8 @@
             short answer in this browser, under the same per-day realm reflections. The opening and closing
             lines wait for you: tap or click anywhere, or press Enter or Space, to continue. Esc or ✕ leaves.
             Aretoria loads only when you enter it, and it honors reduced motion.
+            You can also open the standalone Aretoria app at
+            <a href="https://casswaters.github.io/aretoria/" style="color:var(--gold)">casswaters.github.io/aretoria</a>.
           </p>
         </div>
         <div class="card">
@@ -305,9 +315,9 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=27"></script>
-  <script type="module" src="captains-log.js?v=27"></script>
-  <script type="module" src="portal.js?v=27"></script>
-  <script type="module" src="scene.js?v=27"></script>
+  <script type="module" src="app.js?v=cl1"></script>
+  <script type="module" src="captains-log.js?v=cl1"></script>
+  <script type="module" src="portal.js?v=cl1"></script>
+  <script type="module" src="scene.js?v=cl1"></script>
 </body>
 </html>

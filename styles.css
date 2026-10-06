@@ -1,4 +1,4 @@
-/* Modern Era Calendar — Aretoria Almanac theme
+/* Captain’s Log — Aretoria Almanac theme
    Ivory / gold / pearl on a dark indigo void, with soft nebula + temple light. */
 :root {
   --bg: #0b0d1a;            /* indigo void */
@@ -890,6 +890,15 @@ body::after {
 }
 .realm-pill:hover { background: color-mix(in srgb, var(--c) 20%, transparent); }
 .portal-enter { margin-top: 16px; padding: 10px 22px; font-family: var(--display); letter-spacing: .12em; font-size: .8rem; }
+.portal-standalone {
+  display: inline-block; margin-top: 10px;
+  font-family: var(--serif); font-style: italic; font-size: .92rem;
+  color: var(--pearl); text-decoration: none;
+  border-bottom: 1px solid rgba(214,184,120,.28);
+  padding-bottom: 1px;
+}
+.portal-standalone:hover { color: var(--gold-bright); border-bottom-color: var(--gold); }
+
 .portal-realms { margin-top: 14px; text-align: left; }
 .portal-realms[hidden] { display: none; }
 .portal-intro { margin: 0 0 10px; font-family: var(--serif); font-style: italic; color: var(--text-muted); text-align: center; font-size: .98rem; }

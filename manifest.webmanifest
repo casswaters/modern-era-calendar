@@ -1,7 +1,7 @@
 {
-  "name": "Modern Era Calendar",
-  "short_name": "MEC",
-  "description": "Twelve 30-day months, ten-day cycles, Renaissance Days. Epoch July 4, 1776.",
+  "name": "Captain’s Log",
+  "short_name": "Captain’s Log",
+  "description": "Daily journal with the Modern Era Calendar, Aretoria, and local sky weather.",
   "start_url": "/modern-era-calendar/",
   "scope": "/modern-era-calendar/",
   "display": "standalone",

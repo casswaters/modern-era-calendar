@@ -683,7 +683,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is mec-v27 and precaches Aretoria code', /mec-v27/.test(sw) && !/mec-v26/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is captains-log-v1 and precaches Aretoria code', /captains-log-v1/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -734,8 +734,8 @@ console.log('\n=== ambient weather scene ===\n');
   // cache-busting
   const html = src('./index.html');
   const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=27 (none left at ?v=26)', /\?v=27/.test(html) && !/\?v=2[0-6]\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=27', /const VERSION = 27;/.test(src('./aretoria.js')));
+  assert('all asset queries are ?v=cl1 (no leftover ?v=27)', /\?v=cl1/.test(html) && !/\?v=27\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=cl1', /const VERSION = 'cl1';/.test(src('./aretoria.js')));
 }
 
 {
@@ -761,7 +761,7 @@ console.log('\n=== ambient weather scene ===\n');
   const css = src('./aretoria.css');
   assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
   const sw = src('./sw.js');
-  assert('SW is mec-v27 and does not precache guardians or realms', /mec-v27/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('SW is captains-log-v1 and does not precache guardians or realms', /captains-log-v1/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
   assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
   const guideText = JSON.stringify(GUIDE);
   assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
@@ -785,8 +785,27 @@ console.log('\n=== ambient weather scene ===\n');
   // Stronger: hub prefers painted; shrine only as fallback when painted missing
   assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /hub \? SCENES\.axial\(SHRINE_IMAGE\)/.test(aj));
   const sw = src('./sw.js');
-  assert('SW mec-v27 does not precache axial.jpg / realms/', /mec-v27/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
+  assert('SW captains-log-v1 does not precache axial.jpg / realms/', /captains-log-v1/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
   assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
+}
+
+
+{
+  console.log('\n--- Captain\'s Log v1 identity (Aretoria stays embedded) ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const html = src('./index.html');
+  const man = src('./manifest.webmanifest');
+  assert('document title is Captain\'s Log', /<title>Captain.s Log<\/title>/.test(html));
+  assert('apple-mobile-web-app-title is Captain\'s Log', /apple-mobile-web-app-title" content="Captain.s Log"/.test(html));
+  assert('header brand is Captain\'s Log (CL mark)', /brand-mark[^>]*>CL<\/div>/.test(html) && /<h1>Captain.s Log<\/h1>/.test(html));
+  assert('About is About Captain\'s Log', /About Captain.s Log/.test(html));
+  assert('does not claim Apple Notes sync', !/sync(?:s|ed)? to Apple Notes/i.test(html) || /Nothing here syncs to Apple Notes/.test(html));
+  assert('MEC still present as a feature', /Modern Era Calendar/.test(html) && /month-grid/.test(html));
+  assert('Aretoria portal still enterable on homepage', /id="portal-enter"/.test(html) && /Enter the Realms/.test(html) && /aretoria\.js/.test(src('./portal.js')));
+  assert('standalone Aretoria link present', /casswaters\.github\.io\/aretoria\//.test(html) && /portal-standalone/.test(html));
+  assert('manifest name Captain\'s Log', /"name": "Captain.s Log"/.test(man));
+  assert('localStorage Captain\'s Log keys stay mec-log:', /mec-log:/.test(src('./captains-log.js')) && /KEY_PREFIX = 'mec-log:'/.test(src('./captains-log.js')));
+  assert('Aretoria reflection keys stay mec-realm:', reflectionKey('2026-10-05', 'wisdom') === 'mec-realm:2026-10-05:wisdom');
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
