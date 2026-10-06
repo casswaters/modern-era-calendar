@@ -1,5 +1,7 @@
-/* MEC service worker — network-first app shell, offline fallback (Aretoria Almanac v20) */
-const CACHE = 'mec-v22';
+/* MEC service worker — network-first app shell, offline fallback (Aretoria v23) */
+const CACHE = 'mec-v23';
+/* Aretoria portrait/shrine images (assets/aretoria/) are deliberately NOT precached;
+   they are fetched only when the portal is entered, then kept by the runtime cache. */
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +12,10 @@ const ASSETS = [
   './captains-log.js',
   './portal.js',
   './scene.js',
+  './aretoria.js',
+  './aretoria-data.js',
+  './aretoria-art.js',
+  './aretoria.css',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

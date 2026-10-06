@@ -18,6 +18,12 @@ import {
 import {
   is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
 } from './scene.js';
+import {
+  REALMS, GUIDE, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
+  validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
+  advisorsFor, advisorDialogue, advisorKey, slugify
+} from './aretoria-data.js';
+import { existsSync, readFileSync } from 'node:fs';
 
 let passed = 0;
 let failed = 0;
@@ -626,6 +632,54 @@ console.log('\n=== ambient weather scene ===\n');
   assert('St. George sunset ≈ 7:11 PM MDT (Open-Meteo ref, 01:11Z)', Math.abs(set - (25 * 60 + 11)) <= 10, st.sunset.toISOString());
   assert('polar night → null', sun_times(new Date(2026, 11, 21, 12), 80, 0) === null);
   assert('no coords, no reading → null', sun_caption_times({}) === null);
+}
+
+
+{
+  console.log('\n--- Aretoria: realms, advisors, dialogue integrity ---');
+  assert('seven realms incl. Shadow', REALMS.length === 7 && REALM_IDS.includes('shadow'));
+  assert('realm ids match legacy portal ids', eq([...REALM_IDS].sort(), ['courage', 'humanity', 'justice', 'shadow', 'temperance', 'transcendence', 'wisdom']));
+  assert('every realm has a guardian with name + source', REALMS.every((r) => r.guardian && r.guardian.name && ['notes', 'neutral'].includes(r.guardian.source)));
+  assert('realm colours are hex', REALMS.every((r) => /^#[0-9a-f]{6}$/.test(r.color)));
+  const allErr = validateAll();
+  assert('all dialogue trees valid (choices → real nodes, all reachable)', allErr.length === 0, allErr.slice(0, 5).join('; '));
+  for (const r of REALMS) {
+    const n = Object.keys(r.dialogue.nodes).length;
+    assert(`${r.id}: 3–5 dialogue nodes`, n >= 3 && n <= 5, String(n));
+    assert(`${r.id}: has a saving reflection node`, Object.values(r.dialogue.nodes).some((x) => x.input && x.choices.some((c) => c.save)));
+  }
+  assert('Irishnu tree valid', validateTree(GUIDE.dialogue).length === 0);
+  assert('validator catches a dangling choice', validateTree({ start: 'a', nodes: { a: { text: 'x', choices: [{ label: 'y', next: 'nope' }] } } }).length > 0);
+  assert('validator catches an unreachable node', validateTree({ start: 'a', nodes: { a: { text: 'x', choices: [{ label: 'y', next: '@close' }] }, b: { text: 'z', choices: [{ label: 'q', next: '@hub' }] } } }).length > 0);
+  assert('legacy reflection key format', reflectionKey('2026-10-05', 'wisdom') === 'mec-realm:2026-10-05:wisdom');
+  assert('ritual: Monday → daily (Wisdom)', ritualFor(new Date(2026, 9, 5)).realm === 'wisdom');
+  assert('ritual: Sunday → self-audit (Justice)', ritualFor(new Date(2026, 9, 4)).id === 'sunday-audit');
+  assert('ritual: 1st & 3rd Saturday → relationship', ritualFor(new Date(2026, 9, 3)).id === 'relationship' && ritualFor(new Date(2026, 9, 17)).id === 'relationship');
+  assert('ritual: 2nd Saturday → daily', ritualFor(new Date(2026, 9, 10)).id === 'daily');
+  assert('ritual: last day of month → monthly review', ritualFor(new Date(2026, 9, 31)).id === 'monthly');
+  const ctx = tokenContext(new Date(2026, 9, 4));
+  const texts = [GUIDE, ...REALMS].flatMap((x) => Object.values(x.dialogue.nodes).flatMap((n) => [n.text, ...n.choices.map((c) => c.label + ' ' + c.next)]));
+  assert('no unresolved {tokens} in dialogue', texts.every((t) => !/\{\w+\}/.test(fillTokens(t, ctx))));
+}
+
+{
+  console.log('\n--- Aretoria: Hall of Virtues + Creed ---');
+  assert('81 virtues', VIRTUES.length === 81, String(VIRTUES.length));
+  assert('virtue slugs unique, lowercase letters only', new Set(VIRTUES.map((v) => v.slug)).size === VIRTUES.length && VIRTUES.every((v) => /^[a-z]+$/.test(v.slug) && v.slug === slugify(v.name)));
+  assert('every virtue maps to a realm', VIRTUES.every((v) => REALM_IDS.includes(v.realm) && v.essence));
+  const withArt = VIRTUES.filter((v) => v.portrait);
+  assert('portrait paths point into assets/aretoria/portraits', withArt.every((v) => v.portrait === `${PORTRAIT_DIR}${v.slug}.jpg`));
+  assert('every portrait file exists', withArt.every((v) => existsSync(new URL(v.portrait, import.meta.url))), withArt.filter((v) => !existsSync(new URL(v.portrait, import.meta.url))).map((v) => v.slug).join(','));
+  assert('shrine image exists', existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
+  assert('every realm but Shadow offers an advisor', REALMS.filter((r) => r.id !== 'shadow').every((r) => advisorsFor(r.id).length > 0));
+  assert('advisor dialogues valid', withArt.every((v) => validateTree(advisorDialogue(v)).length === 0));
+  assert('advisor key extends legacy key', advisorKey('2026-10-05', withArt[0]) === `mec-realm:2026-10-05:${withArt[0].realm}:${withArt[0].slug}`);
+  assert('creed closing affirmation', eq(CREED.affirmation, ['This is the nature of reality.', 'This is who we are.', 'I am part of this.']));
+  assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
+  assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
+  const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
+  assert('SW is mec-v23 and precaches Aretoria code', /mec-v23/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

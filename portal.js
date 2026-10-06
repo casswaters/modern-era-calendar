@@ -1,7 +1,8 @@
 /**
- * Aretoria portal (v1): seven realm dots and a small "Enter the Realms" panel.
- * One short reflection per realm per day, kept in this browser only
- * (localStorage key "mec-realm:YYYY-MM-DD:<realm>"). Not a full app.
+ * Aretoria portal card: seven realm dots and the "Enter the Realms" button.
+ * The button lazy-loads the full portal (aretoria.js). Realm reflections stay in this
+ * browser only under "mec-realm:YYYY-MM-DD:<realm>" (advisor answers add ":<virtue>").
+ * The small inline panel below is kept as an offline fallback.
  */
 const REALMS = [
   { id: 'wisdom', name: 'Wisdom', color: '#7fb8ff', temple: 'Prism of Insight', guardian: 'Sophia the Eternal Oracle',
@@ -105,12 +106,34 @@ function closePanel() {
   $('portal-card').classList.remove('open');
 }
 
-enterBtn.addEventListener('click', () => (panel.hidden ? openPanel() : closePanel()));
+/* v23: "Enter the Realms" opens the full Aretoria portal (aretoria.js), loaded only on demand.
+   If the module can't load (e.g. offline before it was ever cached), fall back to the
+   simple realm panel below. */
+let aretoriaMod = null;
+function loadAretoria() {
+  if (!aretoriaMod) aretoriaMod = import('./aretoria.js?v=23').catch((err) => { aretoriaMod = null; throw err; });
+  return aretoriaMod;
+}
+function enterAretoria(realm = null) {
+  enterBtn.disabled = true;
+  loadAretoria()
+    .then((m) => m.openAretoria({ realm, returnFocus: enterBtn }))
+    .catch(() => openPanel(realm))
+    .finally(() => { enterBtn.disabled = false; });
+}
+// Warm the module when the visitor shows intent (hover / focus / touch), never on page load.
+['pointerenter', 'focus', 'touchstart'].forEach((ev) =>
+  enterBtn.addEventListener(ev, () => { loadAretoria().catch(() => {}); }, { once: true, passive: true }));
+
+enterBtn.addEventListener('click', () => {
+  if (!panel.hidden) return closePanel();
+  enterAretoria();
+});
 panel.addEventListener('click', (e) => {
   const tile = e.target.closest('.realm-tile');
   if (tile) { active = tile.dataset.realm; renderPanel(); }
 });
 $('realm-legend').addEventListener('click', (e) => {
   const pill = e.target.closest('.realm-pill');
-  if (pill) openPanel(pill.dataset.realm);
+  if (pill) enterAretoria(pill.dataset.realm);
 });
