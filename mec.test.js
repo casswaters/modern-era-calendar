@@ -23,7 +23,7 @@ import {
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorKey, slugify
 } from './aretoria-data.js';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 
 let passed = 0;
 let failed = 0;
@@ -671,6 +671,9 @@ console.log('\n=== ambient weather scene ===\n');
   assert('portrait paths point into assets/aretoria/portraits', withArt.every((v) => v.portrait === `${PORTRAIT_DIR}${v.slug}.jpg`));
   assert('every portrait file exists', withArt.every((v) => existsSync(new URL(v.portrait, import.meta.url))), withArt.filter((v) => !existsSync(new URL(v.portrait, import.meta.url))).map((v) => v.slug).join(','));
   assert('shrine image exists', existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
+  assert('all 81 virtues have a portrait (22 own + 59 generated)', withArt.length === 81 && VIRTUES.filter((v) => v.wide).length === 59 && VIRTUES.filter((v) => !v.wide).length === 22);
+  assert("Cassidy's own portraits stay tall (not flagged wide)", ['acceptance', 'resolve', 'creativity', 'reverence'].every((s) => !VIRTUES.find((v) => v.slug === s).wide));
+  assert('generated portraits are web-sized (<150 KB)', VIRTUES.filter((v) => v.wide).every((v) => statSync(new URL(v.portrait, import.meta.url)).size < 150000));
   assert('every realm but Shadow offers an advisor', REALMS.filter((r) => r.id !== 'shadow').every((r) => advisorsFor(r.id).length > 0));
   assert('advisor dialogues valid', withArt.every((v) => validateTree(advisorDialogue(v)).length === 0));
   assert('advisor key extends legacy key', advisorKey('2026-10-05', withArt[0]) === `mec-realm:2026-10-05:${withArt[0].realm}:${withArt[0].slug}`);
@@ -678,7 +681,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is mec-v23 and precaches Aretoria code', /mec-v23/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is mec-v24 and precaches Aretoria code', /mec-v24/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 

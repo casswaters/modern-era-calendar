@@ -9,8 +9,8 @@ import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug
-} from './aretoria-data.js?v=23';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=23';
+} from './aretoria-data.js?v=24';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=24';
 
 const VERSION = 23;
 const MET_KEY = 'mec-aretoria:met-irishnu';
@@ -115,6 +115,12 @@ function build() {
   $('.ar-dlg-text').addEventListener('click', () => finishTyping());
   $('.ar-intro').addEventListener('click', () => finishIntro());
   $('.ar-outro').addEventListener('click', () => finishOutro());
+  // Long advisor rows scroll sideways with an ordinary mouse wheel.
+  root.addEventListener('wheel', (e) => {
+    const row = e.target.closest && e.target.closest('.ar-adv-row');
+    if (!row || row.scrollWidth <= row.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault(); row.scrollLeft += e.deltaY;
+  }, { passive: false });
   // On document (capture) so Esc still works after focus falls back to <body>.
   document.addEventListener('keydown', (e) => { if (S.open) { onKey(e); if (e.key === 'Escape') e.stopPropagation(); } }, true);
   root.addEventListener('pointermove', (e) => {
@@ -238,7 +244,7 @@ function renderRealmUI(id) {
   const advisors = advisorsFor(id);
   const fig = FIGURE_FOR[id];
   const strip = advisors.length
-    ? `<div class="ar-advisors"><div class="ar-adv-head">Advisors of ${esc(r.name)}</div><div class="ar-adv-row">` +
+    ? `<div class="ar-advisors"><div class="ar-adv-head">Advisors of ${esc(r.name)} <span>· ${advisors.length}</span></div><div class="ar-adv-row">` +
       advisors.map((v, i) => `<button type="button" class="ar-adv" data-slug="${v.slug}" style="animation-delay:${-i * 1.3}s" aria-label="Speak with the ${esc(advisorTitle(v))}">` +
         `<span class="ar-frame"><img src="${v.portrait}" alt="" loading="lazy" decoding="async"></span><span class="ar-adv-name">${esc(v.name)}</span></button>`).join('') +
       `</div></div>`
@@ -463,7 +469,7 @@ function openDialogue(opts) {
 
 function showStage(v) {
   const st = $('.ar-stage');
-  st.innerHTML = `<div class="ar-stage-frame"><img src="${v.portrait}" alt="Portrait of the ${esc(advisorTitle(v))}"></div><div class="ar-stage-name">${esc(advisorTitle(v))}</div>`;
+  st.innerHTML = `<div class="ar-stage-frame${v.wide ? ' wide' : ''}"><img src="${v.portrait}" alt="Portrait of the ${esc(advisorTitle(v))}"></div><div class="ar-stage-name">${esc(advisorTitle(v))}</div>`;
   st.hidden = false;
   requestAnimationFrame(() => st.classList.add('show'));
 }

@@ -596,7 +596,9 @@ export function validateAll() {
 /* Hall of Virtues: the single virtue list (Cassidy's note, Acceptance..Zest)  */
 /*                                                                            */
 /* To reveal a new advisor later: drop <slug>.jpg into                         */
-/* assets/aretoria/portraits/ and add `portrait: P('<slug>')` to that entry.   */
+/* assets/aretoria/portraits/ and add `portrait: P('<slug>')` to that entry   */
+/* (P = tall portrait, like Cassidy's own; G = landscape/generated art).      */
+/* All 81 virtues have art as of v24: 22 of Cassidy's own + 59 generated.      */
 /* Optional `greet` / `teach` / `ask` / `bless` lines customise the dialogue;  */
 /* without them a gentle default script is used.                              */
 /*                                                                            */
@@ -606,11 +608,16 @@ export function validateAll() {
 
 export const PORTRAIT_DIR = 'assets/aretoria/portraits/';
 export const SHRINE_IMAGE = 'assets/aretoria/shrine.jpg';
-const P = (slug) => `${PORTRAIT_DIR}${slug}.jpg`;
+const P = (slug) => `${PORTRAIT_DIR}${slug}.jpg`;   // Cassidy's own portraits (tall, ~2:3)
+/* Generated portraits (1024×576 landscape, figure centred). The `wide` flag lets the UI
+   show them in a landscape frame when an advisor speaks; small frames crop to the centre. */
+const G = (slug) => { WIDE.add(slug); return P(slug); };
+const WIDE = new Set();
 export const slugify = (name) => String(name).toLowerCase().replace(/[^a-z]/g, '');
 
 function V(name, realm, essence, extra = {}) {
-  return { slug: slugify(name), name, realm, fit: 'notes', essence, ...extra };
+  const slug = slugify(name);
+  return { slug, name, realm, fit: 'notes', essence, ...extra, ...(WIDE.has(slug) ? { wide: true } : {}) };
 }
 
 export const VIRTUES = [
@@ -687,49 +694,49 @@ export const VIRTUES = [
     greet: 'Step inside the star, Cassidy. Every point of it is someone else’s view of the world. From here, you can see through all of them.',
     teach: 'Empathy is the thread that binds souls. Step into the pool of another’s story and let your heart weave with theirs before you judge or advise.',
     ask: 'Whose world could you step into this week? What do you think they are feeling right now?' }),
-  V('Encouragement', 'humanity', 'Lifting others’ spirits and belief in themselves.'),
-  V('Enthusiasm', 'courage', 'Wholehearted energy that sparks action and joy.'),
-  V('Equanimity', 'wisdom', 'Steadiness of mind in calm and in storm.'),
-  V('Ethicality', 'wisdom', 'Choosing the right action even when it costs.'),
-  V('Excellence', 'justice', 'Doing your best work as an offering, not for applause.'),
-  V('Fairness', 'justice', 'Giving everyone an even scale.'),
-  V('Faith', 'transcendence', 'Trusting what cannot yet be seen.'),
-  V('Flexibility', 'wisdom', 'Adapting gracefully when the path changes.'),
+  V('Encouragement', 'humanity', 'Lifting others’ spirits and belief in themselves.', { portrait: G('encouragement') }),
+  V('Enthusiasm', 'courage', 'Wholehearted energy that sparks action and joy.', { portrait: G('enthusiasm') }),
+  V('Equanimity', 'wisdom', 'Steadiness of mind in calm and in storm.', { portrait: G('equanimity') }),
+  V('Ethicality', 'wisdom', 'Choosing the right action even when it costs.', { portrait: G('ethicality') }),
+  V('Excellence', 'justice', 'Doing your best work as an offering, not for applause.', { portrait: G('excellence') }),
+  V('Fairness', 'justice', 'Giving everyone an even scale.', { portrait: G('fairness') }),
+  V('Faith', 'transcendence', 'Trusting what cannot yet be seen.', { portrait: G('faith') }),
+  V('Flexibility', 'wisdom', 'Adapting gracefully when the path changes.', { portrait: G('flexibility') }),
   V('Forgiveness', 'temperance', 'Releasing grudges so the heart can move freely.', { portrait: P('forgiveness'),
     greet: 'Let the golden light fall on you, Cassidy. Nothing you carry is too heavy to set down here.',
     teach: 'Forgiveness is release, not approval. You let go of the debt so it stops collecting interest in your heart, and you keep the lesson.',
     ask: 'Who, perhaps yourself, are you ready to forgive, even a little? What would you let go of?' }),
-  V('Friendliness', 'humanity', 'Warm openness that makes others feel welcome.'),
-  V('Generosity', 'humanity', 'Giving freely of time, attention and resources.'),
-  V('Gentleness', 'humanity', 'Strength that chooses a soft touch.'),
-  V('Graciousness', 'humanity', 'Poise and warmth in giving and receiving.'),
-  V('Gratitude', 'transcendence', 'Noticing gifts and giving thanks.'),
-  V('Harmony', 'humanity', 'Bringing discordant notes into one song.'),
-  V('Helpfulness', 'humanity', 'Lending strength where it is needed.'),
-  V('Honesty', 'courage', 'Telling the truth, especially when it is hard.'),
-  V('Honor', 'justice', 'Keeping your sacred vows and duties.'),
-  V('Hope', 'transcendence', 'A lantern for dark paths.'),
-  V('Humility', 'temperance', 'A grounded view of yourself, neither high nor low.'),
-  V('Idealism', 'wisdom', 'Shaping lofty ideals into goals.'),
-  V('Integrity', 'justice', 'Standing firm and whole, word and deed as one.'),
-  V('Imagination', 'wisdom', 'Seeing worlds that do not yet exist.'),
-  V('Joyfulness', 'transcendence', 'Delight that spreads.'),
-  V('Justice', 'justice', 'Upholding fairness for all.'),
-  V('Kindness', 'humanity', 'Goodwill offered freely.'),
-  V('Love', 'humanity', 'The bond that holds every realm together.'),
-  V('Loyalty', 'justice', 'Steadfast faithfulness to people and principles.'),
-  V('Moderation', 'temperance', 'Neither too much nor too little.'),
-  V('Modesty', 'temperance', 'Letting your work speak without needing the spotlight.'),
-  V('Optimism', 'courage', 'The dawn that follows every night.'),
-  V('Orderliness', 'wisdom', 'Structuring chaos into clarity.'),
-  V('Passion', 'courage', 'The fire that fuels zeal.'),
-  V('Patience', 'humanity', 'Enduring with calm, trusting timing.'),
-  V('Peace', 'humanity', 'Stillness that calms storms.'),
-  V('Perseverance', 'courage', 'Enduring through every trial.'),
-  V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.'),
-  V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.'),
-  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best' }),
-  V('Reliability', 'justice', 'Being someone others can count on.'),
+  V('Friendliness', 'humanity', 'Warm openness that makes others feel welcome.', { portrait: G('friendliness') }),
+  V('Generosity', 'humanity', 'Giving freely of time, attention and resources.', { portrait: G('generosity') }),
+  V('Gentleness', 'humanity', 'Strength that chooses a soft touch.', { portrait: G('gentleness') }),
+  V('Graciousness', 'humanity', 'Poise and warmth in giving and receiving.', { portrait: G('graciousness') }),
+  V('Gratitude', 'transcendence', 'Noticing gifts and giving thanks.', { portrait: G('gratitude') }),
+  V('Harmony', 'humanity', 'Bringing discordant notes into one song.', { portrait: G('harmony') }),
+  V('Helpfulness', 'humanity', 'Lending strength where it is needed.', { portrait: G('helpfulness') }),
+  V('Honesty', 'courage', 'Telling the truth, especially when it is hard.', { portrait: G('honesty') }),
+  V('Honor', 'justice', 'Keeping your sacred vows and duties.', { portrait: G('honor') }),
+  V('Hope', 'transcendence', 'A lantern for dark paths.', { portrait: G('hope') }),
+  V('Humility', 'temperance', 'A grounded view of yourself, neither high nor low.', { portrait: G('humility') }),
+  V('Idealism', 'wisdom', 'Shaping lofty ideals into goals.', { portrait: G('idealism') }),
+  V('Integrity', 'justice', 'Standing firm and whole, word and deed as one.', { portrait: G('integrity') }),
+  V('Imagination', 'wisdom', 'Seeing worlds that do not yet exist.', { portrait: G('imagination') }),
+  V('Joyfulness', 'transcendence', 'Delight that spreads.', { portrait: G('joyfulness') }),
+  V('Justice', 'justice', 'Upholding fairness for all.', { portrait: G('justice') }),
+  V('Kindness', 'humanity', 'Goodwill offered freely.', { portrait: G('kindness') }),
+  V('Love', 'humanity', 'The bond that holds every realm together.', { portrait: G('love') }),
+  V('Loyalty', 'justice', 'Steadfast faithfulness to people and principles.', { portrait: G('loyalty') }),
+  V('Moderation', 'temperance', 'Neither too much nor too little.', { portrait: G('moderation') }),
+  V('Modesty', 'temperance', 'Letting your work speak without needing the spotlight.', { portrait: G('modesty') }),
+  V('Optimism', 'courage', 'The dawn that follows every night.', { portrait: G('optimism') }),
+  V('Orderliness', 'wisdom', 'Structuring chaos into clarity.', { portrait: G('orderliness') }),
+  V('Passion', 'courage', 'The fire that fuels zeal.', { portrait: G('passion') }),
+  V('Patience', 'humanity', 'Enduring with calm, trusting timing.', { portrait: G('patience') }),
+  V('Peace', 'humanity', 'Stillness that calms storms.', { portrait: G('peace') }),
+  V('Perseverance', 'courage', 'Enduring through every trial.', { portrait: G('perseverance') }),
+  V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.', { portrait: G('preparedness') }),
+  V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.', { portrait: G('purposefulness') }),
+  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best', portrait: G('quietudeness') }),
+  V('Reliability', 'justice', 'Being someone others can count on.', { portrait: G('reliability') }),
   V('Resilience', 'courage', 'Rebounding from setbacks stronger than before.', { portrait: P('resilience'),
     greet: 'Pull up a stool by the forge, Cassidy. I have been hammered more times than I can count. Look at me. Still here, and stronger at the seams.',
     teach: 'Resilience is the art of weaving strength from fractures. Bend, but never break; each trial forges you anew, and the scars become veins of gold.',
@@ -738,30 +745,30 @@ export const VIRTUES = [
     greet: 'You walked a long way through the forest to find me, Cassidy. That is resolve already. Lean on my staff a moment.',
     teach: 'Resolve is the decision behind the decision: settled so deeply that pressure cannot reopen it. Decide once, then let the decision carry you.',
     ask: 'What have you already decided in your heart but not yet committed to? Seal it here.' }),
-  V('Respect', 'justice', 'Honoring the worth and boundaries of all.'),
-  V('Responsibility', 'justice', 'Owning your tasks and their consequences.'),
+  V('Respect', 'justice', 'Honoring the worth and boundaries of all.', { portrait: G('respect') }),
+  V('Responsibility', 'justice', 'Owning your tasks and their consequences.', { portrait: G('responsibility') }),
   V('Reverence', 'transcendence', 'Honoring the sacred in all things.', { portrait: P('reverence'),
     greet: 'Hush, Cassidy. Listen to the stars. I am made of them, and so are you. Everything here is holy if you look long enough.',
     teach: 'Reverence is honoring the sacred, the vastness that holds you and the small things that carry it. It turns ordinary moments into temples.',
     ask: 'Where did you feel the sacred recently, in a person, place or moment?' }),
-  V('Self-discipline', 'temperance', 'Mastery over impulse in service of what matters.'),
-  V('Serenity', 'temperance', 'Calm clarity, untroubled at the center.', { fit: 'best' }),
-  V('Service', 'transcendence', 'Aiding others as an offering.'),
-  V('Sincerity', 'justice', 'Speaking plainly and meaning it.'),
-  V('Tact', 'temperance', 'Navigating tension with gentle words.'),
-  V('Temperance', 'temperance', 'Balance in all things.'),
-  V('Tenacity', 'courage', 'Clinging fiercely to worthy goals.'),
-  V('Thankfulness', 'transcendence', 'A heart that keeps saying thank you.'),
-  V('Tolerance', 'humanity', 'A bridge across differences.'),
-  V('Trust', 'justice', 'Safeguarding bonds and giving faith.'),
-  V('Truthfulness', 'justice', 'Faithfulness to what is real.'),
-  V('Understanding', 'wisdom', 'Deep comprehension of people and things.'),
-  V('Unity', 'humanity', 'Binding all together in one circle.'),
-  V('Vision', 'wisdom', 'Seeing the roads ahead.'),
-  V('Wisdom', 'wisdom', 'Balancing heart and mind toward the quiet truth.'),
-  V('Wonder', 'wisdom', 'Awe that keeps the world new.'),
-  V('Xeniality', 'humanity', 'Hospitality and welcome to strangers.', { fit: 'best' }),
-  V('Zest', 'courage', 'Living with vigor and eagerness.', { fit: 'best' })
+  V('Self-discipline', 'temperance', 'Mastery over impulse in service of what matters.', { portrait: G('selfdiscipline') }),
+  V('Serenity', 'temperance', 'Calm clarity, untroubled at the center.', { fit: 'best', portrait: G('serenity') }),
+  V('Service', 'transcendence', 'Aiding others as an offering.', { portrait: G('service') }),
+  V('Sincerity', 'justice', 'Speaking plainly and meaning it.', { portrait: G('sincerity') }),
+  V('Tact', 'temperance', 'Navigating tension with gentle words.', { portrait: G('tact') }),
+  V('Temperance', 'temperance', 'Balance in all things.', { portrait: G('temperance') }),
+  V('Tenacity', 'courage', 'Clinging fiercely to worthy goals.', { portrait: G('tenacity') }),
+  V('Thankfulness', 'transcendence', 'A heart that keeps saying thank you.', { portrait: G('thankfulness') }),
+  V('Tolerance', 'humanity', 'A bridge across differences.', { portrait: G('tolerance') }),
+  V('Trust', 'justice', 'Safeguarding bonds and giving faith.', { portrait: G('trust') }),
+  V('Truthfulness', 'justice', 'Faithfulness to what is real.', { portrait: G('truthfulness') }),
+  V('Understanding', 'wisdom', 'Deep comprehension of people and things.', { portrait: G('understanding') }),
+  V('Unity', 'humanity', 'Binding all together in one circle.', { portrait: G('unity') }),
+  V('Vision', 'wisdom', 'Seeing the roads ahead.', { portrait: G('vision') }),
+  V('Wisdom', 'wisdom', 'Balancing heart and mind toward the quiet truth.', { portrait: G('wisdom') }),
+  V('Wonder', 'wisdom', 'Awe that keeps the world new.', { portrait: G('wonder') }),
+  V('Xeniality', 'humanity', 'Hospitality and welcome to strangers.', { fit: 'best', portrait: G('xeniality') }),
+  V('Zest', 'courage', 'Living with vigor and eagerness.', { fit: 'best', portrait: G('zest') })
 ];
 
 export const virtueBySlug = (slug) => VIRTUES.find((v) => v.slug === slug) || null;
@@ -777,7 +784,7 @@ export function advisorDialogue(v) {
     start: 'greet',
     nodes: {
       greet: {
-        text: v.greet || `Cassidy. I am the Advisor of ${v.name}, of the ${realm.name} Realm. ${v.essence}`,
+        text: v.greet || `Welcome, Cassidy. I am the Advisor of ${v.name}, from the ${realm.name} Realm. What I hold is this: ${v.essence.charAt(0).toLowerCase()}${v.essence.slice(1)}`,
         choices: [
           { label: 'What do you teach?', next: 'teach' },
           { label: 'Ask me your question.', next: 'reflect' },

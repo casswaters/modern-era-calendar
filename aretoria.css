@@ -105,7 +105,9 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 /* ---------- realm: advisors (Cassidy's portraits) ---------- */
 .ar-advisors { position: absolute; left: 3vw; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 6; max-width: min(62vw, 820px); }
 .ar-adv-head { font-family: var(--display); font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gold-b); margin: 0 0 8px 4px; text-shadow: 0 1px 6px #000; }
-.ar-adv-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+.ar-adv-row { display: flex; gap: 14px; flex-wrap: nowrap; align-items: flex-end; overflow-x: auto; overflow-y: hidden; padding: 16px 6px 4px; scroll-behavior: smooth;
+  scrollbar-width: thin; scrollbar-color: rgba(241,213,142,.35) transparent; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); }
+.ar-adv { flex: 0 0 auto; }
 .ar-adv { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .ar-frame { position: relative; display: block; width: 104px; height: 150px; padding: 4px; border-radius: 999px 999px 10px 10px;
   background: linear-gradient(180deg, #fff1c1, #e3bf6c 40%, #9c7330); box-shadow: 0 0 24px color-mix(in srgb, var(--rc) 45%, transparent), 0 8px 22px rgba(0,0,0,.6); transition: transform .35s, box-shadow .35s; }
@@ -124,6 +126,10 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 .ar-stage-frame { width: min(42vh, 360px); aspect-ratio: 784 / 1168; padding: 6px; border-radius: 999px 999px 14px 14px; overflow: hidden;
   background: linear-gradient(180deg, #fff1c1, #e3bf6c 40%, #9c7330); box-shadow: 0 0 60px color-mix(in srgb, var(--rc) 55%, transparent), 0 0 140px rgba(255,220,150,.18), 0 20px 50px rgba(0,0,0,.7); }
 .ar-stage-frame img { border-radius: 999px 999px 9px 9px; }
+/* generated portraits are 16:9 landscape: show them whole in a landscape frame */
+.ar-stage-frame.wide { width: min(58vw, 660px, 78vh); aspect-ratio: 16 / 9; border-radius: 18px; }
+.ar-stage:has(.wide) { top: 40%; }
+.ar-stage-frame.wide img { border-radius: 13px; object-position: 50% 30%; }
 .ar-stage-name { font-family: var(--display); letter-spacing: .18em; font-size: .9rem; color: #fff1c1; text-shadow: 0 1px 8px #000; }
 .ar-talking .ar-advisors, .ar-talking .ar-lore { opacity: .25; transition: opacity .4s; }
 .ar-dlg.ar-dlg-photo ~ .ar-stage { display: flex; }
@@ -377,6 +383,8 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar[data-realm="shadow"] .ar-host, .ar-realmui:not(:has(.ar-advisors)) .ar-host { bottom: 30px; right: calc(50% - 15.2vh); height: 52vh; }
   .ar-stage { top: 33%; }
   .ar-stage-frame { width: min(34vh, 62vw); }
+  .ar-stage-frame.wide { width: 92vw; }
+  .ar-stage:has(.wide) { top: 30%; }
   .ar-stage-name { display: none; }
   .ar-dlg { width: 100vw; bottom: 0; border-radius: 18px 18px 0 0; grid-template-columns: 1fr; gap: 8px; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); }
   .ar-dlg-portrait { position: absolute; top: -34px; left: 14px; width: 64px; height: 64px; }
