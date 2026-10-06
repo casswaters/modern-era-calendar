@@ -107,7 +107,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   background: linear-gradient(180deg, rgba(40,30,60,.75), rgba(10,8,24,.8)); box-shadow: 0 0 20px rgba(255,220,150,.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .ar-pill:hover { box-shadow: 0 0 26px rgba(255,220,150,.4); border-color: #fff1c1; }
 
-/* ---------- realm: Guardian portrait (optional, assets/aretoria/guardians/<realm>.jpg, 1024×576) ---------- */
+/* ---------- realm: Guardian portrait (desktop 1024×576; mobile .../mobile/ ~576×1024) ---------- */
 .ar-host.ar-host-photo { aspect-ratio: 16 / 9; height: auto; width: min(40vw, 560px); right: 3vw; bottom: auto; top: 50%; translate: 0 0; }
 .ar-host-photo { margin-top: calc(min(40vw, 560px) * -0.33); }
 .ar-guide.ar-host-photo { left: 2vw; right: auto; width: min(36vw, 480px); top: 52%; height: auto;
@@ -419,14 +419,22 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-frame { width: 70px; height: 100px; padding: 3px; }
   .ar-adv-name { font-size: .62rem; }
   .ar[data-realm="shadow"] .ar-host, .ar-realmui:not(:has(.ar-advisors)) .ar-host { bottom: 30px; right: calc(50% - 15.2vh); height: 52vh; }
-  .ar-host.ar-host-photo, .ar[data-realm="shadow"] .ar-host.ar-host-photo { width: 92vw; height: auto; right: 4vw; top: 96px; bottom: auto; margin-top: 0; }
-  .ar-guide.ar-host-photo { left: 4vw; right: auto; width: min(72vw, 320px); top: auto; bottom: 72px; margin-top: 0; }
+  /* Portrait-ratio frames for mobile guardian / Irishnu / shrine art (.../mobile/). */
+  .ar-host.ar-host-photo, .ar[data-realm="shadow"] .ar-host.ar-host-photo {
+    aspect-ratio: 9 / 16; width: min(58vw, 260px); height: auto; right: 4vw; top: 88px; bottom: auto; margin-top: 0;
+  }
+  .ar-guide.ar-host-photo {
+    aspect-ratio: 9 / 16; left: 4vw; right: auto; width: min(46vw, 200px); top: auto; bottom: 72px; margin-top: 0;
+  }
+  .ar-gframe img, .ar-dlg-portrait img.ar-gport { object-position: 50% 16%; }
   .ar-intro-line { bottom: 15%; }
   .ar-narr-hint { font-size: .66rem; letter-spacing: .18em; }
   .ar-stage { top: 33%; }
   .ar-stage-frame { width: min(34vh, 62vw); }
-  .ar-stage-frame.wide { width: 92vw; }
-  .ar-stage:has(.wide) { top: 30%; }
+  /* Guardian / Irishnu stage: portrait siblings, not 16:9 */
+  .ar-stage-frame.wide { width: min(52vw, 240px); aspect-ratio: 9 / 16; border-radius: 16px; }
+  .ar-stage-frame.wide img { object-position: 50% 16%; border-radius: 12px; }
+  .ar-stage:has(.wide) { top: 28%; }
   .ar-stage-name { display: none; }
   .ar-dlg { width: 100vw; bottom: 0; border-radius: 18px 18px 0 0; grid-template-columns: 1fr; gap: 8px; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); }
   .ar-dlg-portrait { position: absolute; top: -34px; left: 14px; width: 64px; height: 64px; }

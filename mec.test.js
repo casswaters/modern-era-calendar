@@ -19,11 +19,12 @@ import {
   is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
 } from './scene.js';
 import {
-  REALMS, GUIDE, HUB, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
+  REALMS, GUIDE, HUB, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE, SHRINE_IMAGE_MOBILE,
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorKey, slugify,
-  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath, GP, GUARDIAN_DIR,
-  IRISHNU_PORTRAIT, irishnuPortraitPath, realmBackdropPath, RP, REALM_DIR
+  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath,
+  irishnuPortraitPath, realmBackdropPath, IRISHNU_PORTRAIT,
+  GP, GPm, GUARDIAN_DIR, RP, RPm, REALM_DIR, ART_MOBILE_MQ, mobileArtPath, pickArtPath
 } from './aretoria-data.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
@@ -683,7 +684,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is captains-log-v1 and precaches Aretoria code', /captains-log-v1/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is captains-log-v2 and precaches Aretoria code', /captains-log-v2/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -734,8 +735,8 @@ console.log('\n=== ambient weather scene ===\n');
   // cache-busting
   const html = src('./index.html');
   const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=cl1 (no leftover ?v=27)', /\?v=cl1/.test(html) && !/\?v=27\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=cl1', /const VERSION = 'cl1';/.test(src('./aretoria.js')));
+  assert('all asset queries are ?v=cl2 (no leftover ?v=27)', /\?v=cl2/.test(html) && !/\?v=27\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=cl2', /const VERSION = 'cl2';/.test(src('./aretoria.js')));
 }
 
 {
@@ -761,7 +762,7 @@ console.log('\n=== ambient weather scene ===\n');
   const css = src('./aretoria.css');
   assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
   const sw = src('./sw.js');
-  assert('SW is captains-log-v1 and does not precache guardians or realms', /captains-log-v1/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('SW is captains-log-v2 and does not precache guardians or realms', /captains-log-v2/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
   assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
   const guideText = JSON.stringify(GUIDE);
   assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
@@ -780,12 +781,12 @@ console.log('\n=== ambient weather scene ===\n');
   assert('realmBackdropPath(HUB) returns axial.jpg', realmBackdropPath(HUB) === RP('axial'));
   const aj = noComments(src('./aretoria.js'));
   assert('hub view uses paintedScene via HUB backdrop (not SHRINE_IMAGE for axial scene)', /realmBackdropPath\(HUB\)/.test(aj) && /paintedScene/.test(aj));
-  assert('entry cinematic still references SHRINE_IMAGE', /backgroundImage = `url\('\$\{SHRINE_IMAGE\}'\)`/.test(aj) || /url\('\$\{SHRINE_IMAGE\}'\)/.test(aj));
-  assert('renderWorld no longer forces SCENES.axial(SHRINE_IMAGE) as the hub path', !/SCENES\.axial\(SHRINE_IMAGE\)/.test(aj) || /painted \? paintedScene/.test(aj));
+  assert('entry cinematic uses resolveArt(SHRINE_IMAGE)', /resolveArt\(SHRINE_IMAGE\)/.test(aj) && /url\('\$\{shrine\}'\)/.test(aj));
+  assert('hub shrine fallback uses resolveArt shrine var', /SCENES\.axial\(shrine\)/.test(aj) && /resolveArt\(SHRINE_IMAGE\)/.test(aj));
   // Stronger: hub prefers painted; shrine only as fallback when painted missing
-  assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /hub \? SCENES\.axial\(SHRINE_IMAGE\)/.test(aj));
+  assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /SCENES\.axial\(shrine\)/.test(aj));
   const sw = src('./sw.js');
-  assert('SW captains-log-v1 does not precache axial.jpg / realms/', /captains-log-v1/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
+  assert('SW captains-log-v2 does not precache axial.jpg / realms/', /captains-log-v2/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
   assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
 }
 
@@ -806,6 +807,23 @@ console.log('\n=== ambient weather scene ===\n');
   assert('manifest name Captain\'s Log', /"name": "Captain.s Log"/.test(man));
   assert('localStorage Captain\'s Log keys stay mec-log:', /mec-log:/.test(src('./captains-log.js')) && /KEY_PREFIX = 'mec-log:'/.test(src('./captains-log.js')));
   assert('Aretoria reflection keys stay mec-realm:', reflectionKey('2026-10-05', 'wisdom') === 'mec-realm:2026-10-05:wisdom');
+}
+
+
+{
+  console.log('\n--- Aretoria v28: responsive mobile portrait art ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const GUARDIAN_SLUG = { courage: 'valorix', justice: 'justar', humanity: 'amara', temperance: 'moder', wisdom: 'sophia', transcendence: 'auria', shadow: 'shadow' };
+  assert('ART_MOBILE_MQ matches CSS mobile breakpoint', ART_MOBILE_MQ === '(max-width: 699px)');
+  assert('mobileArtPath / pickArtPath scheme', mobileArtPath(RP('courage')) === RPm('courage') && pickArtPath(GP('valorix'), true) === GPm('valorix') && pickArtPath(GP('valorix'), false) === GP('valorix'));
+  assert('shrine mobile path', mobileArtPath(SHRINE_IMAGE) === SHRINE_IMAGE_MOBILE && existsSync(new URL(SHRINE_IMAGE_MOBILE, import.meta.url)));
+  assert('all realm + axial mobile backdrops exist', ['axial', ...REALMS.map((r) => r.id)].every((id) => existsSync(new URL(RPm(id), import.meta.url))));
+  assert('all guardian + irishnu mobile portraits exist', [...Object.values(GUARDIAN_SLUG), 'irishnu'].every((s) => existsSync(new URL(GPm(s), import.meta.url))));
+  const aj = noComments(src('./aretoria.js'));
+  assert('aretoria.js has resolveArt + artMQ listener', /resolveArt/.test(aj) && /ART_MOBILE_MQ/.test(aj) && /refreshArtIfBreakpointChanged/.test(aj));
+  assert('SW captains-log-v2; VERSION cl2', /captains-log-v2/.test(src('./sw.js')) && /const VERSION = 'cl2';/.test(src('./aretoria.js')));
+  assert('virtue thumbs stay shared (gap: no mobile virtue portraits this pass)', VIRTUES.filter((v) => v.portrait).every((v) => !String(v.portrait).includes('/mobile/')));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

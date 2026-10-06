@@ -13,19 +13,34 @@
  * (lazy-loaded; drawn SVG / CSS scenes remain the fallback).
  * v27: Axial hub uses its own painted floating-island backdrop (realms/axial.jpg); the
  * entry cinematic still flies through the shrine photo (SHRINE_IMAGE).
+ * v28: responsive art — matchMedia(ART_MOBILE_MQ) picks .../mobile/ portrait JPEGs for
+ * realm backdrops, guardian portraits, Irishnu, and the entry shrine; desktop otherwise.
  */
 import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
-  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath
-} from './aretoria-data.js?v=cl1';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl1';
+  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
+  mobileArtPath, pickArtPath, ART_MOBILE_MQ
+} from './aretoria-data.js?v=cl2';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl2';
 
-const VERSION = 'cl1';
+const VERSION = 'cl2';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
+const artMQ = window.matchMedia ? window.matchMedia(ART_MOBILE_MQ) : { matches: false };
+const preferMobileArt = () => !!artMQ.matches;
+/** Resolve desktop landscape path → mobile portrait when the viewport is narrow. */
+function resolveArt(desktopPath) {
+  if (!desktopPath) return null;
+  if (preferMobileArt()) {
+    const m = mobileArtPath(desktopPath);
+    if (m && !S.badPortraits.has(m)) return m;
+  }
+  if (!S.badPortraits.has(desktopPath)) return desktopPath;
+  return null;
+}
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const realmById = (id) => REALMS.find((r) => r.id === id);
 const HUB_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence']; // warm → violet (spectrum order)
@@ -35,7 +50,8 @@ let S = {
   open: false, view: 'axial', pushed: false, returnFocus: null,
   dlg: null, typing: null, raf: 0, fx: null,
   px: 0, py: 0, tx: 0, ty: 0, introTimer: [], outroTimer: null, lastT: 0,
-  badPortraits: new Set()
+  badPortraits: new Set(),
+  artMobile: false
 };
 const coarse = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 const continueText = () => (coarse() ? 'Tap to continue' : 'Click or press Enter to continue');
@@ -160,7 +176,10 @@ function build() {
     S.tx = Math.max(-1, Math.min(1, e.gamma / 25));
     S.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
   });
-  window.addEventListener('resize', () => { if (S.open) { layoutHub(); S.fx && S.fx.resize(); } });
+  window.addEventListener('resize', () => { if (S.open) { layoutHub(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
+  const onArtMq = () => { refreshArtIfBreakpointChanged(); };
+  if (artMQ.addEventListener) artMQ.addEventListener('change', onArtMq);
+  else if (artMQ.addListener) artMQ.addListener(onArtMq);
   window.addEventListener('popstate', () => {
     if (S.open && S.pushed) { S.pushed = false; close({ fromPop: true }); }
   });
@@ -220,14 +239,44 @@ function onKey(e) {
   }
 }
 
+/* ---------- responsive art (desktop landscape vs mobile portrait) ---------- */
+function refreshArtIfBreakpointChanged() {
+  if (!S.open || !root) return;
+  const next = preferMobileArt();
+  if (next === S.artMobile) return;
+  S.artMobile = next;
+  applyResponsiveArt();
+}
+
+/** Re-apply backdrop + any imgs tagged data-ar-desk after orientation / width change. */
+function applyResponsiveArt() {
+  if (!root) return;
+  renderWorld(S.view);
+  root.querySelectorAll('img[data-ar-desk]').forEach((img) => {
+    const desk = img.dataset.arDesk;
+    const next = resolveArt(desk);
+    if (next && img.getAttribute('src') !== next) img.setAttribute('src', next);
+  });
+  const intro = $('.ar-intro');
+  if (intro && !intro.hidden) {
+    const img = $('.ar-intro-img');
+    if (img) {
+      const shrine = resolveArt(SHRINE_IMAGE) || SHRINE_IMAGE;
+      img.style.backgroundImage = `url('${shrine}')`;
+    }
+  }
+}
+
 /* ---------- scenes ---------- */
 function renderWorld(id) {
   const r = realmById(id);
   const hub = id === 'axial';
   // Hub: painted Axial backdrop (HUB.realmBackdrop); entry cinematic still uses SHRINE_IMAGE.
-  const painted = hub ? realmBackdropPath(HUB) : realmBackdropPath(r);
+  const paintedDesk = hub ? realmBackdropPath(HUB) : realmBackdropPath(r);
+  const painted = paintedDesk ? resolveArt(paintedDesk) : null;
   const fallback = hub ? SCENES.axial() : SCENES[id]();
-  const sc = painted ? paintedScene(painted, fallback) : (hub ? SCENES.axial(SHRINE_IMAGE) : fallback);
+  const shrine = resolveArt(SHRINE_IMAGE) || SHRINE_IMAGE;
+  const sc = painted ? paintedScene(painted, fallback) : (hub ? SCENES.axial(shrine) : fallback);
   $('.ar-sky').style.background = sc.sky;
   $('.ar-fog').style.background = sc.fog || 'none';
   $('.ar-layers').innerHTML = sc.layers.map((l) => `<div class="ar-layer" data-depth="${l.depth}">${l.html}</div>`).join('');
@@ -282,22 +331,30 @@ function guideHostHtml() {
   if (!photo) {
     return `<button type="button" class="ar-host ar-guide" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">${fig}</button>`;
   }
+  const desk = irishnuPortraitPath();
   return `<button type="button" class="ar-host ar-guide ar-host-photo" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">` +
-    `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"></span><span class="ar-host-name">Irishnu</span></button>`;
+    `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"${desk ? ` data-ar-desk="${esc(desk)}"` : ''}></span><span class="ar-host-name">Irishnu</span></button>`;
 }
 function irishnuPhoto() {
-  const p = irishnuPortraitPath();
-  return p && !S.badPortraits.has(p) ? p : null;
+  return resolveArt(irishnuPortraitPath());
 }
 function wireIrishnuPortraitFallback() {
   const img = $('.ar-guide.ar-host-photo img');
   if (!img) return;
+  const desk = irishnuPortraitPath();
+  if (desk) img.dataset.arDesk = desk;
   img.addEventListener('error', () => {
-    const p = irishnuPortraitPath(); if (p) S.badPortraits.add(p);
+    const failed = img.getAttribute('src');
+    if (failed) S.badPortraits.add(failed);
+    // Mobile missing → try desktop once
+    if (desk && failed !== desk && !S.badPortraits.has(desk)) {
+      img.src = desk;
+      return;
+    }
     const b = $('.ar-guide.ar-host-photo'); if (!b) return;
     b.classList.remove('ar-host-photo');
     b.innerHTML = `${figureSvg('irishnu', 'irs')}<span class="ar-host-name">Irishnu</span>`;
-  }, { once: true });
+  });
 }
 
 function layoutHub() {
@@ -331,21 +388,24 @@ function renderRealmUI(id) {
         `<span class="ar-frame"><img src="${v.portrait}" alt="" loading="lazy" decoding="async"></span><span class="ar-adv-name">${esc(v.name)}</span></button>`).join('') +
       `</div></div>`
     : '';
+  const desk = portraitDesk(r);
   const photo = portraitFor(r);
   const figureHost = `${figureSvg(fig, 'h' + id)}<span class="ar-host-name">${esc(r.guardian.name)}</span>`;
   const host = photo
     ? `<button type="button" class="ar-host ar-host-photo" data-act="host" aria-label="Speak with ${esc(guardianLine(r))}">` +
-      `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"></span><span class="ar-host-name">${esc(r.guardian.name)}</span></button>`
+      `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"${desk ? ` data-ar-desk="${esc(desk)}"` : ''}></span><span class="ar-host-name">${esc(r.guardian.name)}</span></button>`
     : `<button type="button" class="ar-host" data-act="host" aria-label="Speak with ${esc(guardianLine(r))}">${figureHost}</button>`;
   $('.ar-realmui').innerHTML = host + strip;
   if (photo) {
-    // Missing or broken portrait file → fall back to the drawn figure for the rest of the visit.
+    // Missing mobile → try desktop; missing both → drawn figure for the rest of the visit.
     const img = $('.ar-host-photo img');
     img.addEventListener('error', () => {
-      S.badPortraits.add(photo);
+      const failed = img.getAttribute('src');
+      if (failed) S.badPortraits.add(failed);
+      if (desk && failed !== desk && !S.badPortraits.has(desk)) { img.src = desk; return; }
       const b = $('.ar-host-photo'); if (!b) return;
       b.classList.remove('ar-host-photo'); b.innerHTML = figureHost;
-    }, { once: true });
+    });
   }
   const lore = $('.ar-lore');
   const tags = (r.virtues.length ? r.virtues : r.aspects || []).slice(0, 8).map((v) => `<span>${esc(v)}</span>`).join('');
@@ -381,10 +441,12 @@ function showView(id) {
 function guardianSub(r) {
   return r.guardian.source === 'notes' ? `${r.guardian.name}, ${guardianRole(r)}` : `${r.guardian.name}, ${r.guardian.title}`;
 }
-/** A Guardian's portrait (assets/aretoria/guardians/<slug>.jpg) when set and not known to be broken. */
+/** A Guardian's portrait URL (desktop or mobile via resolveArt), or null for the drawn figure. */
 function portraitFor(r) {
-  const p = guardianPortraitPath(r);
-  return p && !S.badPortraits.has(p) ? p : null;
+  return resolveArt(guardianPortraitPath(r));
+}
+function portraitDesk(r) {
+  return guardianPortraitPath(r);
 }
 
 function travel(id, fromEl) {
@@ -544,22 +606,26 @@ class FX {
 /* ---------- dialogue (visual-novel style) ---------- */
 function speakerFor(opts) {
   if (opts.kind === 'guide') {
+    const desk = irishnuPortraitPath();
     const photo = irishnuPhoto();
+    const deskAttr = desk ? ` data-ar-desk="${esc(desk)}"` : '';
     return {
       name: GUIDE.name, title: GUIDE.title, tree: GUIDE.dialogue, key: null, el: '.ar-guide',
-      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport">` : figureSvg('irishnu', 'pirs', true),
-      stage: photo ? { src: photo, label: `${GUIDE.name} ${GUIDE.title}`, wide: true } : null,
+      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport"${deskAttr}>` : figureSvg('irishnu', 'pirs', true),
+      stage: photo ? { src: photo, label: `${GUIDE.name} ${GUIDE.title}`, wide: true, desk } : null,
       guide: true
     };
   }
   if (opts.kind === 'host') {
     const r = realmById(opts.realm);
     const g = r.guardian;
+    const desk = portraitDesk(r);
     const photo = portraitFor(r);
+    const deskAttr = desk ? ` data-ar-desk="${esc(desk)}"` : '';
     return { name: g.name, title: g.source === 'notes' ? `${guardianRole(r)} · ${g.warrior}` : `${g.title} · Shadow Realm`, tree: r.dialogue,
-      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport">` : figureSvg(FIGURE_FOR[r.id], 'p' + r.id, true),
+      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport"${deskAttr}>` : figureSvg(FIGURE_FOR[r.id], 'p' + r.id, true),
       key: reflectionKey(todayIso(), r.id), el: '.ar-realmui .ar-host',
-      stage: photo ? { src: photo, label: guardianLine(r), wide: true } : null, realm: r };
+      stage: photo ? { src: photo, label: guardianLine(r), wide: true, desk } : null, realm: r };
   }
   const v = opts.virtue;
   return { name: advisorTitle(v), title: `${realmById(v.realm).name} Realm`, tree: advisorDialogue(v),
@@ -592,12 +658,18 @@ function openDialogue(opts) {
   renderNode(S.dlg.node);
 }
 
-function showStage({ src, label, wide }) {
+function showStage({ src, label, wide, desk }) {
   const st = $('.ar-stage');
-  st.innerHTML = `<div class="ar-stage-frame${wide ? ' wide' : ''}"><img src="${esc(src)}" alt="Portrait of ${/^Advisor/.test(label) ? 'the ' : ''}${esc(label)}"></div><div class="ar-stage-name">${esc(label)}</div>`;
+  const deskAttr = desk ? ` data-ar-desk="${esc(desk)}"` : '';
+  st.innerHTML = `<div class="ar-stage-frame${wide ? ' wide' : ''}"><img src="${esc(src)}" alt="Portrait of ${/^Advisor/.test(label) ? 'the ' : ''}${esc(label)}"${deskAttr}></div><div class="ar-stage-name">${esc(label)}</div>`;
   st.hidden = false;
   const img = st.querySelector('img');
-  img.addEventListener('error', () => { S.badPortraits.add(src); st.classList.remove('show'); st.hidden = true; st.innerHTML = ''; }, { once: true });
+  img.addEventListener('error', () => {
+    const failed = img.getAttribute('src');
+    if (failed) S.badPortraits.add(failed);
+    if (desk && failed !== desk && !S.badPortraits.has(desk)) { img.src = desk; return; }
+    st.classList.remove('show'); st.hidden = true; st.innerHTML = '';
+  });
   requestAnimationFrame(() => st.classList.add('show'));
 }
 
@@ -773,11 +845,17 @@ function startIntro(target) {
   intro.hidden = false;
   intro.className = 'ar-intro';
   const img = $('.ar-intro-img');
-  img.style.backgroundImage = `url('${SHRINE_IMAGE}')`;
-  // Place the zoom origin + gold arch on the shrine's glowing doorway (≈55.5%, 33% of the photo).
-  const W = window.innerWidth, H = window.innerHeight, iw = 900, ih = 675;
+  const shrine = resolveArt(SHRINE_IMAGE) || SHRINE_IMAGE;
+  img.style.backgroundImage = `url('${shrine}')`;
+  img.dataset.arDesk = SHRINE_IMAGE;
+  // Place the zoom origin + gold arch on the shrine's glowing doorway.
+  // Desktop shrine 900×675 (door ≈55.5%, 36%); mobile portrait crop is door-centered (~50%, 40%).
+  const W = window.innerWidth, H = window.innerHeight;
+  const mobile = preferMobileArt();
+  const iw = mobile ? 576 : 900, ih = mobile ? 1024 : 675;
+  const dx = mobile ? 0.50 : 0.555, dy = mobile ? 0.40 : 0.36;
   const s = Math.max(W / iw, H / ih);
-  const ox = (W - iw * s) / 2 + 0.555 * iw * s, oy = (H - ih * s) / 2 + 0.36 * ih * s;
+  const ox = (W - iw * s) / 2 + dx * iw * s, oy = (H - ih * s) / 2 + dy * ih * s;
   intro.style.setProperty('--ox', `${ox}px`); intro.style.setProperty('--oy', `${oy}px`);
   intro.style.setProperty('--as', `${(0.24 * ih * s) / 170}`);
   $('.ar-intro-line').textContent = OPENING;
@@ -836,6 +914,7 @@ export async function openAretoria(opts = {}) {
   if (!root) build();
   if (S.open) { if (opts.realm) travel(opts.realm); return; }
   S.open = true;
+  S.artMobile = preferMobileArt();
   S.returnFocus = opts.returnFocus || document.activeElement;
   root.hidden = false;
   $('.ar-outro').hidden = true;

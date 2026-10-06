@@ -10,6 +10,7 @@
  * Guardian and described as a warrior suited to the realm (guardian.warrior).
  * v26 wires painted guardian portraits, Irishnu's portrait, and realm backdrops.
  * v27 adds the Axial hub painted backdrop (HUB.realmBackdrop = RP('axial')); entry still uses SHRINE_IMAGE.
+ * v28: mobile portrait siblings under .../mobile/ (~576×1024); pickArtPath + ART_MOBILE_MQ for responsive art.
  *
  * (Authoring note, never shown to visitors: Irishnu is a wise fool at heart. He does
  * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
@@ -183,10 +184,17 @@ export const GUIDE = {
 /** Guardian portraits: assets/aretoria/guardians/<guardian slug>.jpg (landscape 1024×576). */
 export const GUARDIAN_DIR = 'assets/aretoria/guardians/';
 export const GP = (slug) => `${GUARDIAN_DIR}${slug}.jpg`;
+/** Mobile portrait guardians: assets/aretoria/guardians/mobile/<slug>.jpg (~576×1024). */
+export const GPm = (slug) => `${GUARDIAN_DIR}mobile/${slug}.jpg`;
 
 /** Realm painted backdrops: assets/aretoria/realms/<realm id>.jpg (landscape 1024×576). */
 export const REALM_DIR = 'assets/aretoria/realms/';
 export const RP = (realmId) => `${REALM_DIR}${realmId}.jpg`;
+/** Mobile portrait realm backdrops: assets/aretoria/realms/mobile/<id>.jpg (~576×1024). */
+export const RPm = (realmId) => `${REALM_DIR}mobile/${realmId}.jpg`;
+
+/** matchMedia query for portrait art (aligned with CSS @media max-width: 699px). */
+export const ART_MOBILE_MQ = '(max-width: 699px)';
 
 export const REALMS = [
   {
@@ -634,6 +642,34 @@ export function realmBackdropPath(r) {
   return r && typeof r.realmBackdrop === 'string' && r.realmBackdrop ? r.realmBackdrop : null;
 }
 
+/**
+ * Map a desktop landscape art URL to its mobile portrait sibling.
+ * Scheme: insert `/mobile/` before the filename.
+ *   assets/aretoria/realms/courage.jpg     → assets/aretoria/realms/mobile/courage.jpg
+ *   assets/aretoria/guardians/valorix.jpg  → assets/aretoria/guardians/mobile/valorix.jpg
+ *   assets/aretoria/shrine.jpg             → assets/aretoria/mobile/shrine.jpg
+ * Virtue advisor thumbs stay shared (no mobile/ siblings in this pass).
+ */
+export function mobileArtPath(desktopPath) {
+  if (!desktopPath || typeof desktopPath !== 'string') return null;
+  if (desktopPath === SHRINE_IMAGE) return SHRINE_IMAGE_MOBILE;
+  const i = desktopPath.lastIndexOf('/');
+  if (i < 0) return null;
+  // already a mobile path
+  if (desktopPath.slice(0, i).endsWith('/mobile')) return desktopPath;
+  return `${desktopPath.slice(0, i + 1)}mobile/${desktopPath.slice(i + 1)}`;
+}
+
+/** Pick desktop or mobile art URL. `preferMobile` comes from matchMedia(ART_MOBILE_MQ). */
+export function pickArtPath(desktopPath, preferMobile) {
+  if (!desktopPath) return null;
+  if (preferMobile) {
+    const m = mobileArtPath(desktopPath);
+    if (m) return m;
+  }
+  return desktopPath;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Integrity checks (used by mec.test.js and as a dev-time guard)              */
 /* -------------------------------------------------------------------------- */
@@ -710,6 +746,8 @@ export function validateAll() {
 
 export const PORTRAIT_DIR = 'assets/aretoria/portraits/';
 export const SHRINE_IMAGE = 'assets/aretoria/shrine.jpg';
+/** Entry shrine mobile portrait (~576×1024), door-biased crop. */
+export const SHRINE_IMAGE_MOBILE = 'assets/aretoria/mobile/shrine.jpg';
 const P = (slug) => `${PORTRAIT_DIR}${slug}.jpg`;   // Cassidy's own portraits (tall, ~2:3)
 /* Generated portraits (1024×576 landscape, figure centred). The `wide` flag lets the UI
    show them in a landscape frame when an advisor speaks; small frames crop to the centre. */
