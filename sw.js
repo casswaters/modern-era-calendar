@@ -1,5 +1,5 @@
-/* MEC service worker — network-first app shell, offline fallback (Captain's Log / Aretoria; captains-log-v5) */
-const CACHE = 'captains-log-v5';
+/* MEC service worker — network-first app shell, offline fallback (Captain's Log / Aretoria; captains-log-v6) */
+const CACHE = 'captains-log-v6';
 /* Aretoria portrait/shrine/guardian/realm images (assets/aretoria/) are deliberately NOT precached;
    they are fetched only when the portal is entered, then kept by the runtime cache. */
 const ASSETS = [
@@ -18,7 +18,11 @@ const ASSETS = [
   './aretoria.css',
   './manifest.webmanifest',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/favicon.svg',
+  './icons/favicon.ico',
+  './icons/favicon-32.png',
+  './icons/favicon-16.png'
 ];
 
 self.addEventListener('install', (event) => {

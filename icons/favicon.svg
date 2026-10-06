@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Captain's Log journal">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#1c2438"/><stop offset="100%" stop-color="#0a0c14"/></radialGradient>
+    <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8a5640"/><stop offset="100%" stop-color="#4a2a1c"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5d278"/><stop offset="100%" stop-color="#c9a227"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#d4af5a" stroke-opacity="0.22" stroke-width="6"/>
+  <rect x="125" y="105" width="290" height="330" rx="28" fill="#000" opacity="0.35"/>
+  <rect x="110" y="90" width="285" height="325" rx="28" fill="url(#leather)"/>
+  <rect x="110" y="92" width="42" height="321" fill="#3e261c"/>
+  <rect x="118" y="140" width="26" height="6" rx="2" fill="url(#gold)"/>
+  <rect x="118" y="200" width="26" height="6" rx="2" fill="url(#gold)"/>
+  <rect x="118" y="260" width="26" height="6" rx="2" fill="url(#gold)"/>
+  <rect x="118" y="320" width="26" height="6" rx="2" fill="url(#gold)"/>
+  <rect x="175" y="130" width="185" height="245" rx="14" fill="none" stroke="url(#gold)" stroke-width="6"/>
+  <rect x="195" y="155" width="145" height="195" rx="10" fill="none" stroke="#b48c3c" stroke-opacity="0.7" stroke-width="3"/>
+  <path d="M268 220 L278 245 L305 245 L283 262 L292 290 L268 274 L244 290 L253 262 L231 245 L258 245 Z" fill="url(#gold)"/>
+  <rect x="388" y="115" width="10" height="275" fill="#f5ecd6"/>
+  <path d="M310 70 L340 70 L340 215 L325 235 L310 215 Z" fill="#b43238"/>
+  <rect x="312" y="105" width="26" height="4" fill="#f5d278"/>
+  <rect x="380" y="235" width="28" height="48" rx="6" fill="url(#gold)"/>
+  <circle cx="398" cy="259" r="8" fill="#3e261c"/>
+</svg>
