@@ -456,19 +456,27 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-vname { font-size: .72rem; }
 }
 
-/* narrow phones (≤ 380px wide): the six art-anchored gates sit closer together — smaller arches, no sub-line */
-@media (max-width: 380px) {
-  .ar-gate { width: 64px; }
-  .ar-gate-arch { width: 42px; }
-  .ar-gate-name { font-size: .5rem; letter-spacing: 0; }
-  .ar-gate-sub { display: none; }
+/* phones: the hub gates are a 3×2 grid (+ Shadow as a centred 7th tile) in the sky under the title, and the
+   painted band below stays unobstructed (layoutHub sets .ar-hubgrid and places the tiles). Each tile is the
+   whole button (≥ 44px tap target). */
+@media (max-width: 699px) {
+  .ar-hubgrid .ar-gate { width: min(31vw, 116px); animation: none; translate: none; }
+  .ar-hubgrid .ar-gate-arch { width: 42px; margin: 0 auto; }
+  .ar-hubgrid .ar-gate-name { font-size: .62rem; letter-spacing: .06em; margin-top: 3px; }
+  .ar-hubgrid .ar-gate-sub { display: block; font-size: .66rem; line-height: 1.15; }
+  .ar-hubgrid .ar-gate-done { right: calc(50% - 26px); }
+  .ar-hubgrid .ar-orb { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+  .ar-hubgrid .ar-orb span { inset: -10px; }
+}
+/* narrow (≤ 380px) or short phones: slightly smaller tiles, guardian names hidden */
+@media (max-width: 380px), (max-width: 699px) and (max-height: 720px) {
+  .ar-hubgrid .ar-gate-arch { width: 40px; }
+  .ar-hubgrid .ar-gate-name { font-size: .58rem; letter-spacing: .03em; }
+  .ar-hubgrid .ar-gate-sub { display: none; }
 }
 
-/* short phones (e.g. 360×640): smaller gates, drop the host sub-line so the arc stays legible */
+/* short phones (e.g. 360×640): smaller host frames */
 @media (max-width: 699px) and (max-height: 720px) {
-  .ar-gate { width: 70px; }
-  .ar-gate-arch { width: 42px; }
-  .ar-gate-sub { display: none; }
   .ar-host.ar-guide { height: 18vh; }
   .ar-guide.ar-host-photo { width: min(26vw, 100px); bottom: 50px; }
   .ar-host.ar-host-photo, .ar[data-realm="shadow"] .ar-host.ar-host-photo { width: min(34vw, 140px); top: 64px; }

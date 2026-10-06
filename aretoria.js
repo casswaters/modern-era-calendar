@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl12';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl12';
+} from './aretoria-data.js?v=cl13';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl13';
 
-const VERSION = 'cl12';
+const VERSION = 'cl13';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -357,38 +357,63 @@ function wireIrishnuPortraitFallback() {
   });
 }
 
+/** Phone hub grid order (3×2), left→right, top→bottom; Shadow is the centred 7th tile. */
+const HUB_GRID_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence'];
+
 function layoutHub() {
   if (!root || S.view !== 'axial') return;
   const w = window.innerWidth, h = window.innerHeight;
-  const mobile = w < 700; // same breakpoint as ART_MOBILE_MQ, so the anchors match the art actually shown
+  const mobile = w < 700; // same breakpoint as ART_MOBILE_MQ, so the layout matches the art actually shown
   const art = mobile ? HUB_ART.mob : HUB_ART.desk;
   // background-size: cover + background-position posX/posY, then the .ar-layer scale(1.06) about the centre
   const s = Math.max(w / art.w, h / art.h);
   const ox = (w - art.w * s) * art.posX, oy = (h - art.h * s) * art.posY;
   const K = 1.06;
   const toScreen = ([ax, ay]) => [w / 2 + (ox + ax * s - w / 2) * K, h / 2 + (oy + ay * s - h / 2) * K];
-  const topSafe = mobile ? 64 : 70, botSafe = mobile ? 120 : 110;
   const gates = root.querySelectorAll('.ar-gate');
-  gates.forEach((g, i) => {
-    const id = g.dataset.realm;            // map by realm name, never by index
-    const arch = g.querySelector('.ar-gate-arch');
-    // the anchor is where the ARCH sits; the button box also holds the name/sub lines below it
-    const archDy = arch ? (g.offsetHeight / 2 - (arch.offsetTop + arch.offsetHeight / 2)) : 0;
-    const half = (arch ? arch.offsetWidth : 60) / 2 + 4;
-    let [x, y] = toScreen(art.gates[id] || art.gates.shadow);
-    if (id === 'shadow') x = w / 2;        // Shadow always on the horizontal centre line
-    x = Math.min(Math.max(x, half), w - half);
-    y = Math.min(Math.max(y + archDy, topSafe + g.offsetHeight / 2), h - botSafe - g.offsetHeight / 2 + (id === 'shadow' ? 40 : 0));
-    g.style.left = `${x}px`; g.style.top = `${y}px`;
-    g.style.animationDelay = `${-i * 0.9}s`;
-    // keep long names (e.g. TRANSCENDENCE) inside the viewport without moving the arch
-    g.querySelectorAll('.ar-gate-name, .ar-gate-sub').forEach((el) => {
-      el.style.translate = '';
-      const r = el.getBoundingClientRect();
-      const dx = r.left < 4 ? 4 - r.left : (r.right > w - 4 ? w - 4 - r.right : 0);
-      if (dx) el.style.translate = `${dx.toFixed(1)}px 0`;
+  root.classList.toggle('ar-hubgrid', mobile);
+  if (mobile) {
+    // Phones: the six realm gates as a neat 3×2 grid in the empty sky under the title, Shadow as a centred
+    // 7th tile below it; the painted band (art.band) stays unobstructed underneath.
+    const head = root.querySelector('.ar-top');   // title + ✕ button
+    const top0 = (head ? head.getBoundingClientRect().bottom : 60) + 2;
+    const bandTop = toScreen([0, art.band[1]])[1];
+    const rowH = Math.max((bandTop - 2 - top0) / 3, 70);
+    const colW = Math.min((w - 12) / 3, 124);
+    gates.forEach((g) => {
+      const id = g.dataset.realm;            // map by realm name, never by index
+      const k = HUB_GRID_ORDER.indexOf(id);
+      const row = id === 'shadow' ? 2 : Math.floor(k / 3), col = id === 'shadow' ? 1 : k % 3;
+      g.style.left = `${w / 2 + (col - 1) * colW}px`;
+      g.style.top = `${top0 + rowH * (row + 0.5)}px`;
+      g.style.animationDelay = '';
+      g.querySelectorAll('.ar-gate-name, .ar-gate-sub').forEach((el) => { el.style.translate = ''; });
     });
-  });
+  } else {
+    // Desktop / wide: the gates sit on a symmetric ellipse around the plaza, each on its own bridge where it
+    // leaves the plaza (art.gates = arch centres in image px), so the temples stay visible beyond them.
+    const topSafe = 70, botSafe = 110;
+    gates.forEach((g, i) => {
+      const id = g.dataset.realm;            // map by realm name, never by index
+      const arch = g.querySelector('.ar-gate-arch');
+      // the anchor is where the ARCH sits; the button box also holds the name/sub lines below it
+      const archDy = arch ? (g.offsetHeight / 2 - (arch.offsetTop + arch.offsetHeight / 2)) : 0;
+      const half = (arch ? arch.offsetWidth : 60) / 2 + 4;
+      let [x, y] = toScreen(art.gates[id] || art.gates.shadow);
+      if (id === 'shadow') x = w / 2;        // Shadow always on the horizontal centre line
+      x = Math.min(Math.max(x, half), w - half);
+      y = Math.min(Math.max(y + archDy, topSafe + g.offsetHeight / 2), h - botSafe - g.offsetHeight / 2 + (id === 'shadow' ? 40 : 0));
+      g.style.left = `${x}px`; g.style.top = `${y}px`;
+      g.style.animationDelay = `${-i * 0.9}s`;
+      // keep long names (e.g. TRANSCENDENCE) inside the viewport without moving the arch
+      g.querySelectorAll('.ar-gate-name, .ar-gate-sub').forEach((el) => {
+        el.style.translate = '';
+        const r = el.getBoundingClientRect();
+        const dx = r.left < 4 ? 4 - r.left : (r.right > w - 4 ? w - 4 - r.right : 0);
+        if (dx) el.style.translate = `${dx.toFixed(1)}px 0`;
+      });
+    });
+  }
   const orb = $('.ar-orb');
   if (orb) { const [x, y] = toScreen(art.rune); orb.style.left = `${x}px`; orb.style.top = `${y}px`; }
 }

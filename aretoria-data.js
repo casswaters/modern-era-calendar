@@ -620,8 +620,8 @@ HUB.realmBackdrop = RP('axial');
  * cover + position (posX/posY) + the .ar-layer scale(1.06), so gates stay on their paths at any size.
  */
 export const HUB_ART = {
-  desk: { w: 1280, h: 720, posX: 0.5, posY: 0.45, rune: [640, 366], gates: { courage: [132, 330], justice: [322, 250], humanity: [530, 258], temperance: [740, 255], wisdom: [935, 262], transcendence: [1155, 312], shadow: [640, 500] } },
-  mob: { w: 576, h: 1024, posX: 0.5, posY: 0.45, rune: [288, 416], gates: { courage: [113, 404], justice: [178, 376], humanity: [250, 379], temperance: [322, 378], wisdom: [390, 380], transcendence: [466, 397], shadow: [288, 517] } }
+  desk: { w: 1280, h: 720, posX: 0.5, posY: 0.45, rune: [640, 366], gates: { courage: [320, 350], justice: [434, 281], humanity: [558, 258], temperance: [722, 258], wisdom: [846, 281], transcendence: [960, 350], shadow: [640, 500] } },
+  mob: { w: 576, h: 1248, posX: 0.5, posY: 0.45, rune: [288, 665], layout: 'grid', band: [4, 514, 572, 788] }
 };
 /* HUB_ART:END */
 
