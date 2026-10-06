@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl2';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl2';
+} from './aretoria-data.js?v=cl3';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl3';
 
-const VERSION = 'cl2';
+const VERSION = 'cl3';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -361,13 +361,17 @@ function layoutHub() {
   if (!root || S.view !== 'axial') return;
   const w = window.innerWidth, h = window.innerHeight;
   const mobile = w < 700;
-  const cx = w / 2, cy = h * (mobile ? 0.42 : 0.5);
+  const cx = w / 2, cy = h * (mobile ? 0.40 : 0.5);
   const rx = mobile ? w * 0.36 : Math.min(w * 0.36, 540);
-  const ry = mobile ? h * (h < 720 ? 0.28 : 0.25) : Math.min(h * 0.36, 300);
+  const ry = mobile ? h * (h < 720 ? 0.26 : 0.24) : Math.min(h * 0.36, 300);
   const gates = root.querySelectorAll('.ar-gate');
   gates.forEach((g, i) => {
     let x, y;
-    if (g.dataset.realm === 'shadow') { x = cx; y = cy + ry * 0.62; } else {
+    if (g.dataset.realm === 'shadow') {
+      // Mobile: nudge Shadow right + lower so Irishnu's Guide portrait does not cover it.
+      x = mobile ? cx + Math.min(w * 0.18, 72) : cx;
+      y = cy + ry * (mobile ? 0.92 : 0.62);
+    } else {
       const th = (170 - i * 32) * Math.PI / 180;
       x = cx + rx * Math.cos(th); y = cy - ry * Math.sin(th);
     }
