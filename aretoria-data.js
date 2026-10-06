@@ -9,6 +9,7 @@
  * "Guardian of the Veil". Since v25 every realm host is presented as that realm's
  * Guardian and described as a warrior suited to the realm (guardian.warrior).
  * v26 wires painted guardian portraits, Irishnu's portrait, and realm backdrops.
+ * v27 adds the Axial hub painted backdrop (HUB.realmBackdrop = RP('axial')); entry still uses SHRINE_IMAGE.
  *
  * (Authoring note, never shown to visitors: Irishnu is a wise fool at heart. He does
  * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
@@ -593,12 +594,15 @@ export const REALM_IDS = REALMS.map((r) => r.id);
 /* Guardian: assets/aretoria/guardians/<slug>.jpg via GP('<slug>').            */
 /* Guide:    assets/aretoria/guardians/irishnu.jpg via IRISHNU_PORTRAIT.       */
 /* Backdrop: assets/aretoria/realms/<realm id>.jpg via RP('<realm id>').       */
+/* Axial hub: HUB.realmBackdrop = RP('axial'); entry cinematic keeps SHRINE_IMAGE. */
 /* All are lazy-loaded (never precached); drawn SVG / CSS scenes are fallback. */
 /* -------------------------------------------------------------------------- */
 
 /* GUARDIAN_DIR / GP() / REALM_DIR / RP() are defined above REALMS. */
 export const IRISHNU_PORTRAIT = GP('irishnu');
 GUIDE.portrait = IRISHNU_PORTRAIT;
+/** Axial hub painted floating-island backdrop (entry cinematic still uses SHRINE_IMAGE). */
+HUB.realmBackdrop = RP('axial');
 
 /** "Guardian of Courage" … "Guardian of the Shadow Realm". */
 export function guardianRole(r) {

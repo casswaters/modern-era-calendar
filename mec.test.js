@@ -19,7 +19,7 @@ import {
   is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
 } from './scene.js';
 import {
-  REALMS, GUIDE, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
+  REALMS, GUIDE, HUB, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorKey, slugify,
   readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath, GP, GUARDIAN_DIR,
@@ -683,7 +683,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is mec-v26 and precaches Aretoria code', /mec-v26/.test(sw) && !/mec-v25/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is mec-v27 and precaches Aretoria code', /mec-v27/.test(sw) && !/mec-v26/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -734,8 +734,8 @@ console.log('\n=== ambient weather scene ===\n');
   // cache-busting
   const html = src('./index.html');
   const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=26 (none left at ?v=25)', /\?v=26/.test(html) && !/\?v=2[0-5]\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=26', /const VERSION = 26;/.test(src('./aretoria.js')));
+  assert('all asset queries are ?v=27 (none left at ?v=26)', /\?v=27/.test(html) && !/\?v=2[0-6]\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=27', /const VERSION = 27;/.test(src('./aretoria.js')));
 }
 
 {
@@ -761,12 +761,32 @@ console.log('\n=== ambient weather scene ===\n');
   const css = src('./aretoria.css');
   assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
   const sw = src('./sw.js');
-  assert('SW is mec-v26 and does not precache guardians or realms', /mec-v26/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
-  assert('Axial hub keeps shrine (no painted Axial backdrop required)', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
+  assert('SW is mec-v27 and does not precache guardians or realms', /mec-v27/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
   const guideText = JSON.stringify(GUIDE);
   assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
   assert('About mentions painted guardians / realm scenes', /painted/.test(src('./index.html')));
   assert('warrior types still shown in dialogue titles', /guardianRole\(r\).*warrior|warrior/.test(aj) && REALMS.every((r) => r.guardian.warrior));
+}
+
+
+{
+  console.log('\n--- Aretoria v27: Axial hub painted backdrop (entry still shrine) ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert('HUB.realmBackdrop is RP(axial)', HUB.realmBackdrop === RP('axial') && RP('axial') === 'assets/aretoria/realms/axial.jpg');
+  assert('axial backdrop exists on disk', existsSync(new URL(HUB.realmBackdrop, import.meta.url)));
+  assert('axial backdrop is web-sized (<200 KB)', statSync(new URL(HUB.realmBackdrop, import.meta.url)).size < 200000);
+  assert('realmBackdropPath(HUB) returns axial.jpg', realmBackdropPath(HUB) === RP('axial'));
+  const aj = noComments(src('./aretoria.js'));
+  assert('hub view uses paintedScene via HUB backdrop (not SHRINE_IMAGE for axial scene)', /realmBackdropPath\(HUB\)/.test(aj) && /paintedScene/.test(aj));
+  assert('entry cinematic still references SHRINE_IMAGE', /backgroundImage = `url\('\$\{SHRINE_IMAGE\}'\)`/.test(aj) || /url\('\$\{SHRINE_IMAGE\}'\)/.test(aj));
+  assert('renderWorld no longer forces SCENES.axial(SHRINE_IMAGE) as the hub path', !/SCENES\.axial\(SHRINE_IMAGE\)/.test(aj) || /painted \? paintedScene/.test(aj));
+  // Stronger: hub prefers painted; shrine only as fallback when painted missing
+  assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /hub \? SCENES\.axial\(SHRINE_IMAGE\)/.test(aj));
+  const sw = src('./sw.js');
+  assert('SW mec-v27 does not precache axial.jpg / realms/', /mec-v27/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
+  assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

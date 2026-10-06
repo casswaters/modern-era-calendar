@@ -11,16 +11,18 @@
  * Esc or ✕ leaves at once.
  * v26: painted guardian portraits, Irishnu the Guide portrait, and realm painted backdrops
  * (lazy-loaded; drawn SVG / CSS scenes remain the fallback).
+ * v27: Axial hub uses its own painted floating-island backdrop (realms/axial.jpg); the
+ * entry cinematic still flies through the shrine photo (SHRINE_IMAGE).
  */
 import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath
-} from './aretoria-data.js?v=26';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=26';
+} from './aretoria-data.js?v=27';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=27';
 
-const VERSION = 26;
+const VERSION = 27;
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -221,8 +223,11 @@ function onKey(e) {
 /* ---------- scenes ---------- */
 function renderWorld(id) {
   const r = realmById(id);
-  const painted = id !== 'axial' ? realmBackdropPath(r) : null;
-  const sc = id === 'axial' ? SCENES.axial(SHRINE_IMAGE) : (painted ? paintedScene(painted, SCENES[id]()) : SCENES[id]());
+  const hub = id === 'axial';
+  // Hub: painted Axial backdrop (HUB.realmBackdrop); entry cinematic still uses SHRINE_IMAGE.
+  const painted = hub ? realmBackdropPath(HUB) : realmBackdropPath(r);
+  const fallback = hub ? SCENES.axial() : SCENES[id]();
+  const sc = painted ? paintedScene(painted, fallback) : (hub ? SCENES.axial(SHRINE_IMAGE) : fallback);
   $('.ar-sky').style.background = sc.sky;
   $('.ar-fog').style.background = sc.fog || 'none';
   $('.ar-layers').innerHTML = sc.layers.map((l) => `<div class="ar-layer" data-depth="${l.depth}">${l.html}</div>`).join('');
