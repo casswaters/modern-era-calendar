@@ -1,31 +1,41 @@
 /**
  * Aretoria v1 — the enterable portal (lazy-loaded from portal.js on "Enter the Realms").
  * Full-screen overlay #aretoria: cinematic entry over Cassidy's island shrine, the Axial
- * hub (the one whole that holds every realm), seven realm environments, drawn realm hosts,
+ * hub (the one whole that holds every realm), seven realm environments, each hosted by its
+ * Guardian (drawn figure, or a portrait from assets/aretoria/guardians/ once one is set),
  * Cassidy's own portraits as virtue advisors, a Hall of Virtues and his Creed.
  * All dialogue is scripted (no AI, no network beyond loading images from this site).
+ *
+ * v25: the opening and closing narration lines stay up for readMs(text) (≈4 s + 60 ms per
+ * character) with a "tap to continue" hint; click/tap anywhere, Enter or Space advances,
+ * Esc or ✕ leaves at once.
  */
 import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
-  reflectionKey, isoDate, tokenContext, fillTokens,
-  advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug
-} from './aretoria-data.js?v=24';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=24';
+  reflectionKey, isoDate, tokenContext, fillTokens, readMs,
+  advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
+  guardianRole, guardianLine, guardianPortraitPath
+} from './aretoria-data.js?v=25';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=25';
 
-const VERSION = 23;
+const VERSION = 25;
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const realmById = (id) => REALMS.find((r) => r.id === id);
-const HUB_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence']; // warm → violet (spectrum / chakra colour order)
+const HUB_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence']; // warm → violet (spectrum order)
 
 let root = null;
 let S = {
   open: false, view: 'axial', pushed: false, returnFocus: null,
   dlg: null, typing: null, raf: 0, fx: null,
-  px: 0, py: 0, tx: 0, ty: 0, introTimer: [], outroTimer: null, lastT: 0
+  px: 0, py: 0, tx: 0, ty: 0, introTimer: [], outroTimer: null, lastT: 0,
+  badPortraits: new Set()
 };
+const coarse = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+const continueText = () => (coarse() ? 'Tap to continue' : 'Click or press Enter to continue');
+const HINT_DELAY_MS = 1200; // the "continue" hint fades in shortly after a narration line appears
 const $ = (sel) => root.querySelector(sel);
 
 /* ---------- CSS (lazy) ---------- */
@@ -97,24 +107,38 @@ function build() {
     <section class="ar-panel ar-hall" hidden aria-label="Hall of Virtues"></section>
     <section class="ar-panel ar-creed" hidden aria-label="${esc(CREED.title)}"></section>
     <div class="ar-flash"></div>
-    <div class="ar-intro" hidden>
+    <div class="ar-intro" hidden tabindex="-1" aria-label="Entering Aretoria">
       <div class="ar-intro-img"></div>
       <div class="ar-intro-rush"></div>
       <svg class="ar-intro-arch" viewBox="0 0 120 170" aria-hidden="true"><defs><linearGradient id="ar-ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1c1"/><stop offset=".5" stop-color="#e3bf6c"/><stop offset="1" stop-color="#9c7330"/></linearGradient></defs>
         <path d="M10 168 L10 60 A50 50 0 0 1 110 60 L110 168" fill="none" stroke="url(#ar-ig)" stroke-width="5"/><path d="M20 168 L20 62 A40 40 0 0 1 100 62 L100 168" fill="none" stroke="#fff1c1" stroke-width="1.2" opacity=".7"/></svg>
-      <p class="ar-intro-line"></p>
+      <p class="ar-intro-line" aria-live="polite"></p>
       <div class="ar-intro-flare"></div>
-      <div class="ar-intro-skip">Tap to enter</div>
+      <div class="ar-narr-hint" aria-hidden="true"></div>
+      <button type="button" class="ar-btn ar-narr-x" aria-label="Leave Aretoria">✕</button>
     </div>
-    <div class="ar-outro" hidden><p></p></div>`;
+    <div class="ar-outro" hidden>
+      <p aria-live="polite"></p>
+      <div class="ar-narr-hint" aria-hidden="true"></div>
+      <button type="button" class="ar-btn ar-narr-x" aria-label="Leave Aretoria now">✕</button>
+    </div>`;
   document.body.appendChild(root);
 
   $('.ar-x').addEventListener('click', () => close());
   $('.ar-back').addEventListener('click', () => travel('axial'));
   $('.ar-dlg-close').addEventListener('click', () => closeDialogue());
   $('.ar-dlg-text').addEventListener('click', () => finishTyping());
-  $('.ar-intro').addEventListener('click', () => finishIntro());
-  $('.ar-outro').addEventListener('click', () => finishOutro());
+  // Narration lines: a tap/click anywhere advances; their own ✕ leaves at once.
+  $('.ar-intro').addEventListener('click', (e) => {
+    if (e.target.closest('.ar-narr-x')) { e.stopPropagation(); return exitNow(); }
+    advanceIntro();
+  });
+  $('.ar-outro').addEventListener('click', (e) => {
+    if (e.target.closest('.ar-narr-x')) { e.stopPropagation(); return finishOutro(); }
+    leaveOutro();
+  });
+  // The stage never scrolls (a focused edge figure could otherwise nudge it sideways on phones).
+  root.addEventListener('scroll', () => { if (root.scrollLeft || root.scrollTop) { root.scrollLeft = 0; root.scrollTop = 0; } });
   // Long advisor rows scroll sideways with an ordinary mouse wheel.
   root.addEventListener('wheel', (e) => {
     const row = e.target.closest && e.target.closest('.ar-adv-row');
@@ -165,16 +189,27 @@ function action(act, el) {
   else if (act === 'panel-close') closePanels();
 }
 
+const isAdvanceKey = (e) => e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar';
+const narrating = (sel) => { const el = $(sel); return !el.hidden && !el.classList.contains('done'); };
+
 function onKey(e) {
+  // Opening / closing narration: Enter or Space advances, Esc leaves at once.
+  if (narrating('.ar-outro')) {
+    if (e.key === 'Escape') { e.preventDefault(); return finishOutro(); }
+    if (isAdvanceKey(e) && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.ar-narr-x'))) { e.preventDefault(); leaveOutro(); }
+    return;
+  }
+  if (narrating('.ar-intro')) {
+    if (e.key === 'Escape') { e.preventDefault(); return exitNow(); }
+    if (isAdvanceKey(e) && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.ar-narr-x'))) { e.preventDefault(); advanceIntro(); }
+    return;
+  }
   if (e.key === 'Escape') {
     e.preventDefault();
-    if (!$('.ar-outro').hidden) return finishOutro();
-    if (!$('.ar-intro').hidden) return finishIntro();
     if (!$('.ar-hall').hidden || !$('.ar-creed').hidden) return closePanels();
     if (S.dlg) return closeDialogue();
     return close();
   }
-  if (!$('.ar-intro').hidden) { finishIntro(); return; }
   if (S.dlg && /^[1-4]$/.test(e.key) && document.activeElement !== $('.ar-dlg-input')) {
     const b = root.querySelectorAll('.ar-choice')[+e.key - 1];
     if (b) { e.preventDefault(); b.click(); }
@@ -249,11 +284,25 @@ function renderRealmUI(id) {
         `<span class="ar-frame"><img src="${v.portrait}" alt="" loading="lazy" decoding="async"></span><span class="ar-adv-name">${esc(v.name)}</span></button>`).join('') +
       `</div></div>`
     : '';
-  $('.ar-realmui').innerHTML =
-    `<button type="button" class="ar-host" data-act="host" aria-label="Speak with ${esc(r.guardian.name)}, ${esc(r.guardian.title)}">${figureSvg(fig, 'h' + id)}<span class="ar-host-name">${esc(r.guardian.name)}</span></button>` + strip;
+  const photo = portraitFor(r);
+  const figureHost = `${figureSvg(fig, 'h' + id)}<span class="ar-host-name">${esc(r.guardian.name)}</span>`;
+  const host = photo
+    ? `<button type="button" class="ar-host ar-host-photo" data-act="host" aria-label="Speak with ${esc(guardianLine(r))}">` +
+      `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"></span><span class="ar-host-name">${esc(r.guardian.name)}</span></button>`
+    : `<button type="button" class="ar-host" data-act="host" aria-label="Speak with ${esc(guardianLine(r))}">${figureHost}</button>`;
+  $('.ar-realmui').innerHTML = host + strip;
+  if (photo) {
+    // Missing or broken portrait file → fall back to the drawn figure for the rest of the visit.
+    const img = $('.ar-host-photo img');
+    img.addEventListener('error', () => {
+      S.badPortraits.add(photo);
+      const b = $('.ar-host-photo'); if (!b) return;
+      b.classList.remove('ar-host-photo'); b.innerHTML = figureHost;
+    }, { once: true });
+  }
   const lore = $('.ar-lore');
   const tags = (r.virtues.length ? r.virtues : r.aspects || []).slice(0, 8).map((v) => `<span>${esc(v)}</span>`).join('');
-  lore.innerHTML = `<div class="ar-lore-temple">${esc(r.temple)}</div><p>${esc(r.templeDesc)}</p><p class="ar-lore-land">${esc(r.landscape)}</p><div class="ar-lore-tags">${tags}</div>`;
+  lore.innerHTML = `<div class="ar-lore-temple">${esc(r.temple)}</div><p class="ar-lore-guardian">${esc(guardianLine(r))}</p><p>${esc(r.templeDesc)}</p><p class="ar-lore-land">${esc(r.landscape)}</p><div class="ar-lore-tags">${tags}</div>`;
   lore.hidden = false;
 }
 
@@ -272,13 +321,23 @@ function showView(id) {
     hint('Tap a gate to travel · tap Irishnu to talk');
   } else {
     const r = realmById(id);
-    setTitle(`The ${r.name} Realm`, `${r.temple} · ${r.guardian.name}${r.guardian.source === 'notes' ? ' ' + r.guardian.title : ''}`);
+    setTitle(`The ${r.name} Realm`, `${r.temple} · ${guardianSub(r)}`);
     renderRealmUI(id);
     const n = advisorsFor(id).length;
     hint(`Tap ${r.guardian.source === 'notes' ? r.guardian.name : 'the Guardian'} to speak${n ? ` · ${n} advisor${n > 1 ? 's' : ''} wait here` : ''}`);
   }
   S.px = S.tx; S.py = S.ty;
   applyParallax(true);
+}
+
+/** Header sub-line: "Valorix, Guardian of Courage" / "Guardian of the Veil, the Veiled Sentinel". */
+function guardianSub(r) {
+  return r.guardian.source === 'notes' ? `${r.guardian.name}, ${guardianRole(r)}` : `${r.guardian.name}, ${r.guardian.title}`;
+}
+/** A Guardian's portrait (assets/aretoria/guardians/<realm>.jpg) when set and not known to be broken. */
+function portraitFor(r) {
+  const p = guardianPortraitPath(r);
+  return p && !S.badPortraits.has(p) ? p : null;
 }
 
 function travel(id, fromEl) {
@@ -440,8 +499,12 @@ function speakerFor(opts) {
   if (opts.kind === 'guide') return { name: GUIDE.name, title: GUIDE.title, tree: GUIDE.dialogue, portrait: figureSvg('irishnu', 'pirs', true), key: null, el: '.ar-guide' };
   if (opts.kind === 'host') {
     const r = realmById(opts.realm);
-    return { name: r.guardian.name, title: r.guardian.source === 'notes' ? r.guardian.title : r.guardian.title, tree: r.dialogue,
-      portrait: figureSvg(FIGURE_FOR[r.id], 'p' + r.id, true), key: reflectionKey(todayIso(), r.id), el: '.ar-realmui .ar-host' };
+    const g = r.guardian;
+    const photo = portraitFor(r);
+    return { name: g.name, title: g.source === 'notes' ? `${guardianRole(r)} · ${g.warrior}` : `${g.title} · Shadow Realm`, tree: r.dialogue,
+      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport">` : figureSvg(FIGURE_FOR[r.id], 'p' + r.id, true),
+      key: reflectionKey(todayIso(), r.id), el: '.ar-realmui .ar-host',
+      stage: photo ? { src: photo, label: guardianLine(r), wide: true } : null, realm: r };
   }
   const v = opts.virtue;
   return { name: advisorTitle(v), title: `${realmById(v.realm).name} Realm`, tree: advisorDialogue(v),
@@ -456,21 +519,26 @@ function openDialogue(opts) {
   const d = $('.ar-dlg');
   d.classList.toggle('ar-dlg-photo', !!sp.virtue);
   $('.ar-dlg-portrait').innerHTML = sp.portrait;
+  const gp = $('.ar-dlg-portrait .ar-gport');
+  if (gp && sp.realm) gp.addEventListener('error', () => { S.badPortraits.add(gp.getAttribute('src')); $('.ar-dlg-portrait').innerHTML = figureSvg(FIGURE_FOR[sp.realm.id], 'p' + sp.realm.id, true); }, { once: true });
   $('.ar-dlg-name').innerHTML = `${esc(sp.name)}<span>${esc(sp.title)}</span>`;
   d.setAttribute('aria-label', `Conversation with ${sp.name}`);
   d.hidden = false;
   root.classList.add('ar-talking');
   const el = sp.el && root.querySelector(sp.el);
   if (el) el.classList.add('speaking');
-  if (sp.virtue) showStage(sp.virtue);
+  if (sp.virtue) showStage({ src: sp.virtue.portrait, label: advisorTitle(sp.virtue), wide: !!sp.virtue.wide });
+  else if (sp.stage) showStage(sp.stage);
   hint('');
   renderNode(S.dlg.node);
 }
 
-function showStage(v) {
+function showStage({ src, label, wide }) {
   const st = $('.ar-stage');
-  st.innerHTML = `<div class="ar-stage-frame${v.wide ? ' wide' : ''}"><img src="${v.portrait}" alt="Portrait of the ${esc(advisorTitle(v))}"></div><div class="ar-stage-name">${esc(advisorTitle(v))}</div>`;
+  st.innerHTML = `<div class="ar-stage-frame${wide ? ' wide' : ''}"><img src="${esc(src)}" alt="Portrait of ${/^Advisor/.test(label) ? 'the ' : ''}${esc(label)}"></div><div class="ar-stage-name">${esc(label)}</div>`;
   st.hidden = false;
+  const img = st.querySelector('img');
+  img.addEventListener('error', () => { S.badPortraits.add(src); st.classList.remove('show'); st.hidden = true; st.innerHTML = ''; }, { once: true });
   requestAnimationFrame(() => st.classList.add('show'));
 }
 
@@ -484,7 +552,7 @@ function closeDialogue(silent) {
   const wasOpen = !!S.dlg;
   S.dlg = null;
   if (wasOpen) restoreFocus();
-  if (wasOpen && !silent) hint(S.view === 'axial' ? 'Tap a gate to travel · tap Irishnu to talk' : 'Tap a figure or advisor to speak');
+  if (wasOpen && !silent) hint(S.view === 'axial' ? 'Tap a gate to travel · tap Irishnu to talk' : 'Tap the Guardian or an advisor to speak');
 }
 
 function renderNode(id) {
@@ -627,6 +695,19 @@ function closePanels() {
 }
 
 /* ---------- entry + exit ---------- */
+/* The opening and closing lines hold for readMs(text) (≈4 s + 60 ms per character) so they
+   can be read comfortably; a subtle "tap to continue" hint appears, and a tap/click
+   anywhere, Enter or Space moves on sooner. Esc or ✕ leaves Aretoria at once. Reduced
+   motion: no zoom or fades, same reading time. */
+const LINE_FADE_IN_MS = 1300; // .35 s delay + ~1 s rise before the opening line is fully visible
+
+function showNarrHint(el) {
+  const h = el.querySelector('.ar-narr-hint');
+  h.textContent = continueText();
+  h.classList.remove('show');
+  return setTimeout(() => h.classList.add('show'), reduced() ? 0 : HINT_DELAY_MS);
+}
+
 function startIntro(target) {
   const intro = $('.ar-intro');
   S.introTarget = target || null;
@@ -642,15 +723,33 @@ function startIntro(target) {
   intro.style.setProperty('--as', `${(0.24 * ih * s) / 170}`);
   $('.ar-intro-line').textContent = OPENING;
   S.introTimer.forEach(clearTimeout); S.introTimer = [];
+  S.introTimer.push(showNarrHint(intro));
+  const hold = readMs(OPENING);
   if (reduced()) {
     intro.classList.add('still');
-    S.introTimer.push(setTimeout(finishIntro, 3200));
+    S.introTimer.push(setTimeout(finishIntro, hold));
     return;
   }
   requestAnimationFrame(() => intro.classList.add('play'));
-  S.introTimer.push(setTimeout(() => intro.classList.add('zoom'), 2700));
-  S.introTimer.push(setTimeout(() => intro.classList.add('flare'), 3500));
-  S.introTimer.push(setTimeout(finishIntro, 3900));
+  S.introTimer.push(setTimeout(beginIntroZoom, LINE_FADE_IN_MS + hold));
+}
+
+/** Fly through the shrine doorway, then enter the hub (or the requested realm). */
+function beginIntroZoom() {
+  const intro = $('.ar-intro');
+  if (intro.hidden || intro.classList.contains('zoom') || intro.classList.contains('done')) return;
+  S.introTimer.forEach(clearTimeout); S.introTimer = [];
+  intro.classList.add('zoom');
+  S.introTimer.push(setTimeout(() => intro.classList.add('flare'), 800));
+  S.introTimer.push(setTimeout(finishIntro, 1200));
+}
+
+/** User asked to continue: play the short fly-through (or skip straight on if it is already playing / motion is reduced). */
+function advanceIntro() {
+  const intro = $('.ar-intro');
+  if (intro.hidden || intro.classList.contains('done')) return;
+  if (reduced() || intro.classList.contains('zoom')) return finishIntro();
+  beginIntroZoom();
 }
 
 function finishIntro() {
@@ -659,10 +758,18 @@ function finishIntro() {
   S.introTimer.forEach(clearTimeout); S.introTimer = [];
   intro.classList.add('done');
   setTimeout(() => { intro.hidden = true; intro.className = 'ar-intro'; }, reduced() ? 50 : 450);
+  if (document.activeElement === intro || !root.contains(document.activeElement)) $('.ar-x').focus({ preventScroll: true });
   const t = S.introTarget; S.introTarget = null;
   if (t && realmById(t)) { showView(t); return; }
   let met = false; try { met = !!localStorage.getItem(MET_KEY); } catch { /* ignore */ }
   if (!met) setTimeout(() => { if (S.open && S.view === 'axial') openDialogue({ kind: 'guide' }); }, reduced() ? 60 : 500);
+}
+
+/** Esc / ✕ during the opening line: leave Aretoria straight away (no closing line). */
+function exitNow() {
+  S.introTimer.forEach(clearTimeout); S.introTimer = [];
+  $('.ar-intro').hidden = true;
+  close({ immediate: true });
 }
 
 export async function openAretoria(opts = {}) {
@@ -679,7 +786,7 @@ export async function openAretoria(opts = {}) {
   showView('axial');
   startLoop();
   startIntro(opts.realm);
-  $('.ar-x').focus({ preventScroll: true });
+  $('.ar-intro').focus({ preventScroll: true });
 }
 
 export function close(o = {}) {
@@ -689,21 +796,37 @@ export function close(o = {}) {
   closeDialogue(true); closePanels();
   S.introTimer.forEach(clearTimeout); S.introTimer = [];
   $('.ar-intro').hidden = true;
+  S.closeOpts = o;
+  if (o.immediate) return finishOutro();
   out.querySelector('p').textContent = CLOSING;
   out.hidden = false; out.className = 'ar-outro';
-  S.closeOpts = o;
   requestAnimationFrame(() => out.classList.add('play'));
+  clearTimeout(S.outroTimer); clearTimeout(S.outroHintTimer);
+  S.outroHintTimer = showNarrHint(out);
+  // Fade-in (~.6 s) + reading time, then a gentle fade out.
+  S.outroTimer = setTimeout(leaveOutro, (reduced() ? 0 : 600) + readMs(CLOSING));
+  // Keep keyboard focus inside the overlay (✕ stays reachable by Tab; Enter/Space continue).
+  out.setAttribute('tabindex', '-1');
+  out.focus({ preventScroll: true });
+}
+
+/** Continue past the closing line: short fade, then leave. */
+function leaveOutro() {
+  const out = $('.ar-outro');
+  if (out.hidden || out.classList.contains('done')) return;
   clearTimeout(S.outroTimer);
-  S.outroTimer = setTimeout(finishOutro, reduced() ? 2200 : 2600);
+  if (reduced()) return finishOutro();
+  out.classList.add('done');
+  S.outroTimer = setTimeout(finishOutro, 600);
 }
 
 function finishOutro() {
-  clearTimeout(S.outroTimer);
+  clearTimeout(S.outroTimer); clearTimeout(S.outroHintTimer);
   if (!S.open) return;
   S.open = false;
   cancelAnimationFrame(S.raf);
   root.hidden = true;
-  $('.ar-outro').hidden = true;
+  $('.ar-outro').hidden = true; $('.ar-outro').className = 'ar-outro';
   document.documentElement.classList.remove('ar-lock');
   const fromPop = S.closeOpts && S.closeOpts.fromPop;
   if (S.pushed && !fromPop) { S.pushed = false; try { history.back(); } catch { /* ignore */ } }

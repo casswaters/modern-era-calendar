@@ -548,7 +548,8 @@ export const SCENES = {
 /* ========================================================================== */
 /* Realm hosts (guardians) — drawn figures, viewBox 0 0 240 480               */
 /* Cassidy's own portraits are used for the virtue advisors; these drawn      */
-/* figures stand in for the realm hosts, who have no portrait yet.            */
+/* figures stand in for the realm Guardians until a guardian portrait is set  */
+/* (realm.guardianPortrait in aretoria-data.js), and remain the fallback.     */
 /* ========================================================================== */
 
 const FIG = {
@@ -559,7 +560,7 @@ const FIG = {
   moder: { aura: '#8fd8d0', robe: ['#8fd8d0', '#3f8f8c', '#0f3a40'], trim: '#e8fffb', face: '#f2e6d6', hair: '#2f4a52', head: 'veil', emblem: 'orbs', pattern: 'silk', pose: 'open', silks: true },
   auria: { aura: '#c9a7f0', robe: ['#4a2a86', '#22114a', '#08051a'], trim: '#f3d9ff', face: '#efe0f4', hair: '#2a1846', head: 'hair', crown: 'stars', emblem: 'galaxy', pattern: 'stars', pose: 'chest' },
   veil: { aura: '#8a7fa6', robe: ['#2e2540', '#161022', '#07050c'], trim: '#8a7fa6', face: '#120c1c', head: 'hood', emblem: 'flame', pattern: 'cracks', pose: 'chest', hidden: true },
-  irishnu: { aura: '#f1d58e', robe: ['#f6f2ea', '#cfc6e0', '#3e3766'], trim: '#d9b56a', face: '#efdcc6', head: 'hood', crown: 'circlet', emblem: 'staff', pattern: 'prism', pose: 'chest' }
+  irishnu: { aura: '#f1d58e', robe: ['#f6f2ea', '#cfc6e0', '#3e3766'], trim: '#d9b56a', face: '#efdcc6', head: 'hood', crown: 'circlet', emblem: 'staff', pattern: 'prism', pose: 'chest', glint: true }
 };
 export const FIGURE_FOR = { wisdom: 'sophia', courage: 'valorix', humanity: 'amara', justice: 'justar', temperance: 'moder', transcendence: 'auria', shadow: 'veil', irishnu: 'irishnu' };
 
@@ -612,7 +613,11 @@ function figEmblem(c, p) {
 function figHead(c, p) {
   const face = `<ellipse cx="120" cy="92" rx="16" ry="20" fill="url(#${p}-face)"/>`;
   const eyes = c.hidden ? `<circle cx="113" cy="94" r="1.4" fill="#b9a6e8" opacity=".7" class="ar-flicker"/><circle cx="127" cy="94" r="1.4" fill="#b9a6e8" opacity=".7" class="ar-flicker"/>` :
-    `<path d="M110 92 q4 3 8 0 M122 92 q4 3 8 0" stroke="#5a4636" stroke-width="1.2" fill="none" opacity=".7"/><path d="M120 96 l-1.5 6 h3" stroke="#000" stroke-opacity=".15" fill="none"/><path d="M115 106 q5 2 10 0" stroke="#a0665a" stroke-width="1" fill="none" opacity=".5"/>`;
+    c.glint
+      // The Guide: the faintest lopsided smile and a small glint in one eye (only an attentive eye will notice).
+      ? `<path d="M110 92 q4 3 8 0 M122 91.4 q4 2.4 8 .4" stroke="#5a4636" stroke-width="1.2" fill="none" opacity=".7"/><path d="M120 96 l-1.5 6 h3" stroke="#000" stroke-opacity=".15" fill="none"/><path d="M115 106.2 q5.5 1.6 10.6 -1.4" stroke="#a0665a" stroke-width="1" fill="none" opacity=".55"/>` +
+        `<path d="M131.6 88.6 l.5 1.3 1.3 .5 -1.3 .5 -.5 1.3 -.5 -1.3 -1.3 -.5 1.3 -.5 Z" fill="#fff8e0" opacity=".85" class="ar-twinkle"/>`
+      : `<path d="M110 92 q4 3 8 0 M122 92 q4 3 8 0" stroke="#5a4636" stroke-width="1.2" fill="none" opacity=".7"/><path d="M120 96 l-1.5 6 h3" stroke="#000" stroke-opacity=".15" fill="none"/><path d="M115 106 q5 2 10 0" stroke="#a0665a" stroke-width="1" fill="none" opacity=".5"/>`;
   const neck = `<rect x="113" y="106" width="14" height="18" fill="url(#${p}-face)"/>`;
   if (c.head === 'helm') {
     const mane = [[94, 70, 16], [146, 70, 16], [86, 96, 14], [154, 96, 14], [100, 54, 15], [140, 54, 15], [120, 46, 17], [80, 120, 12], [160, 120, 12]]

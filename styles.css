@@ -34,7 +34,7 @@
   --display: "Cinzel", "Trajan Pro", "Cormorant Garamond", "Palatino Linotype", Georgia, serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --thread: linear-gradient(90deg, transparent, rgba(217,181,106,.15) 12%, var(--gold) 50%, rgba(217,181,106,.15) 88%, transparent);
-  /* Chakra / realm colours (V2) — used only as tiny dots */
+  /* Realm colours — used only as tiny dots */
   --realm-root: #c8463d;
   --realm-sacral: #e8893a;
   --realm-solar: #ecc94b;

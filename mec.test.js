@@ -21,7 +21,8 @@ import {
 import {
   REALMS, GUIDE, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
-  advisorsFor, advisorDialogue, advisorKey, slugify
+  advisorsFor, advisorDialogue, advisorKey, slugify,
+  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath, GP, GUARDIAN_DIR
 } from './aretoria-data.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
@@ -681,8 +682,61 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is mec-v24 and precaches Aretoria code', /mec-v24/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is mec-v25 and precaches Aretoria code', /mec-v25/.test(sw) && !/mec-v24/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
+}
+
+{
+  console.log('\n--- Aretoria v25: narration timing, Irishnu, Guardians, wording ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // 1. narration lines stay readable
+  assert('readMs: at least 4 s even for an empty line', readMs('') >= 4000 && READ_BASE_MS >= 4000);
+  assert('readMs: ≈4 s + 60 ms per character', readMs('x'.repeat(100)) === READ_BASE_MS + 100 * READ_PER_CHAR_MS && READ_PER_CHAR_MS >= 60);
+  assert('readMs grows with length', readMs('a short line') < readMs(OPENING));
+  assert('opening line holds ≥ 4 s + 60 ms/char (≈18 s)', readMs(OPENING) >= 4000 + 60 * OPENING.length);
+  assert('closing line holds ≥ 4 s + 60 ms/char', readMs(CLOSING) >= 4000 + 60 * CLOSING.length);
+  const aj = noComments(src('./aretoria.js'));
+  assert('intro + outro timers use readMs (no fixed 2.6–3.9 s fades)', /readMs\(OPENING\)/.test(aj) && /readMs\(CLOSING\)/.test(aj) && !/setTimeout\(finishIntro, 3900\)/.test(aj) && !/setTimeout\(finishOutro, reduced\(\) \? 2200 : 2600\)/.test(aj));
+  assert('continue hint text present (tap / click / Enter)', /Tap to continue/.test(aj) && /press Enter to continue/.test(aj) && /ar-narr-hint/.test(aj));
+  assert('Enter and Space advance narration', /e\.key === 'Enter'/.test(aj) && /e\.key === ' '/.test(aj) && /advanceIntro\(\)/.test(aj) && /leaveOutro\(\)/.test(aj));
+  assert('Esc / ✕ on narration leave at once', /exitNow\(\)/.test(aj) && /ar-narr-x/.test(aj) && /immediate: true/.test(aj));
+  assert('reduced motion still honoured in narration', /if \(reduced\(\)\) \{\s*intro\.classList\.add\('still'\)/.test(aj));
+  const css = src('./aretoria.css');
+  assert('CSS: hint styled + outro no longer fades out on its own', /\.ar-narr-hint\.show/.test(css) && !/78% \{ opacity: 1; \} 100% \{ opacity: 0; \}/.test(css));
+  // 2. Irishnu: the Guide (his wit stays unannounced)
+  assert('Irishnu is titled the Guide', GUIDE.name === 'Irishnu' && GUIDE.title === 'the Guide');
+  const guideText = JSON.stringify(GUIDE);
+  assert('Irishnu is never labelled a jester/fool/clown in visible text', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
+  assert('Irishnu keeps the lore: axis, one whole, Shadow, real-circumstances question', /one whole/.test(guideText) && /Shadow/.test(guideText) && /real circumstances/.test(guideText) && /Eirena/.test(guideText));
+  assert('Irishnu dialogue rewritten (v24 greeting gone)', !/I keep the doors and walk beside you/.test(guideText));
+  const art = src('./aretoria-art.js');
+  assert('Irishnu figure keeps hood + staff, no costume', /irishnu: \{[^}]*head: 'hood'[^}]*emblem: 'staff'/.test(art) && !/jester|bells|motley|harlequin/i.test(noComments(art)));
+  // 3. Guardians
+  assert('every realm host is a Guardian with a warrior type', REALMS.every((r) => r.guardian.warrior && guardianRole(r).startsWith('Guardian of')));
+  const types = Object.fromEntries(REALMS.map((r) => [r.id, r.guardian.warrior]));
+  assert('warrior types fit the realms', types.courage === 'storm-forged champion' && types.justice === 'paladin of the balance' && types.humanity === 'warrior-healer' && types.temperance === 'disciplined monk-warrior' && types.wisdom === 'battle-sage' && types.transcendence === 'celestial seraph-knight' && types.shadow === 'veiled sentinel', JSON.stringify(types));
+  assert('every Guardian introduces itself as Guardian in its greeting', REALMS.every((r) => /Guardian of/.test(r.dialogue.nodes.greet.text)));
+  assert('guardianLine reads naturally', guardianLine(REALMS.find((r) => r.id === 'courage')) === 'Valorix the Stormheart, Guardian of Courage, a storm-forged champion');
+  assert('every realm has a guardianPortrait field (null until art arrives)', REALMS.every((r) => 'guardianPortrait' in r && (r.guardianPortrait === null || r.guardianPortrait === GP(r.id))));
+  assert('GP builds assets/aretoria/guardians/<realm>.jpg', GP('courage') === 'assets/aretoria/guardians/courage.jpg' && GUARDIAN_DIR === 'assets/aretoria/guardians/');
+  assert('guardianPortraitPath: null → drawn figure, string → path', guardianPortraitPath({ guardianPortrait: null }) === null && guardianPortraitPath({ guardianPortrait: GP('wisdom') }) === GP('wisdom'));
+  assert('any guardian portrait that is set exists on disk', REALMS.filter((r) => r.guardianPortrait).every((r) => existsSync(new URL(r.guardianPortrait, import.meta.url))));
+  const dataSrc = src('./aretoria-data.js');
+  assert('GP() is declared before REALMS (safe to use inside realm entries)', dataSrc.indexOf('export const GP =') > -1 && dataSrc.indexOf('export const GP =') < dataSrc.indexOf('export const REALMS ='));
+  assert('guardian portrait is lazy with drawn-figure fallback', /ar-host-photo/.test(aj) && /loading="lazy"/.test(aj) && /badPortraits\.add/.test(aj));
+  const sw = src('./sw.js');
+  assert('SW does not precache guardian portraits', !/guardians\//.test(noComments(sw)));
+  // 3b/4. wording
+  const visible = [JSON.stringify(REALMS), guideText, JSON.stringify(VIRTUES), ...VIRTUES.map((v) => JSON.stringify(advisorDialogue(v)))].join(' ');
+  assert('no "keeper" in Aretoria text', !/keeper/i.test(visible) && !/keeper/i.test(noComments(src('./aretoria.js'))) && !/keeper/i.test(src('./portal.js')));
+  assert('no Version 2 / chakra realms in user-facing text', !/chakra|version 2/i.test(visible + noComments(src('./aretoria.js')) + src('./portal.js') + src('./index.html')));
+  assert('Version 1 only: six virtue realms + Shadow', eq(REALMS.filter((r) => r.id !== 'shadow').map((r) => r.id).sort(), ['courage', 'humanity', 'justice', 'temperance', 'transcendence', 'wisdom']));
+  // cache-busting
+  const html = src('./index.html');
+  const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
+  assert('all asset queries are ?v=25 (none left at ?v=24)', /\?v=25/.test(html) && !/\?v=2[0-4]\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=25', /const VERSION = 25;/.test(src('./aretoria.js')));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

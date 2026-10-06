@@ -3,10 +3,15 @@
  *
  * Cosmology: V1 "horizontal" Aretoria — six VIA-virtue realms plus the Shadow Realm
  * (seven environments), entered from the Axial Realm (the shared realm of existence,
- * where Eirena the Eternal Weaver holds the golden thread). Irishnu is the advisor
- * persona who greets you in the hub. Names, temples and virtues come from Cassidy's
- * Aretoria project notes; the Shadow Realm has no named central guardian there, so it
- * uses the neutral title "Guardian of the Veil".
+ * where Eirena the Eternal Weaver holds the golden thread). Irishnu, the Guide, greets
+ * you in the hub. Names, temples and virtues come from Cassidy's Aretoria project notes;
+ * the Shadow Realm has no named central guardian there, so it uses the neutral name
+ * "Guardian of the Veil". Since v25 every realm host is presented as that realm's
+ * Guardian and described as a warrior suited to the realm (guardian.warrior).
+ *
+ * (Authoring note, never shown to visitors: Irishnu is a wise fool at heart. He does
+ * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
+ * sincere guidance always comes first and the humour is never announced or named.)
  *
  * Dialogue trees are scripted (no AI). A choice's `next` is a node id in the same tree
  * or one of: '@hub' (return to the Axial hub), '@close' (close the dialogue),
@@ -32,6 +37,18 @@ export const CREED = {
   affirmation: ["This is the nature of reality.", "This is who we are.", "I am part of this."]
 };
 
+
+/**
+ * How long a narration line (the opening line, the closing line) stays on screen before
+ * it moves on by itself: about 4 s plus 60 ms per character. Visitors can always tap,
+ * click, or press Enter/Space to move on sooner.
+ */
+export const READ_BASE_MS = 4000;
+export const READ_PER_CHAR_MS = 60;
+export function readMs(text) {
+  const n = String(text == null ? '' : text).trim().length;
+  return READ_BASE_MS + READ_PER_CHAR_MS * n;
+}
 
 /** Legacy-compatible storage key for a realm's reflection on a Gregorian date. */
 export function reflectionKey(iso, realmId) {
@@ -98,14 +115,14 @@ export const HUB = {
 export const GUIDE = {
   id: 'irishnu',
   name: 'Irishnu',
-  title: 'Advisor of Aretoria',
+  title: 'the Guide',
   source: 'notes', // name/persona from notes; appearance is not described there
   color: '#f1d58e',
   dialogue: {
     start: 'greet',
     nodes: {
       greet: {
-        text: 'Cassidy, welcome to the Axial Realm, the shared realm of existence: the one whole that holds every realm within it. Every realm of Aretoria is threaded through here. Eirena the Eternal Weaver holds the golden thread; I keep the doors and walk beside you.',
+        text: 'Ah, Cassidy. Right on time, or time is right on you; from the center it is hard to tell which. Welcome to the Axial Realm, the one whole that holds every realm within it. Eirena the Eternal Weaver holds the golden thread. I hold the doors, and, when it is needed, the traveler’s attention.',
         choices: [
           { label: 'What are the realms?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -114,15 +131,23 @@ export const GUIDE = {
         ]
       },
       realms: {
-        text: 'Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. Eighty-one virtues live among them, and the ones that belong everywhere (Beauty, Graciousness, Integrity, Purposefulness, Wonder) rest here on the axis. Each realm has a central temple and a guardian who will speak with you.',
+        text: 'Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. Call them six rooms in one house. Travelers like to call it a mansion; it still has only one front door, and you are standing in it. Eighty-one virtues live in those rooms, and the few that refuse to pick just one (Beauty, Graciousness, Integrity, Purposefulness, Wonder) stay here on the axis with me. Each realm has a temple and a Guardian, a warrior of its own kind, who will speak with you.',
         choices: [
           { label: 'Where should I go today?', next: 'today' },
           { label: 'And the Shadow Realm?', next: 'shadow' },
+          { label: 'Who are you, really?', next: 'who' },
           { label: 'Thank you. I’ll explore.', next: 'go' }
         ]
       },
+      who: {
+        text: 'Your guide. I point at doors, and now and then at the one walking through them; he is the door that matters most and opens least. Every realm out there is one face of the same whole, Cassidy, and so are you. I am simply the reminder, wearing a robe so you will take me seriously.',
+        choices: [
+          { label: 'Where should I go today?', next: 'today' },
+          { label: 'Then remind me: let me explore.', next: 'go' }
+        ]
+      },
       today: {
-        text: '{ritualLine} The {suggest} Realm suits it; its guardian waits in the {suggestTemple}. Wherever you go, end with the same question: how does this fit my real circumstances?',
+        text: '{ritualLine} I could pretend to consult the stars, but the calendar already did: the {suggest} Realm suits it, and its Guardian waits in the {suggestTemple}. Whatever door you take, keep one small question in your pocket on the way back: how does this fit my real circumstances? It is a little question. It opens all the big doors.',
         choices: [
           { label: 'Take me to {suggest}.', next: '@realm:{suggestId}' },
           { label: 'Tell me about the realms first.', next: 'realms' },
@@ -130,7 +155,7 @@ export const GUIDE = {
         ]
       },
       shadow: {
-        text: 'Aretoria walks the middle path. Darkness is not evil to deny; it is a distortion, an imbalance in becoming whole. Below the axis lies the Veil of Shadows, an obsidian labyrinth with a mirror pool and a dim flame of awareness. Go there when anger, envy or regret calls. You will not be judged.',
+        text: 'Every lamp worth lighting throws a shadow. That is not the lamp failing; that is the lamp working. Aretoria walks the middle path: darkness is not evil to deny but a distortion, an imbalance on the way to becoming whole. Below the axis lies the Veil of Shadows, an obsidian labyrinth with a mirror pool and a dim flame of awareness. Go there when anger, envy or regret calls. No one is judged there. The mirror does not even remember faces.',
         choices: [
           { label: 'What are the realms of light?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -138,7 +163,7 @@ export const GUIDE = {
         ]
       },
       go: {
-        text: 'Then choose a gate. Touch one and you will cross. To come home, follow the golden thread back to the axis. The Hall of Virtues and your Creed are kept here too. I am always here.',
+        text: 'Then choose a gate. Touch one and you will cross; I have yet to see one refuse. To come home, follow the golden thread back to the axis, the only road in Aretoria that grows shorter the farther you walk it. The Hall of Virtues and your Creed wait here too, and so do I. Leaving the center is the one thing I have never managed.',
         choices: [
           { label: 'Walk the realms', next: '@close' },
           { label: 'Open the Hall of Virtues', next: '@hall' },
@@ -153,6 +178,10 @@ export const GUIDE = {
 /* The seven environments                                                      */
 /* -------------------------------------------------------------------------- */
 
+/** Guardian portraits: assets/aretoria/guardians/<realm id>.jpg (landscape 1024×576). */
+export const GUARDIAN_DIR = 'assets/aretoria/guardians/';
+export const GP = (realmId) => `${GUARDIAN_DIR}${realmId}.jpg`;
+
 export const REALMS = [
   {
     id: 'courage', name: 'Courage', color: '#ef7a4f', order: 1,
@@ -161,15 +190,17 @@ export const REALMS = [
     landscape: 'Jagged mountains, rivers of molten determination, storm-swept peaks.',
     virtues: ['Courage', 'Assertiveness', 'Confidence', 'Determination', 'Enthusiasm', 'Optimism', 'Passion', 'Perseverance', 'Resilience', 'Tenacity', 'Honesty'],
     particles: 'embers',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Valorix', title: 'the Stormheart', source: 'notes',
-      look: 'Colossal knight armored in lightning-forged plates, mane of thunderclouds, eyes like embers.'
+      warrior: 'storm-forged champion',
+      look: 'Storm-forged champion: colossal knight armored in lightning-forged plates, mane of thunderclouds, eyes like embers.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Cassidy! The forge has been burning for you. Courage is not the absence of fear, but the thunder that drowns it out. What brings you to the Forge of Valor?',
+          text: 'Cassidy! Stand with me on the anvil-ground. I am Valorix the Stormheart, Guardian of Courage, a champion forged in the storm itself. Courage is not the absence of fear, but the thunder that drowns it out. What battle brings you to the Forge of Valor?',
           choices: [
             { label: 'Something I’ve been avoiding.', next: 'virtue' },
             { label: 'I’m angry and need somewhere to put it.', next: 'anger' },
@@ -214,15 +245,17 @@ export const REALMS = [
     landscape: 'Grand halls of marble and balanced scales amid orderly cities.',
     virtues: ['Justice', 'Fairness', 'Integrity', 'Honor', 'Loyalty', 'Trust', 'Sincerity', 'Truthfulness', 'Respect', 'Responsibility', 'Reliability', 'Dignity'],
     particles: 'dust',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Justar', title: 'the Balancer', source: 'notes',
-      look: 'Scale-bearing judge upholding fairness.'
+      warrior: 'paladin of the balance',
+      look: 'Paladin of the balance: scale-bearing holy knight upholding fairness.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Be welcome under the Scales of Equity, Cassidy. Every oath engraved on this beam was once a small choice. I do not condemn; I weigh. What would you place on the scales?',
+          text: 'Be welcome under the Scales of Equity, Cassidy. I am Justar the Balancer, Guardian of Justice, a paladin sworn to the balance. My blade stays sheathed; the scale does my fighting. Every oath engraved on this beam was once a small choice. I do not condemn; I weigh. What would you place on the scales?',
           choices: [
             { label: 'My week.', next: 'audit' },
             { label: 'What do the scales measure?', next: 'virtue' },
@@ -230,7 +263,7 @@ export const REALMS = [
           ]
         },
         virtue: {
-          text: 'Integrity, Fairness, Honor, Responsibility. Rectus the Unswerving stands like a pillar, Valoris the Oathkeeper guards your vows, Creda the Keeper safeguards trust, and Verax the Open speaks plainly. Justice begins with being honest about what was yours to carry.',
+          text: 'Integrity, Fairness, Honor, Responsibility. Rectus the Unswerving stands like a pillar, Valoris the Oath-Guardian watches over your vows, Creda the Trust-Guardian safeguards trust, and Verax the Open speaks plainly. Justice begins with being honest about what was yours to carry.',
           choices: [
             { label: 'Weigh my week with me.', next: 'audit' }
           ]
@@ -267,15 +300,17 @@ export const REALMS = [
     landscape: 'Blooming meadows, rivers of empathy, groves of bioluminescent vines, bridges of woven light.',
     virtues: ['Love', 'Empathy', 'Compassion', 'Loyalty', 'Unity', 'Kindness', 'Patience', 'Peace', 'Harmony', 'Generosity', 'Acceptance', 'Gentleness'],
     particles: 'lanterns',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Amara', title: 'the Heartbloom', source: 'notes',
-      look: 'Vine- and rose-crowned matriarch whose chest opens into an infinite garden of light.'
+      warrior: 'warrior-healer',
+      look: 'Warrior-healer: vine- and rose-crowned defender whose chest opens into an infinite garden of light.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Come in from the cold, dear one. Sit by the Hearth of Hearts. The fountain of empathy has been flowing all day, waiting for you. How is your heart, Cassidy?',
+          text: 'Come in from the cold, dear one. I am Amara the Heartbloom, Guardian of Humanity, a warrior-healer: these hands bind wounds, and when a heart must be defended, they hold the shield. Sit by the Hearth of Hearts. The fountain of empathy has been flowing all day, waiting for you. How is your heart, Cassidy?',
           choices: [
             { label: 'Full. I want to share it.', next: 'virtue' },
             { label: 'Heavy. Someone is on my mind.', next: 'heavy' },
@@ -320,15 +355,17 @@ export const REALMS = [
     landscape: 'Serene meadows and calm seas with minimalist architecture; a tempering pool.',
     virtues: ['Temperance', 'Moderation', 'Self-discipline', 'Forgiveness', 'Humility', 'Contentment', 'Tact', 'Commitment', 'Modesty'],
     particles: 'mist',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Moder', title: 'the Equilibrator', source: 'notes',
-      look: 'Silk-robed balancer harmonizing extremes.'
+      warrior: 'disciplined monk-warrior',
+      look: 'Disciplined monk-warrior: silk-robed balancer harmonizing extremes.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Breathe with the tide, Cassidy. In… and out. The Veil of Balance moves so it never has to break. Nothing here is too much and nothing is too little. What feels out of balance?',
+          text: 'Breathe with the tide, Cassidy. In… and out. I am Moder the Equilibrator, Guardian of Temperance, a monk-warrior who trained a lifetime to strike once, and to know when not to strike at all. The Veil of Balance moves so it never has to break. What feels out of balance?',
           choices: [
             { label: 'I’ve been running hot.', next: 'pool' },
             { label: 'Teach me balance.', next: 'virtue' },
@@ -373,15 +410,17 @@ export const REALMS = [
     landscape: 'Ancient forests of glowing trees, crystal-clear lakes reflecting infinite possibilities, floating libraries.',
     virtues: ['Wisdom', 'Vision', 'Understanding', 'Creativity', 'Imagination', 'Equanimity', 'Wonder', 'Orderliness', 'Purposefulness', 'Preparedness', 'Idealism', 'Flexibility', 'Ethicality'],
     particles: 'motes',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Sophia', title: 'the Eternal Oracle', source: 'notes',
-      look: 'Luminous goddess with eyes holding the weight of ages, robes woven from threads of time.'
+      warrior: 'battle-sage',
+      look: 'Battle-sage: luminous figure with eyes holding the weight of ages, robes woven from threads of time.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Welcome, Cassidy. The Prism has been turning your light into colors all day. I have no quick answers to give you, only the quiet truth that lasts. What are you seeking?',
+          text: 'Welcome, Cassidy. I am Sophia the Eternal Oracle, Guardian of Wisdom, a battle-sage who wins most battles before they begin. The Prism has been turning your light into colors all day. I have no quick answers to give you, only the quiet truth that lasts. What are you seeking?',
           choices: [
             { label: 'Clarity on a decision.', next: 'virtue' },
             { label: 'To understand my day.', next: 'reflect' },
@@ -426,15 +465,17 @@ export const REALMS = [
     landscape: 'Ethereal clouds and starry voids, with temples that phase in and out of visibility.',
     virtues: ['Gratitude', 'Hope', 'Joyfulness', 'Beauty', 'Reverence', 'Faith', 'Service', 'Thankfulness'],
     particles: 'stars',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
       name: 'Auria', title: 'the Awestruck', source: 'notes',
-      look: 'Galaxy-robed mystic inspiring wonder.'
+      warrior: 'celestial seraph-knight',
+      look: 'Celestial seraph-knight: galaxy-robed, winged, inspiring wonder.'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'Oh, Cassidy, look up. The Nebula grew a little when you arrived; it expands with every act of appreciation. What have you come to celebrate?',
+          text: 'Oh, Cassidy, look up. I am Auria the Awestruck, Guardian of Transcendence, a seraph-knight of the high stars: my wings are for lifting others, my lance for keeping wonder safe. The Nebula grew a little when you arrived; it expands with every act of appreciation. What have you come to celebrate?',
           choices: [
             { label: 'Something good happened.', next: 'virtue' },
             { label: 'I need hope.', next: 'hope' },
@@ -442,7 +483,7 @@ export const REALMS = [
           ]
         },
         virtue: {
-          text: 'Gratitude, Joy, Beauty, Reverence. Thankara the Appreciator sings over every gift, Gleam the Reveler dances, Esthara reveals splendor, and Sanctus keeps the altar. Festivals and celebrations are sacred work here. Joy shared is joy made real.',
+          text: 'Gratitude, Joy, Beauty, Reverence. Thankara the Appreciator sings over every gift, Gleam the Reveler dances, Esthara reveals splendor, and Sanctus guards the altar. Festivals and celebrations are sacred work here. Joy shared is joy made real.',
           choices: [
             { label: 'Let me give thanks.', next: 'reflect' },
             { label: 'And hope?', next: 'hope' }
@@ -480,15 +521,17 @@ export const REALMS = [
     virtues: [], // cautionary aspects, not virtues
     aspects: ['Revenge (Vexara)', 'Envy (Invidia)', 'Deceit (Slytheron)', 'Destructive Desire (Ravena)', 'Greed (Aurum)', 'Wrath'],
     particles: 'fog',
+    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
     guardian: {
-      name: 'Guardian of the Veil', title: 'Keeper of the mirror pool', source: 'neutral',
-      look: 'Hooded keeper holding the dim flame of awareness (no central guardian is named in the notes).'
+      name: 'Guardian of the Veil', title: 'the Veiled Sentinel', source: 'neutral',
+      warrior: 'veiled sentinel',
+      look: 'Veiled sentinel: hooded guardian holding the dim flame of awareness (no central guardian is named in the notes).'
     },
     dialogue: {
       start: 'greet',
       nodes: {
         greet: {
-          text: 'In Aretoria’s whole, what shadow calls? You entered the misty veil, Cassidy. That took honesty. Nothing here is judged. The mirror pool only shows what is bent, so that it can be made straight.',
+          text: 'In Aretoria’s whole, what shadow calls? I am the Guardian of the Veil, the veiled sentinel who stands watch where the light grows thin. You entered the misty veil, Cassidy. That took honesty. Nothing here is judged. The mirror pool only shows what is bent, so that it can be made straight.',
           choices: [
             { label: 'Something dark is pulling at me.', next: 'aspects' },
             { label: 'What is this place?', next: 'veil' },
@@ -531,6 +574,39 @@ export const REALMS = [
 ];
 
 export const REALM_IDS = REALMS.map((r) => r.id);
+
+/* -------------------------------------------------------------------------- */
+/* Guardians: presentation + optional portraits                                */
+/*                                                                            */
+/* To give a Guardian a portrait later: drop a landscape 1024×576 JPEG at      */
+/* assets/aretoria/guardians/<realm id>.jpg and set that realm's               */
+/* `guardianPortrait: GP('<realm id>')`. It is lazy-loaded (never precached), */
+/* and the drawn figure stays as the fallback if the file is missing.          */
+/* -------------------------------------------------------------------------- */
+
+/* GUARDIAN_DIR and GP() are defined above REALMS so realm entries can use GP(). */
+
+/** "Guardian of Courage" … "Guardian of the Shadow Realm". */
+export function guardianRole(r) {
+  return r.id === 'shadow' ? 'Guardian of the Shadow Realm' : `Guardian of ${r.name}`;
+}
+/** Full name with epithet, e.g. "Valorix the Stormheart" / "Guardian of the Veil". */
+export function guardianFullName(r) {
+  const g = r.guardian;
+  return g.source === 'notes' ? `${g.name} ${g.title}` : g.name;
+}
+/** One-line description, e.g. "Valorix the Stormheart, Guardian of Courage, a storm-forged champion". */
+export function guardianLine(r) {
+  const g = r.guardian;
+  return r.id === 'shadow'
+    ? `${g.name}, ${g.title} of the Shadow Realm`
+    : `${guardianFullName(r)}, ${guardianRole(r)}, ${article(g.warrior)} ${g.warrior}`;
+}
+function article(w) { return /^[aeiou]/i.test(w || '') ? 'an' : 'a'; }
+/** Portrait path for a realm's Guardian, or null to use the drawn figure. */
+export function guardianPortraitPath(r) {
+  return r && typeof r.guardianPortrait === 'string' && r.guardianPortrait ? r.guardianPortrait : null;
+}
 
 /* -------------------------------------------------------------------------- */
 /* Integrity checks (used by mec.test.js and as a dev-time guard)              */
@@ -792,7 +868,7 @@ export function advisorDialogue(v) {
         ]
       },
       teach: {
-        text: v.teach || `${v.name}: ${v.essence} It is one of the virtues you seek to compound within yourself, and ${realm.guardian.name} keeps it in the ${realm.temple}.`,
+        text: v.teach || `${v.name}: ${v.essence} It is one of the virtues you seek to compound within yourself, and ${realm.guardian.name}, ${guardianRole(realm)}, guards it in the ${realm.temple}.`,
         choices: [
           { label: 'Ask me your question.', next: 'reflect' },
           { label: 'Thank you.', next: 'bless' }

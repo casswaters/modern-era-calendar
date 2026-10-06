@@ -17,7 +17,7 @@ const REALMS = [
     prompt: 'Where do I need more restraint, and where more forgiveness?' },
   { id: 'transcendence', name: 'Transcendence', color: '#c9a7f0', temple: 'Nebula of Awe', guardian: 'Auria the Awestruck',
     prompt: 'What filled me with awe, hope, or gratitude recently?' },
-  { id: 'shadow', name: 'Shadow', color: '#8a7fa6', temple: 'Veil of Shadows', guardian: 'The mirror pool',
+  { id: 'shadow', name: 'Shadow', color: '#8a7fa6', temple: 'Veil of Shadows', guardian: 'Guardian of the Veil',
     prompt: 'What feeling am I resisting, and what is it trying to protect?' }
 ];
 
@@ -111,7 +111,7 @@ function closePanel() {
    simple realm panel below. */
 let aretoriaMod = null;
 function loadAretoria() {
-  if (!aretoriaMod) aretoriaMod = import('./aretoria.js?v=24').catch((err) => { aretoriaMod = null; throw err; });
+  if (!aretoriaMod) aretoriaMod = import('./aretoria.js?v=25').catch((err) => { aretoriaMod = null; throw err; });
   return aretoriaMod;
 }
 function enterAretoria(realm = null) {
