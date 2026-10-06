@@ -258,7 +258,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 /* ---------- entry ---------- */
 .ar-intro { position: absolute; inset: 0; z-index: 60; background: #020108; overflow: hidden; cursor: pointer; }
 .ar-intro[hidden] { display: none; }
-.ar-intro-img { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0; transform-origin: var(--ox) var(--oy);
+.ar-intro-img { position: absolute; inset: 0; background-size: cover; background-position: center; background-repeat: no-repeat; opacity: 0; transform-origin: var(--ox) var(--oy);
   filter: brightness(.94) contrast(1.04) saturate(1.02); }
 .ar-intro-rush { position: absolute; inset: -50%; opacity: 0; transform-origin: var(--ox) var(--oy);
   background: repeating-conic-gradient(from 0deg at var(--ox) var(--oy), rgba(255,255,255,.0) 0deg 4deg, rgba(190,230,255,.35) 4.5deg, rgba(255,255,255,0) 5deg 9deg);
