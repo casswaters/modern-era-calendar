@@ -199,7 +199,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 .ar-dlg-close { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; min-width: 0; padding: 0; font-size: .9rem; }
 
 /* ---------- panels: Hall of Virtues + Creed ---------- */
-.ar-panel { position: absolute; inset: 0; z-index: 40; overflow-y: auto; -webkit-overflow-scrolling: touch; opacity: 0; transition: opacity .4s;
+.ar-panel { position: absolute; inset: 0; z-index: 40; overflow-y: auto; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; opacity: 0; transition: opacity .4s;
   background: radial-gradient(70% 50% at 50% 0%, rgba(80,60,120,.4), transparent 70%), rgba(5,4,14,.94); user-select: text; -webkit-user-select: text; }
 .ar-panel.show { opacity: 1; }
 .ar-panel[hidden] { display: none; }
@@ -353,7 +353,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-outro.play p { animation: ar-outro .9s ease-out forwards; }
   .ar-outro.play { animation: ar-outro-bg .6s ease-out forwards; }
   .ar-narr-hint.show { animation: ar-hintbreathe 3.6s ease-in-out 1s infinite; }
-  .ar-panel.show .ar-tablet { animation: ar-rise .6s ease-out; }
+  .ar-panel.show .ar-tablet { animation: ar-tablet-rise .6s ease-out; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ar-intro.still { animation: ar-fadein .4s ease-out; }
@@ -385,7 +385,8 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 @keyframes ar-kenburns-lg { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.12) translate(1.5%, -2.5%); } }
 @keyframes ar-frameglow { 50% { box-shadow: 0 0 46px color-mix(in srgb, var(--rc) 70%, transparent), 0 8px 22px rgba(0,0,0,.6); } }
 @keyframes ar-rise { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
-.ar-panel .ar-tablet { --x: 0; }
+/* Tablet is margin-centered (not left:50%); -50% X in ar-rise caused open jump then snap. */
+@keyframes ar-tablet-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes ar-flash-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ar-flash-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ar-intro-img { from { opacity: 0; transform: scale(1.02); } 15% { opacity: 1; } to { opacity: 1; transform: scale(1); } }

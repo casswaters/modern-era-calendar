@@ -1,7 +1,7 @@
 /**
  * Aretoria v1 — the enterable portal (lazy-loaded from portal.js on "Enter the Realms").
  * Full-screen overlay #aretoria: cinematic entry over Cassidy's island shrine, the Axial
- * hub (the one whole that holds every realm), seven realm environments, each hosted by its
+ * hub (Welcome to Aretoria), seven realm environments, each hosted by its
  * Guardian (drawn figure, or a portrait from assets/aretoria/guardians/ once one is set),
  * Cassidy's own portraits as virtue advisors, a Hall of Virtues and his Creed.
  * All dialogue is scripted (no AI, no network beyond loading images from this site).
@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl8';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl8';
+} from './aretoria-data.js?v=cl9';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl9';
 
-const VERSION = 'cl8';
+const VERSION = 'cl9';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -316,7 +316,7 @@ function renderHub() {
     `<span class="ar-gate-name">${esc(r.name)}</span><span class="ar-gate-sub">${esc(r.guardian.name)}</span><i class="ar-gate-done" aria-hidden="true">✓</i></button>`).join('');
   $('.ar-hubui').innerHTML =
     `<div class="ar-thread" aria-hidden="true"></div>` +
-    `<button type="button" class="ar-orb" data-act="creed" aria-label="The one whole at the axis: read ${esc(CREED.title)}"><span></span></button>` +
+    `<button type="button" class="ar-orb" data-act="creed" aria-label="Read ${esc(CREED.title)}"><span></span></button>` +
     `<div class="ar-gates">${gates}</div>` +
     guideHostHtml() +
     `<div class="ar-hubbar"><button type="button" class="ar-pill" data-act="hall">✦ Hall of Virtues</button><button type="button" class="ar-pill" data-act="creed">❦ The Creed</button></div>`;
@@ -427,7 +427,7 @@ function showView(id) {
   $('.ar-back').hidden = hub;
   if (hub) {
     $('.ar-lore').hidden = true;
-    setTitle(HUB.name, 'The one whole that holds every realm');
+    setTitle(HUB.name, 'Welcome to Aretoria');
     renderHub();
     hint('Tap a gate to travel · tap Irishnu to talk');
   } else {
