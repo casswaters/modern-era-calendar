@@ -20,12 +20,12 @@ import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
-  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
+  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl11';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl11';
+} from './aretoria-data.js?v=cl12';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl12';
 
-const VERSION = 'cl11';
+const VERSION = 'cl12';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -43,7 +43,8 @@ function resolveArt(desktopPath) {
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const realmById = (id) => REALMS.find((r) => r.id === id);
-const HUB_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence']; // warm → violet (spectrum order)
+const HUB_ORDER = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence']; // left → right on the hub arc
+const SHARED_ACCENT = '#f1d58e'; // shared ivory/gold accent for every realm (no colour coding)
 
 let root = null;
 let S = {
@@ -282,7 +283,7 @@ function renderWorld(id) {
   $('.ar-layers').innerHTML = sc.layers.map((l) => `<div class="ar-layer" data-depth="${l.depth}">${l.html}</div>`).join('');
   root.dataset.realm = id;
   root.classList.toggle('ar-painted', !!painted);
-  root.style.setProperty('--rc', r ? r.color : '#f1d58e');
+  root.style.setProperty('--rc', SHARED_ACCENT); // one shared palette — no per-realm colour coding
   if (S.fx) S.fx.setMode(r ? r.particles : 'prism');
 }
 
@@ -311,7 +312,7 @@ function hint(text) {
 
 function renderHub() {
   const gates = HUB_ORDER.map((id) => realmById(id)).concat([realmById('shadow')]).map((r) =>
-    `<button type="button" class="ar-gate${r.id === 'shadow' ? ' ar-gate-shadow' : ''}${realmDone(r.id) ? ' done' : ''}" data-realm="${r.id}" style="--c:${r.color}" aria-label="Travel to the ${esc(r.name)} Realm, ${esc(r.temple)}">` +
+    `<button type="button" class="ar-gate${r.id === 'shadow' ? ' ar-gate-shadow' : ''}${realmDone(r.id) ? ' done' : ''}" data-realm="${r.id}" aria-label="Travel to the ${esc(r.name)} Realm, ${esc(r.temple)}">` +
     `<span class="ar-gate-arch"><span class="ar-gate-portal">${gateGlyph(r.id)}</span></span>` +
     `<span class="ar-gate-name">${esc(r.name)}</span><span class="ar-gate-sub">${esc(r.guardian.name)}</span><i class="ar-gate-done" aria-hidden="true">✓</i></button>`).join('');
   $('.ar-hubui').innerHTML =
@@ -359,26 +360,37 @@ function wireIrishnuPortraitFallback() {
 function layoutHub() {
   if (!root || S.view !== 'axial') return;
   const w = window.innerWidth, h = window.innerHeight;
-  const mobile = w < 700;
-  const cx = w / 2, cy = h * (mobile ? 0.40 : 0.5);
-  const rx = mobile ? w * 0.36 : Math.min(w * 0.36, 540);
-  const ry = mobile ? h * (h < 720 ? 0.26 : 0.24) : Math.min(h * 0.36, 300);
+  const mobile = w < 700; // same breakpoint as ART_MOBILE_MQ, so the anchors match the art actually shown
+  const art = mobile ? HUB_ART.mob : HUB_ART.desk;
+  // background-size: cover + background-position posX/posY, then the .ar-layer scale(1.06) about the centre
+  const s = Math.max(w / art.w, h / art.h);
+  const ox = (w - art.w * s) * art.posX, oy = (h - art.h * s) * art.posY;
+  const K = 1.06;
+  const toScreen = ([ax, ay]) => [w / 2 + (ox + ax * s - w / 2) * K, h / 2 + (oy + ay * s - h / 2) * K];
+  const topSafe = mobile ? 64 : 70, botSafe = mobile ? 120 : 110;
   const gates = root.querySelectorAll('.ar-gate');
   gates.forEach((g, i) => {
-    let x, y;
-    if (g.dataset.realm === 'shadow') {
-      // Axial hub: Shadow stays on the horizontal axis; vertical stays low so Irishnu leaves it clear/tappable.
-      x = cx;
-      y = cy + ry * (mobile ? 0.92 : 0.62);
-    } else {
-      const th = (170 - i * 32) * Math.PI / 180;
-      x = cx + rx * Math.cos(th); y = cy - ry * Math.sin(th);
-    }
+    const id = g.dataset.realm;            // map by realm name, never by index
+    const arch = g.querySelector('.ar-gate-arch');
+    // the anchor is where the ARCH sits; the button box also holds the name/sub lines below it
+    const archDy = arch ? (g.offsetHeight / 2 - (arch.offsetTop + arch.offsetHeight / 2)) : 0;
+    const half = (arch ? arch.offsetWidth : 60) / 2 + 4;
+    let [x, y] = toScreen(art.gates[id] || art.gates.shadow);
+    if (id === 'shadow') x = w / 2;        // Shadow always on the horizontal centre line
+    x = Math.min(Math.max(x, half), w - half);
+    y = Math.min(Math.max(y + archDy, topSafe + g.offsetHeight / 2), h - botSafe - g.offsetHeight / 2 + (id === 'shadow' ? 40 : 0));
     g.style.left = `${x}px`; g.style.top = `${y}px`;
     g.style.animationDelay = `${-i * 0.9}s`;
+    // keep long names (e.g. TRANSCENDENCE) inside the viewport without moving the arch
+    g.querySelectorAll('.ar-gate-name, .ar-gate-sub').forEach((el) => {
+      el.style.translate = '';
+      const r = el.getBoundingClientRect();
+      const dx = r.left < 4 ? 4 - r.left : (r.right > w - 4 ? w - 4 - r.right : 0);
+      if (dx) el.style.translate = `${dx.toFixed(1)}px 0`;
+    });
   });
   const orb = $('.ar-orb');
-  if (orb) { orb.style.left = `${cx}px`; orb.style.top = `${cy}px`; }
+  if (orb) { const [x, y] = toScreen(art.rune); orb.style.left = `${x}px`; orb.style.top = `${y}px`; }
 }
 
 function renderRealmUI(id) {
@@ -457,7 +469,7 @@ function travel(id, fromEl) {
   closePanels();
   const r = realmById(id);
   const flash = $('.ar-flash');
-  flash.style.setProperty('--fc', r ? r.color : '#f1d58e');
+  flash.style.setProperty('--fc', SHARED_ACCENT);
   if (reduced()) { showView(id); return Promise.resolve(); }
   if (fromEl) fromEl.classList.add('ar-going');
   flash.classList.remove('out'); flash.classList.add('in');
@@ -534,7 +546,7 @@ class FX {
       case 'fog': for (let i = 0; i < n(12); i++) mk({ kind: 'blob', r: 180 + R() * 260, vx: 4 + R() * 8, y: h * (0.4 + R() * 0.6), c: ['#6a4f9a', '#3b2a5c'][i % 2], a: 0.08 + R() * 0.08 });
         for (let i = 0; i < n(7); i++) mk({ r: 3 + R() * 3, vy: -(1 + R() * 3), sw: 10, c: '#d8a8ff', kind: 'dim' });
         break;
-      default: for (let i = 0; i < n(80); i++) { const x = w / 2 + (R() + R() + R() - 1.5) * w * 0.35; mk({ x, r: 1 + R() * 2.4, vy: -(8 + R() * 18), sw: 12, c: ['#ff9aa8', '#ffd27a', '#9ef0c8', '#7fb8ff', '#c9a7f0', '#fff1c1'][i % 6] }); }
+      default: for (let i = 0; i < n(80); i++) { const x = w / 2 + (R() + R() + R() - 1.5) * w * 0.35; mk({ x, r: 1 + R() * 2.4, vy: -(8 + R() * 18), sw: 12, c: ['#fff1c1', '#f1d58e', '#ffffff', '#f6efdf', '#e3bf6c', '#fff8e6'][i % 6] }); }
     }
     this.parts = P;
   }
@@ -769,13 +781,13 @@ function renderHall(filter) {
     `<p class="ar-hall-lead">The virtues I seek to compound within myself:</p>` +
     `<p class="ar-hall-count">${VIRTUES.length} virtues · ${revealed} advisors revealed</p>` +
     `<div class="ar-filters"><button type="button" class="ar-filter${filter === 'all' ? ' on' : ''}" data-realm="all">All</button>` +
-    realmsIn.map((r) => `<button type="button" class="ar-filter${filter === r.id ? ' on' : ''}" data-realm="${r.id}" style="--c:${r.color}"><i></i>${esc(r.name)}</button>`).join('') + `</div>` +
+    realmsIn.map((r) => `<button type="button" class="ar-filter${filter === r.id ? ' on' : ''}" data-realm="${r.id}"><i></i>${esc(r.name)}</button>`).join('') + `</div>` +
     `<div class="ar-vgrid">` + list.map((v) => {
       const r = realmById(v.realm);
       const art = v.portrait
         ? `<span class="ar-vart"><img src="${v.portrait}" alt="" loading="lazy" decoding="async"></span>`
         : `<span class="ar-vart ar-vveil">${gateGlyph(v.realm)}<em>portrait not yet revealed</em></span>`;
-      return `<button type="button" class="ar-vcard${v.portrait ? ' has' : ''}" data-slug="${v.slug}" style="--c:${r.color}" ${v.portrait ? `aria-label="Speak with the ${esc(advisorTitle(v))}"` : `aria-label="${esc(v.name)}: portrait not yet revealed"`}>` +
+      return `<button type="button" class="ar-vcard${v.portrait ? ' has' : ''}" data-slug="${v.slug}" ${v.portrait ? `aria-label="Speak with the ${esc(advisorTitle(v))}"` : `aria-label="${esc(v.name)}: portrait not yet revealed"`}>` +
         art + `<span class="ar-vname">${esc(v.name)}</span><span class="ar-vrealm"><i></i>${esc(r.name)}</span><span class="ar-vess">${esc(v.essence)}</span></button>`;
     }).join('') + `</div></div>`;
 }

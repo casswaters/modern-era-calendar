@@ -65,17 +65,18 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 .ar-hubui, .ar-realmui { position: absolute; inset: 0; z-index: 10; }
 .ar-hubui[hidden], .ar-realmui[hidden] { display: none; }
 .ar-orb { position: absolute; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 50%; cursor: pointer; border: 0; padding: 0;
-  background: radial-gradient(circle at 42% 38%, #fff, #fff1c1 18%, rgba(255,214,140,.6) 36%, rgba(201,167,240,.35) 56%, transparent 72%); }
+  background: radial-gradient(circle at 42% 38%, #fff, #fff1c1 18%, rgba(255,214,140,.6) 36%, rgba(227,191,108,.28) 56%, transparent 72%); }
 .ar-orb span { position: absolute; inset: -30px; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(255,143,163,.35), rgba(255,210,122,.35), rgba(158,240,200,.35), rgba(127,184,255,.35), rgba(201,167,240,.35), rgba(255,143,163,.35));
+  background: conic-gradient(from 0deg, rgba(255,241,193,.45), rgba(227,191,108,.25), rgba(255,248,230,.5), rgba(156,115,48,.25), rgba(255,241,193,.45), rgba(227,191,108,.25), rgba(255,241,193,.45));
   -webkit-mask: radial-gradient(circle, transparent 38%, #000 40%, #000 46%, transparent 62%); mask: radial-gradient(circle, transparent 38%, #000 40%, #000 46%, transparent 62%); }
+.ar-gate, .ar-filter, .ar-vcard { --c: #f1d58e; } /* one shared gold accent; no per-realm colour coding */
 .ar-gate { position: absolute; transform: translate(-50%, -50%); appearance: none; border: 0; background: none; cursor: pointer; padding: 0;
   display: flex; flex-direction: column; align-items: center; gap: 2px; width: 120px; }
 .ar-gate-arch { display: block; width: 82px; aspect-ratio: .72; padding: 4px; border-radius: 999px 999px 10px 10px;
   background: linear-gradient(180deg, #fff1c1, #e3bf6c 45%, #9c7330); box-shadow: 0 0 22px color-mix(in srgb, var(--c) 60%, transparent), 0 6px 18px rgba(0,0,0,.5);
   transition: transform .35s, box-shadow .35s; }
 .ar-gate-portal { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 999px 999px 7px 7px; overflow: hidden;
-  background: radial-gradient(60% 50% at 50% 55%, #fff8e6, var(--c) 40%, color-mix(in srgb, var(--c) 30%, #050414) 100%); position: relative; }
+  background: radial-gradient(60% 50% at 50% 55%, #fff8e6, #f1d58e 34%, #6b5428 70%, #0a0818 100%); position: relative; }
 .ar-gate-portal::after { content: ""; position: absolute; inset: -40%; background: conic-gradient(from 0deg, transparent, rgba(255,255,255,.35), transparent 30%, rgba(255,255,255,.2), transparent 60%); }
 .ar-gate-portal svg { width: 52%; height: auto; position: relative; z-index: 1; filter: drop-shadow(0 0 4px rgba(0,0,0,.5)); }
 .ar-gate-name { font-family: var(--display); font-size: .82rem; letter-spacing: .12em; color: #fff6dc; text-shadow: 0 1px 8px #000, 0 0 12px color-mix(in srgb, var(--c) 70%, transparent); margin-top: 4px; }
@@ -85,7 +86,8 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 .ar-gate.done .ar-gate-done { display: grid; }
 .ar-gate:hover .ar-gate-arch, .ar-gate:focus-visible .ar-gate-arch { transform: scale(1.08); box-shadow: 0 0 40px var(--c), 0 6px 18px rgba(0,0,0,.5); }
 .ar-gate.ar-going .ar-gate-arch { transform: scale(1.6); box-shadow: 0 0 80px var(--c); }
-.ar-gate-shadow .ar-gate-arch { filter: saturate(.8); background: linear-gradient(180deg, #b9a6e8, #6b5a8a 50%, #2a2040); }
+.ar-gate-shadow .ar-gate-arch { background: linear-gradient(180deg, #d8ccb4, #8a6f3e 50%, #2a2216); }
+.ar-gate-shadow .ar-gate-portal { background: radial-gradient(60% 50% at 50% 60%, #e9dcc0, #7a6440 38%, #1c1710 72%, #050408 100%); }
 
 .ar-host { position: absolute; appearance: none; border: 0; background: none; padding: 0; cursor: pointer; z-index: 5;
   right: 3vw; bottom: 0; height: min(68vh, 640px); aspect-ratio: 280 / 480; }
@@ -398,7 +400,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 @media (max-width: 699px) {
   .ar-gate { width: 78px; }
   .ar-gate-arch { width: 52px; padding: 3px; }
-  .ar-gate-name { font-size: .58rem; letter-spacing: .04em; white-space: nowrap; }
+  .ar-gate-name { font-size: .54rem; letter-spacing: .02em; white-space: nowrap; }
   .ar-gate-sub { font-size: .64rem; }
   .ar-gate-done { right: 6px; width: 16px; height: 16px; }
   .ar-orb { width: 64px; height: 64px; margin: -32px 0 0 -32px; }
@@ -452,6 +454,14 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-title-sub { font-size: .72rem; }
   .ar-vart { padding: 2px; }
   .ar-vname { font-size: .72rem; }
+}
+
+/* narrow phones (≤ 380px wide): the six art-anchored gates sit closer together — smaller arches, no sub-line */
+@media (max-width: 380px) {
+  .ar-gate { width: 64px; }
+  .ar-gate-arch { width: 42px; }
+  .ar-gate-name { font-size: .5rem; letter-spacing: 0; }
+  .ar-gate-sub { display: none; }
 }
 
 /* short phones (e.g. 360×640): smaller gates, drop the host sub-line so the arc stays legible */

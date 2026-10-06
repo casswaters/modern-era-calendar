@@ -23,7 +23,7 @@ import {
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorKey, slugify,
   readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath,
-  irishnuPortraitPath, realmBackdropPath, IRISHNU_PORTRAIT,
+  irishnuPortraitPath, realmBackdropPath, HUB_ART, IRISHNU_PORTRAIT,
   GP, GPm, GUARDIAN_DIR, RP, RPm, REALM_DIR, ART_MOBILE_MQ, mobileArtPath, pickArtPath
 } from './aretoria-data.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -684,7 +684,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is captains-log-v11 and precaches Aretoria code', /captains-log-v11/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is captains-log-v12 and precaches Aretoria code', /captains-log-v12/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -735,8 +735,8 @@ console.log('\n=== ambient weather scene ===\n');
   // cache-busting
   const html = src('./index.html');
   const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=cl11 (no leftover ?v=27)', /\?v=cl11/.test(html) && !/\?v=27\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=cl11', /const VERSION = 'cl11';/.test(src('./aretoria.js')));
+  assert('all asset queries are ?v=cl12 (no leftover ?v=27)', /\?v=cl12/.test(html) && !/\?v=27\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=cl12', /const VERSION = 'cl12';/.test(src('./aretoria.js')));
 }
 
 {
@@ -762,7 +762,7 @@ console.log('\n=== ambient weather scene ===\n');
   const css = src('./aretoria.css');
   assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
   const sw = src('./sw.js');
-  assert('SW is captains-log-v11 and does not precache guardians or realms', /captains-log-v11/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('SW is captains-log-v12 and does not precache guardians or realms', /captains-log-v12/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
   assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
   const guideText = JSON.stringify(GUIDE);
   assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
@@ -786,10 +786,39 @@ console.log('\n=== ambient weather scene ===\n');
   // Stronger: hub prefers painted; shrine only as fallback when painted missing
   assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /SCENES\.axial\(shrine\)/.test(aj));
   const sw = src('./sw.js');
-  assert('SW captains-log-v11 does not precache axial.jpg / realms/', /captains-log-v11/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
+  assert('SW captains-log-v12 does not precache axial.jpg / realms/', /captains-log-v12/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
   assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
 }
 
+
+{
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  console.log('\n--- No realm colour coding (shared ivory/gold palette) ---');
+  const ajNC = noComments(src('./aretoria.js'));
+  const cssNC = src('./aretoria.css');
+  assert('aretoria.js never reads r.color (no per-realm colour coding)', !/\br\.color\b/.test(ajNC) && /SHARED_ACCENT/.test(ajNC));
+  assert('gates/filters/cards carry no inline --c realm colour', !/style="--c:/.test(ajNC));
+  assert('CSS pins --c to one shared gold', /\.ar-gate, \.ar-filter, \.ar-vcard \{ --c: #f1d58e; \}/.test(cssNC));
+  assert('hub orb ring + hub particles are gold, not rainbow', !/rgba\(158,240,200/.test(cssNC) && !/'#9ef0c8', '#7fb8ff'/.test(ajNC));
+  assert('Shadow gate is deep bronze/marble, not violet', !/#b9a6e8/.test(cssNC));
+}
+
+{
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  console.log('\n--- Axial hub v12: art-anchored gates (no colour coding) ---');
+  const ajA = noComments(src('./aretoria.js'));
+  const ids = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence', 'shadow'];
+  assert('HUB_ART has desk + mob anchors for all 7 gates', ['desk', 'mob'].every((k) => ids.every((id) => Array.isArray(HUB_ART[k].gates[id]) && HUB_ART[k].gates[id].length === 2)));
+  assert('HUB_ART art sizes match the shipped JPEGs (1280×720 / 576×1024)', HUB_ART.desk.w === 1280 && HUB_ART.desk.h === 720 && HUB_ART.mob.w === 576 && HUB_ART.mob.h === 1024);
+  assert('desktop anchors run left→right Courage…Transcendence', ids.slice(0, 6).every((id, i, a) => i === 0 || HUB_ART.desk.gates[id][0] > HUB_ART.desk.gates[a[i - 1]][0]));
+  assert('mobile anchors run left→right Courage…Transcendence', ids.slice(0, 6).every((id, i, a) => i === 0 || HUB_ART.mob.gates[id][0] > HUB_ART.mob.gates[a[i - 1]][0]));
+  assert('layoutHub maps gates by realm name, Shadow on x = cx, orb on the rune', /art\.gates\[id\]/.test(ajA) && /id === 'shadow'\) x = w \/ 2/.test(ajA) && /toScreen\(art\.rune\)/.test(ajA));
+  assert('no gold centre thread element in the hub', !/ar-thread|gold-thread|center-thread/.test(ajA + src('./aretoria.css')));
+  const mobAx = new URL('./assets/aretoria/realms/mobile/axial.jpg', import.meta.url);
+  assert('mobile axial backdrop exists and is < 200 KB', existsSync(mobAx) && statSync(mobAx).size < 200000);
+}
 
 {
   console.log('\n--- Captain\'s Log v1 identity (Aretoria stays embedded) ---');
@@ -822,7 +851,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('all guardian + irishnu mobile portraits exist', [...Object.values(GUARDIAN_SLUG), 'irishnu'].every((s) => existsSync(new URL(GPm(s), import.meta.url))));
   const aj = noComments(src('./aretoria.js'));
   assert('aretoria.js has resolveArt + artMQ listener', /resolveArt/.test(aj) && /ART_MOBILE_MQ/.test(aj) && /refreshArtIfBreakpointChanged/.test(aj));
-  assert('SW captains-log-v11; VERSION cl11', /captains-log-v11/.test(src('./sw.js')) && /const VERSION = 'cl11';/.test(src('./aretoria.js')));
+  assert('SW captains-log-v12; VERSION cl12', /captains-log-v12/.test(src('./sw.js')) && /const VERSION = 'cl12';/.test(src('./aretoria.js')));
   assert('virtue thumbs stay shared (gap: no mobile virtue portraits this pass)', VIRTUES.filter((v) => v.portrait).every((v) => !String(v.portrait).includes('/mobile/')));
 }
 
