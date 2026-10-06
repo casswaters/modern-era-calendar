@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl9';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl9';
+} from './aretoria-data.js?v=cl10';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl10';
 
-const VERSION = 'cl9';
+const VERSION = 'cl10';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -315,7 +315,6 @@ function renderHub() {
     `<span class="ar-gate-arch"><span class="ar-gate-portal">${gateGlyph(r.id)}</span></span>` +
     `<span class="ar-gate-name">${esc(r.name)}</span><span class="ar-gate-sub">${esc(r.guardian.name)}</span><i class="ar-gate-done" aria-hidden="true">✓</i></button>`).join('');
   $('.ar-hubui').innerHTML =
-    `<div class="ar-thread" aria-hidden="true"></div>` +
     `<button type="button" class="ar-orb" data-act="creed" aria-label="Read ${esc(CREED.title)}"><span></span></button>` +
     `<div class="ar-gates">${gates}</div>` +
     guideHostHtml() +

@@ -64,11 +64,6 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 /* ---------- hub ---------- */
 .ar-hubui, .ar-realmui { position: absolute; inset: 0; z-index: 10; }
 .ar-hubui[hidden], .ar-realmui[hidden] { display: none; }
-.ar-thread { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%);
-  background: linear-gradient(180deg, transparent, rgba(255,241,193,.55) 15%, var(--gold) 50%, rgba(255,241,193,.55) 85%, transparent);
-  box-shadow: 0 0 12px rgba(255,220,150,.6), 0 0 30px rgba(255,220,150,.25); }
-.ar-thread::after { content: ""; position: absolute; left: -2px; right: -2px; height: 26%; top: 100%;
-  background: linear-gradient(180deg, transparent, #fff, transparent); opacity: .7; }
 .ar-orb { position: absolute; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 50%; cursor: pointer; border: 0; padding: 0;
   background: radial-gradient(circle at 42% 38%, #fff, #fff1c1 18%, rgba(255,214,140,.6) 36%, rgba(201,167,240,.35) 56%, transparent 72%); }
 .ar-orb span { position: absolute; inset: -30px; border-radius: 50%;
@@ -324,7 +319,6 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-dash { animation: ar-dash 6s linear infinite; }
   .ar-veil-sway { animation: ar-pulse 6s ease-in-out infinite; }
   .ar-ripple { animation: ar-pulse 5s ease-in-out infinite; }
-  .ar-thread::after { animation: ar-thread 4.5s linear infinite; }
   .ar-orb { animation: ar-pulse 5s ease-in-out infinite; }
   .ar-orb span { animation: ar-spin 30s linear infinite; }
   .ar-gate { animation: ar-gatebob 7s ease-in-out infinite; }
@@ -374,7 +368,6 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 @keyframes ar-spin { to { transform: rotate(360deg); } }
 @keyframes ar-phase { 0%, 100% { opacity: .15; } 50% { opacity: .95; } }
 @keyframes ar-fall { from { transform: translateY(-40px); opacity: .2; } 30% { opacity: .9; } to { transform: translateY(60px); opacity: 0; } }
-@keyframes ar-thread { from { top: -30%; } to { top: 100%; } }
 @keyframes ar-gatebob { 0%, 100% { translate: 0 -5px; } 50% { translate: 0 6px; } }
 @keyframes ar-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.012, 1.02) translateY(-1px); } }
 @keyframes ar-silk { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2.5deg); } }
