@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl13';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl13';
+} from './aretoria-data.js?v=cl14';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl14';
 
-const VERSION = 'cl13';
+const VERSION = 'cl14';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -177,7 +177,7 @@ function build() {
     S.tx = Math.max(-1, Math.min(1, e.gamma / 25));
     S.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
   });
-  window.addEventListener('resize', () => { if (S.open) { layoutHub(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
+  window.addEventListener('resize', () => { if (S.open) { layoutHub(); fitHallNames(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
   const onArtMq = () => { refreshArtIfBreakpointChanged(); };
   if (artMQ.addEventListener) artMQ.addEventListener('change', onArtMq);
   else if (artMQ.addListener) artMQ.addListener(onArtMq);
@@ -792,6 +792,7 @@ function openHall() {
   $('.ar-creed').hidden = true;
   renderHall('all');
   const h = $('.ar-hall'); h.hidden = false; h.scrollTop = 0;
+  fitHallNames();
   requestAnimationFrame(() => h.classList.add('show'));
   const c = h.querySelector('.ar-panel-close'); if (c) c.focus({ preventScroll: true });
 }
@@ -810,11 +811,25 @@ function renderHall(filter) {
     `<div class="ar-vgrid">` + list.map((v) => {
       const r = realmById(v.realm);
       const art = v.portrait
-        ? `<span class="ar-vart"><img src="${v.portrait}" alt="" loading="lazy" decoding="async"></span>`
-        : `<span class="ar-vart ar-vveil">${gateGlyph(v.realm)}<em>portrait not yet revealed</em></span>`;
+        ? `<img src="${v.portrait}" alt="" loading="lazy" decoding="async">`
+        : `${gateGlyph(v.realm)}<em>portrait not yet revealed</em>`;
+      // The essence is an overlay inside the fixed art frame (never grows the card); see .ar-vess.
       return `<button type="button" class="ar-vcard${v.portrait ? ' has' : ''}" data-slug="${v.slug}" ${v.portrait ? `aria-label="Speak with the ${esc(advisorTitle(v))}"` : `aria-label="${esc(v.name)}: portrait not yet revealed"`}>` +
-        art + `<span class="ar-vname">${esc(v.name)}</span><span class="ar-vrealm"><i></i>${esc(r.name)}</span><span class="ar-vess">${esc(v.essence)}</span></button>`;
+        `<span class="ar-vart${v.portrait ? '' : ' ar-vveil'}">${art}<span class="ar-vess">${esc(v.essence)}</span></span>` +
+        `<span class="ar-vname">${esc(v.name)}</span><span class="ar-vrealm"><i></i>${esc(r.name)}</span></button>`;
     }).join('') + `</div></div>`;
+  fitHallNames();
+}
+
+/** Uniform Hall cards: a name that would overflow its one line is scaled down to fit (card size never changes). */
+function fitHallNames() {
+  const hall = $('.ar-hall');
+  if (!hall || hall.hidden) return;
+  hall.querySelectorAll('.ar-vname').forEach((el) => {
+    el.style.fontSize = '';
+    const cw = el.clientWidth, sw = el.scrollWidth;
+    if (cw && sw > cw + 0.5) el.style.fontSize = `${(parseFloat(getComputedStyle(el).fontSize) * Math.max(0.68, (cw - 1) / sw)).toFixed(2)}px`;
+  });
 }
 
 function hallPick(slug) {
