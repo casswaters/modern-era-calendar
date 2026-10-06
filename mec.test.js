@@ -16,7 +16,7 @@ import {
   wttr_url, parse_wttr, place_from_wttr
 } from './weather.js';
 import {
-  is_desert, season_for, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
+  is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
 } from './scene.js';
 
 let passed = 0;
@@ -605,6 +605,27 @@ console.log('\n=== ambient weather scene ===\n');
   assert('palette yields hex colours', [P.top, P.sky, P.hor, P.far, P.mid, P.ground].every((c) => /^#[0-9a-f]{6}$/.test(c)), JSON.stringify(P));
   const keys = ['desert', 'meadow'].flatMap((t) => ['spring', 'summer', 'fall', 'winter'].flatMap((se) => ['clear', 'partly', 'overcast', 'fog'].flatMap((sk) => ['day', 'dusk', 'night'].map((ti) => palette({ terrain: t, season: se, sky: sk, precip: 'none', time: ti, warm: false, cold: false })))));
   assert('every palette combo valid', keys.every((p) => /^#[0-9a-f]{6}$/.test(p.far) && /^#[0-9a-f]{6}$/.test(p.top)));
+}
+
+{
+  console.log('\n--- sunrise / sunset ---');
+  assert('fmt morning', format_local_iso_time('2026-10-05T07:16') === '7:16 AM');
+  assert('fmt evening', format_local_iso_time('2026-10-05T18:58') === '6:58 PM');
+  assert('fmt midnight/noon', format_local_iso_time('2026-10-05T00:05') === '12:05 AM' && format_local_iso_time('2026-10-05T12:00') === '12:00 PM');
+  assert('fmt bad → null', format_local_iso_time(null) === null && format_local_iso_time('nope') === null);
+  assert('format_clock', format_clock(new Date(2026, 9, 5, 19, 4)) === '7:04 PM');
+  const om = parse_open_meteo({ current: { temperature_2m: 70, weather_code: 0, is_day: 1 }, daily: { sunrise: ['2026-10-05T07:16'], sunset: ['2026-10-05T18:56'] } });
+  assert('open-meteo parses sun', om.sunrise === '2026-10-05T07:16' && om.sunset === '2026-10-05T18:56');
+  assert('open-meteo url asks sun', /sunrise%2Csunset/.test(open_meteo_url(37, -113)));
+  const sc = sun_caption_times({ lat: 37, lon: -113, weather: om });
+  assert('caption prefers open-meteo', sc.rise === '7:16 AM' && sc.set === '6:56 PM', JSON.stringify(sc));
+  const st = sun_times(new Date(2026, 9, 5, 12), 37.0965, -113.5684);
+  const utcMin = (d) => d.getUTCHours() * 60 + d.getUTCMinutes();
+  const rise = utcMin(st.sunrise), set = (utcMin(st.sunset) + 1440) % 1440 + (utcMin(st.sunset) < 600 ? 1440 : 0);
+  assert('St. George sunrise ≈ 7:33 AM MDT (Open-Meteo ref, 13:33Z)', Math.abs(rise - (13 * 60 + 33)) <= 10, st.sunrise.toISOString());
+  assert('St. George sunset ≈ 7:11 PM MDT (Open-Meteo ref, 01:11Z)', Math.abs(set - (25 * 60 + 11)) <= 10, st.sunset.toISOString());
+  assert('polar night → null', sun_times(new Date(2026, 11, 21, 12), 80, 0) === null);
+  assert('no coords, no reading → null', sun_caption_times({}) === null);
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

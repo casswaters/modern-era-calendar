@@ -59,7 +59,7 @@ export function open_meteo_url(lat, lon) {
     latitude: lat.toFixed(4),
     longitude: lon.toFixed(4),
     current: 'temperature_2m,apparent_temperature,weather_code,is_day,cloud_cover,precipitation,wind_speed_10m',
-    daily: 'temperature_2m_max,temperature_2m_min',
+    daily: 'temperature_2m_max,temperature_2m_min,sunrise,sunset',
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
     precipitation_unit: 'inch',
@@ -87,7 +87,10 @@ export function parse_open_meteo(json) {
     isDay: c.is_day !== 0,
     cloud: typeof c.cloud_cover === 'number' ? Math.round(c.cloud_cover) : null,
     precipIn: typeof c.precipitation === 'number' ? c.precipitation : null,
-    windMph: typeof c.wind_speed_10m === 'number' ? Math.round(c.wind_speed_10m) : null
+    windMph: typeof c.wind_speed_10m === 'number' ? Math.round(c.wind_speed_10m) : null,
+    // Place-local ISO strings (no offset) from timezone=auto, e.g. "2026-10-05T07:16".
+    sunrise: Array.isArray(d.sunrise) && typeof d.sunrise[0] === 'string' ? d.sunrise[0] : null,
+    sunset: Array.isArray(d.sunset) && typeof d.sunset[0] === 'string' ? d.sunset[0] : null
   };
 }
 
@@ -238,7 +241,9 @@ function emitSky(state) {
     lat: state.lat, lon: state.lon,
     source: state.source || 'fallback',
     weather: state.weather || null,
-    fetchedAt: state.fetchedAt || 0
+    fetchedAt: state.fetchedAt || 0,
+    sunrise: (state.weather && state.weather.sunrise) || null,
+    sunset: (state.weather && state.weather.sunset) || null
   };
   try {
     globalThis.__mecSky = detail;

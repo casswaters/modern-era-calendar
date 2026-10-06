@@ -58,6 +58,55 @@ export function solar_position(date, lat, lon) {
   return { elevation: el, hourAngle: ha };
 }
 
+/** "h:mm AM" from a local ISO string ("2026-10-05T07:16", no offset) — no timezone reconversion. */
+export function format_local_iso_time(iso) {
+  const m = typeof iso === 'string' && /T(\d{1,2}):(\d{2})/.exec(iso);
+  if (!m) return null;
+  const h = +m[1], mm = m[2];
+  if (h > 23 || +mm > 59) return null;
+  return `${h % 12 || 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/** "h:mm AM" from a Date in the browser's local time zone. */
+export function format_clock(date) {
+  if (!(date instanceof Date) || isNaN(date)) return null;
+  const h = date.getHours(), mm = String(date.getMinutes()).padStart(2, '0');
+  return `${h % 12 || 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/**
+ * NOAA sunrise equation: { sunrise, sunset } as Dates for the local calendar day of `date`
+ * at lat/lon, or null during polar day/night.
+ */
+export function sun_times(date, lat, lon) {
+  const rad = Math.PI / 180;
+  const noonUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12) - lon / 15 * 3600000;
+  const n = Math.round(noonUtc / 86400000 - 10957.5); // days since J2000
+  const Js = n - lon / 360;
+  const M = ((357.5291 + 0.98560028 * Js) % 360) * rad;
+  const C = 1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M);
+  const lam = ((M / rad + C + 180 + 102.9372) % 360) * rad;
+  const Jt = 2451545 + Js + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * lam);
+  const dec = Math.asin(Math.sin(lam) * Math.sin(23.4397 * rad));
+  const cosW = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec));
+  if (!(cosW >= -1 && cosW <= 1)) return null;
+  const w = Math.acos(cosW) / rad;
+  const toDate = (j) => new Date((j - 2440587.5) * 86400000);
+  return { sunrise: toDate(Jt - w / 360), sunset: toDate(Jt + w / 360) };
+}
+
+/** { rise, set } display strings: Open-Meteo place-local times first, else computed, else null. */
+export function sun_caption_times(sky, date = new Date()) {
+  const r = format_local_iso_time(sky && (sky.sunrise || (sky.weather && sky.weather.sunrise)));
+  const s = format_local_iso_time(sky && (sky.sunset || (sky.weather && sky.weather.sunset)));
+  if (r && s) return { rise: r, set: s };
+  if (sky && typeof sky.lat === 'number' && typeof sky.lon === 'number') {
+    const t = sun_times(date, sky.lat, sky.lon);
+    if (t) return { rise: format_clock(t.sunrise), set: format_clock(t.sunset) };
+  }
+  return null;
+}
+
 /** day / dusk (golden hour or twilight) / night from solar elevation. */
 export function time_of_day(elevation) {
   if (elevation > 9) return 'day';
@@ -614,8 +663,15 @@ export function initScene() {
     band.classList.toggle('sc-reduced', reduced);
     band.style.setProperty('--sc-cloud-dur', `${Math.round(240 / (1 + (scene.windMph || 0) / 8))}s`);
     const where = sky && scene.hasPlace ? (sky.place || '').split(',')[0] : '';
+    const st = scene.hasPlace ? sun_caption_times(sky) : null;
     caption.textContent = scene.label + (where ? ` — ${where}` : '');
-    band.setAttribute('aria-label', `Ambient scene: ${scene.label}${where ? `, ${sky.place}` : ''}`);
+    if (st) { // its own no-wrap span so the times drop to a second line together on narrow screens
+      const sun = document.createElement('span');
+      sun.className = 'sc-sun';
+      sun.textContent = `· ☀︎ ${st.rise} · ☾ ${st.set}`;
+      caption.append(' ', sun);
+    }
+    band.setAttribute('aria-label', `Ambient scene: ${scene.label}${where ? `, ${sky.place}` : ''}${st ? `. Sunrise ${st.rise}, sunset ${st.set}` : ''}`);
     band.title = scene.located ? `Ambient scene from ${sky.place} weather` : scene.hasPlace ? `Ambient seasonal scene for ${sky.place} (no weather reading yet)` : 'Ambient seasonal scene (no location)';
 
     const { w, h } = sizeCanvas();
