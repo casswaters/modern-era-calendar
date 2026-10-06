@@ -100,7 +100,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   font-family: var(--display); letter-spacing: .14em; font-size: .85rem; color: #fff6dc; padding: 4px 12px; border-radius: 999px;
   background: rgba(8,6,20,.55); border: 1px solid rgba(227,191,108,.45); text-shadow: 0 1px 4px #000; }
 .ar-host-name::after { content: ""; position: absolute; inset: -6px; border-radius: 999px; border: 1px solid rgba(255,241,193,.5); opacity: 0; }
-.ar-guide { right: auto; left: 2vw; height: min(50vh, 470px); }
+.ar-guide { right: auto; left: 1.5vw; height: min(28vh, 240px); bottom: 72px; }
 .ar-hubbar { position: absolute; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; z-index: 6; }
 .ar-pill { appearance: none; cursor: pointer; white-space: nowrap; font-family: var(--display) !important; letter-spacing: .1em; font-size: .78rem;
   padding: 10px 16px; border-radius: 999px; color: #fff1c1; border: 1px solid rgba(227,191,108,.6);
@@ -110,8 +110,10 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 /* ---------- realm: Guardian portrait (desktop 1024×576; mobile .../mobile/ ~576×1024) ---------- */
 .ar-host.ar-host-photo { aspect-ratio: 16 / 9; height: auto; width: min(40vw, 560px); right: 3vw; bottom: auto; top: 50%; translate: 0 0; }
 .ar-host-photo { margin-top: calc(min(40vw, 560px) * -0.33); }
-.ar-guide.ar-host-photo { left: 2vw; right: auto; width: min(36vw, 480px); top: 52%; height: auto;
-  margin-top: calc(min(36vw, 480px) * -0.33); }
+/* Axial Guide portrait: low-left, sized so it never covers Justice / virtue arc or Shadow.
+   Shadow stays horizontally centered via layoutHub(); do not raise this card. */
+.ar-guide.ar-host-photo { left: 1.5vw; right: auto; width: min(18vw, 260px); top: auto; bottom: 72px; height: auto;
+  margin-top: 0; z-index: 4; }
 .ar-talking .ar-guide.ar-host-photo { opacity: 0; transition: opacity .4s; }
 .ar-gframe { display: block; width: 100%; height: 100%; padding: 4px; border-radius: 16px; overflow: hidden;
   background: linear-gradient(180deg, #fff1c1, #e3bf6c 45%, #9c7330); box-shadow: 0 0 30px color-mix(in srgb, var(--rc) 55%, transparent), 0 10px 26px rgba(0,0,0,.55); }
