@@ -22,7 +22,8 @@ import {
   REALMS, GUIDE, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE,
   validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
   advisorsFor, advisorDialogue, advisorKey, slugify,
-  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath, GP, GUARDIAN_DIR
+  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath, GP, GUARDIAN_DIR,
+  IRISHNU_PORTRAIT, irishnuPortraitPath, realmBackdropPath, RP, REALM_DIR
 } from './aretoria-data.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
@@ -682,7 +683,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is mec-v25 and precaches Aretoria code', /mec-v25/.test(sw) && !/mec-v24/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is mec-v26 and precaches Aretoria code', /mec-v26/.test(sw) && !/mec-v25/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -718,10 +719,8 @@ console.log('\n=== ambient weather scene ===\n');
   assert('warrior types fit the realms', types.courage === 'storm-forged champion' && types.justice === 'paladin of the balance' && types.humanity === 'warrior-healer' && types.temperance === 'disciplined monk-warrior' && types.wisdom === 'battle-sage' && types.transcendence === 'celestial seraph-knight' && types.shadow === 'veiled sentinel', JSON.stringify(types));
   assert('every Guardian introduces itself as Guardian in its greeting', REALMS.every((r) => /Guardian of/.test(r.dialogue.nodes.greet.text)));
   assert('guardianLine reads naturally', guardianLine(REALMS.find((r) => r.id === 'courage')) === 'Valorix the Stormheart, Guardian of Courage, a storm-forged champion');
-  assert('every realm has a guardianPortrait field (null until art arrives)', REALMS.every((r) => 'guardianPortrait' in r && (r.guardianPortrait === null || r.guardianPortrait === GP(r.id))));
-  assert('GP builds assets/aretoria/guardians/<realm>.jpg', GP('courage') === 'assets/aretoria/guardians/courage.jpg' && GUARDIAN_DIR === 'assets/aretoria/guardians/');
-  assert('guardianPortraitPath: null → drawn figure, string → path', guardianPortraitPath({ guardianPortrait: null }) === null && guardianPortraitPath({ guardianPortrait: GP('wisdom') }) === GP('wisdom'));
-  assert('any guardian portrait that is set exists on disk', REALMS.filter((r) => r.guardianPortrait).every((r) => existsSync(new URL(r.guardianPortrait, import.meta.url))));
+  assert('GP builds assets/aretoria/guardians/<slug>.jpg', GP('valorix') === 'assets/aretoria/guardians/valorix.jpg' && GUARDIAN_DIR === 'assets/aretoria/guardians/');
+  assert('guardianPortraitPath: null → drawn figure, string → path', guardianPortraitPath({ guardianPortrait: null }) === null && guardianPortraitPath({ guardianPortrait: GP('sophia') }) === GP('sophia'));
   const dataSrc = src('./aretoria-data.js');
   assert('GP() is declared before REALMS (safe to use inside realm entries)', dataSrc.indexOf('export const GP =') > -1 && dataSrc.indexOf('export const GP =') < dataSrc.indexOf('export const REALMS ='));
   assert('guardian portrait is lazy with drawn-figure fallback', /ar-host-photo/.test(aj) && /loading="lazy"/.test(aj) && /badPortraits\.add/.test(aj));
@@ -735,8 +734,39 @@ console.log('\n=== ambient weather scene ===\n');
   // cache-busting
   const html = src('./index.html');
   const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=25 (none left at ?v=24)', /\?v=25/.test(html) && !/\?v=2[0-4]\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=25', /const VERSION = 25;/.test(src('./aretoria.js')));
+  assert('all asset queries are ?v=26 (none left at ?v=25)', /\?v=26/.test(html) && !/\?v=2[0-5]\b/.test(allSrc));
+  assert('aretoria.css loads with ?v=26', /const VERSION = 26;/.test(src('./aretoria.js')));
+}
+
+{
+  console.log('\n--- Aretoria v26: painted guardians, Irishnu, realm backdrops ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const GUARDIAN_SLUG = { courage: 'valorix', justice: 'justar', humanity: 'amara', temperance: 'moder', wisdom: 'sophia', transcendence: 'auria', shadow: 'shadow' };
+  assert('every realm has a painted guardianPortrait via GP(slug)', REALMS.every((r) => r.guardianPortrait === GP(GUARDIAN_SLUG[r.id])));
+  assert('all 7 guardian portraits exist on disk', REALMS.every((r) => existsSync(new URL(r.guardianPortrait, import.meta.url))));
+  assert('guardian portraits are web-sized (<220 KB)', REALMS.every((r) => statSync(new URL(r.guardianPortrait, import.meta.url)).size < 220000));
+  assert('Irishnu portrait is set and exists', IRISHNU_PORTRAIT === GP('irishnu') && GUIDE.portrait === IRISHNU_PORTRAIT && existsSync(new URL(IRISHNU_PORTRAIT, import.meta.url)));
+  assert('irishnuPortraitPath returns the Guide portrait', irishnuPortraitPath() === IRISHNU_PORTRAIT);
+  assert('Irishnu portrait is web-sized (<220 KB)', statSync(new URL(IRISHNU_PORTRAIT, import.meta.url)).size < 220000);
+  assert('every realm has a painted realmBackdrop via RP(id)', REALMS.every((r) => r.realmBackdrop === RP(r.id)));
+  assert('RP builds assets/aretoria/realms/<id>.jpg', RP('courage') === 'assets/aretoria/realms/courage.jpg' && REALM_DIR === 'assets/aretoria/realms/');
+  assert('all 7 realm backdrops exist on disk', REALMS.every((r) => existsSync(new URL(r.realmBackdrop, import.meta.url))));
+  assert('realm backdrops are web-sized (<250 KB)', REALMS.every((r) => statSync(new URL(r.realmBackdrop, import.meta.url)).size < 250000));
+  assert('realmBackdropPath: null → CSS scene, string → path', realmBackdropPath({ realmBackdrop: null }) === null && realmBackdropPath(REALMS[0]) === REALMS[0].realmBackdrop);
+  const aj = noComments(src('./aretoria.js'));
+  assert('hub uses Irishnu portrait with drawn-figure fallback', /irishnuPhoto|irishnuPortraitPath/.test(aj) && /ar-guide/.test(aj) && /badPortraits/.test(aj));
+  assert('realm views use paintedScene when backdrop present', /paintedScene/.test(aj) && /realmBackdropPath/.test(aj) && /ar-l-realm/.test(aj));
+  assert('guardian + guide portraits stay lazy-loaded', /loading="lazy"/.test(aj));
+  const css = src('./aretoria.css');
+  assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
+  const sw = src('./sw.js');
+  assert('SW is mec-v26 and does not precache guardians or realms', /mec-v26/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('Axial hub keeps shrine (no painted Axial backdrop required)', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
+  const guideText = JSON.stringify(GUIDE);
+  assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
+  assert('About mentions painted guardians / realm scenes', /painted/.test(src('./index.html')));
+  assert('warrior types still shown in dialogue titles', /guardianRole\(r\).*warrior|warrior/.test(aj) && REALMS.every((r) => r.guardian.warrior));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

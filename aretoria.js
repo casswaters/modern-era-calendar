@@ -9,16 +9,18 @@
  * v25: the opening and closing narration lines stay up for readMs(text) (≈4 s + 60 ms per
  * character) with a "tap to continue" hint; click/tap anywhere, Enter or Space advances,
  * Esc or ✕ leaves at once.
+ * v26: painted guardian portraits, Irishnu the Guide portrait, and realm painted backdrops
+ * (lazy-loaded; drawn SVG / CSS scenes remain the fallback).
  */
 import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
-  guardianRole, guardianLine, guardianPortraitPath
-} from './aretoria-data.js?v=25';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=25';
+  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath
+} from './aretoria-data.js?v=26';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=26';
 
-const VERSION = 25;
+const VERSION = 26;
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -218,14 +220,28 @@ function onKey(e) {
 
 /* ---------- scenes ---------- */
 function renderWorld(id) {
-  const sc = id === 'axial' ? SCENES.axial(SHRINE_IMAGE) : SCENES[id]();
+  const r = realmById(id);
+  const painted = id !== 'axial' ? realmBackdropPath(r) : null;
+  const sc = id === 'axial' ? SCENES.axial(SHRINE_IMAGE) : (painted ? paintedScene(painted, SCENES[id]()) : SCENES[id]());
   $('.ar-sky').style.background = sc.sky;
   $('.ar-fog').style.background = sc.fog || 'none';
   $('.ar-layers').innerHTML = sc.layers.map((l) => `<div class="ar-layer" data-depth="${l.depth}">${l.html}</div>`).join('');
   root.dataset.realm = id;
-  const r = realmById(id);
+  root.classList.toggle('ar-painted', !!painted);
   root.style.setProperty('--rc', r ? r.color : '#f1d58e');
   if (S.fx) S.fx.setMode(r ? r.particles : 'prism');
+}
+
+/** Painted realm backdrop (cover, centered) with a soft veil; fog + FX particles stay on top. */
+function paintedScene(img, fallback) {
+  return {
+    sky: fallback.sky,
+    fog: fallback.fog,
+    layers: [
+      { depth: 0.08, html: `<div class="ar-l ar-l-img ar-l-realm" style="background-image:url('${img}')"></div>` },
+      { depth: 0.14, html: `<div class="ar-l ar-l-realmveil"></div>` }
+    ]
+  };
 }
 
 function setTitle(main, sub) {
@@ -248,9 +264,35 @@ function renderHub() {
     `<div class="ar-thread" aria-hidden="true"></div>` +
     `<button type="button" class="ar-orb" data-act="creed" aria-label="The one whole at the axis: read ${esc(CREED.title)}"><span></span></button>` +
     `<div class="ar-gates">${gates}</div>` +
-    `<button type="button" class="ar-host ar-guide" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">${figureSvg('irishnu', 'irs')}<span class="ar-host-name">Irishnu</span></button>` +
+    guideHostHtml() +
     `<div class="ar-hubbar"><button type="button" class="ar-pill" data-act="hall">✦ Hall of Virtues</button><button type="button" class="ar-pill" data-act="creed">❦ The Creed</button></div>`;
   layoutHub();
+  wireIrishnuPortraitFallback();
+}
+
+/** Hub Guide host: painted Irishnu when present, else the drawn Guide figure. */
+function guideHostHtml() {
+  const photo = irishnuPhoto();
+  const fig = `${figureSvg('irishnu', 'irs')}<span class="ar-host-name">Irishnu</span>`;
+  if (!photo) {
+    return `<button type="button" class="ar-host ar-guide" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">${fig}</button>`;
+  }
+  return `<button type="button" class="ar-host ar-guide ar-host-photo" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">` +
+    `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"></span><span class="ar-host-name">Irishnu</span></button>`;
+}
+function irishnuPhoto() {
+  const p = irishnuPortraitPath();
+  return p && !S.badPortraits.has(p) ? p : null;
+}
+function wireIrishnuPortraitFallback() {
+  const img = $('.ar-guide.ar-host-photo img');
+  if (!img) return;
+  img.addEventListener('error', () => {
+    const p = irishnuPortraitPath(); if (p) S.badPortraits.add(p);
+    const b = $('.ar-guide.ar-host-photo'); if (!b) return;
+    b.classList.remove('ar-host-photo');
+    b.innerHTML = `${figureSvg('irishnu', 'irs')}<span class="ar-host-name">Irishnu</span>`;
+  }, { once: true });
 }
 
 function layoutHub() {
@@ -334,7 +376,7 @@ function showView(id) {
 function guardianSub(r) {
   return r.guardian.source === 'notes' ? `${r.guardian.name}, ${guardianRole(r)}` : `${r.guardian.name}, ${r.guardian.title}`;
 }
-/** A Guardian's portrait (assets/aretoria/guardians/<realm>.jpg) when set and not known to be broken. */
+/** A Guardian's portrait (assets/aretoria/guardians/<slug>.jpg) when set and not known to be broken. */
 function portraitFor(r) {
   const p = guardianPortraitPath(r);
   return p && !S.badPortraits.has(p) ? p : null;
@@ -496,7 +538,15 @@ class FX {
 
 /* ---------- dialogue (visual-novel style) ---------- */
 function speakerFor(opts) {
-  if (opts.kind === 'guide') return { name: GUIDE.name, title: GUIDE.title, tree: GUIDE.dialogue, portrait: figureSvg('irishnu', 'pirs', true), key: null, el: '.ar-guide' };
+  if (opts.kind === 'guide') {
+    const photo = irishnuPhoto();
+    return {
+      name: GUIDE.name, title: GUIDE.title, tree: GUIDE.dialogue, key: null, el: '.ar-guide',
+      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport">` : figureSvg('irishnu', 'pirs', true),
+      stage: photo ? { src: photo, label: `${GUIDE.name} ${GUIDE.title}`, wide: true } : null,
+      guide: true
+    };
+  }
   if (opts.kind === 'host') {
     const r = realmById(opts.realm);
     const g = r.guardian;
@@ -520,7 +570,11 @@ function openDialogue(opts) {
   d.classList.toggle('ar-dlg-photo', !!sp.virtue);
   $('.ar-dlg-portrait').innerHTML = sp.portrait;
   const gp = $('.ar-dlg-portrait .ar-gport');
-  if (gp && sp.realm) gp.addEventListener('error', () => { S.badPortraits.add(gp.getAttribute('src')); $('.ar-dlg-portrait').innerHTML = figureSvg(FIGURE_FOR[sp.realm.id], 'p' + sp.realm.id, true); }, { once: true });
+  if (gp) gp.addEventListener('error', () => {
+    S.badPortraits.add(gp.getAttribute('src'));
+    if (sp.realm) $('.ar-dlg-portrait').innerHTML = figureSvg(FIGURE_FOR[sp.realm.id], 'p' + sp.realm.id, true);
+    else if (sp.guide) $('.ar-dlg-portrait').innerHTML = figureSvg('irishnu', 'pirs', true);
+  }, { once: true });
   $('.ar-dlg-name').innerHTML = `${esc(sp.name)}<span>${esc(sp.title)}</span>`;
   d.setAttribute('aria-label', `Conversation with ${sp.name}`);
   d.hidden = false;

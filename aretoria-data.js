@@ -8,6 +8,7 @@
  * the Shadow Realm has no named central guardian there, so it uses the neutral name
  * "Guardian of the Veil". Since v25 every realm host is presented as that realm's
  * Guardian and described as a warrior suited to the realm (guardian.warrior).
+ * v26 wires painted guardian portraits, Irishnu's portrait, and realm backdrops.
  *
  * (Authoring note, never shown to visitors: Irishnu is a wise fool at heart. He does
  * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
@@ -178,9 +179,13 @@ export const GUIDE = {
 /* The seven environments                                                      */
 /* -------------------------------------------------------------------------- */
 
-/** Guardian portraits: assets/aretoria/guardians/<realm id>.jpg (landscape 1024×576). */
+/** Guardian portraits: assets/aretoria/guardians/<guardian slug>.jpg (landscape 1024×576). */
 export const GUARDIAN_DIR = 'assets/aretoria/guardians/';
-export const GP = (realmId) => `${GUARDIAN_DIR}${realmId}.jpg`;
+export const GP = (slug) => `${GUARDIAN_DIR}${slug}.jpg`;
+
+/** Realm painted backdrops: assets/aretoria/realms/<realm id>.jpg (landscape 1024×576). */
+export const REALM_DIR = 'assets/aretoria/realms/';
+export const RP = (realmId) => `${REALM_DIR}${realmId}.jpg`;
 
 export const REALMS = [
   {
@@ -190,7 +195,8 @@ export const REALMS = [
     landscape: 'Jagged mountains, rivers of molten determination, storm-swept peaks.',
     virtues: ['Courage', 'Assertiveness', 'Confidence', 'Determination', 'Enthusiasm', 'Optimism', 'Passion', 'Perseverance', 'Resilience', 'Tenacity', 'Honesty'],
     particles: 'embers',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('valorix'),
+    realmBackdrop: RP('courage'),
     guardian: {
       name: 'Valorix', title: 'the Stormheart', source: 'notes',
       warrior: 'storm-forged champion',
@@ -245,7 +251,8 @@ export const REALMS = [
     landscape: 'Grand halls of marble and balanced scales amid orderly cities.',
     virtues: ['Justice', 'Fairness', 'Integrity', 'Honor', 'Loyalty', 'Trust', 'Sincerity', 'Truthfulness', 'Respect', 'Responsibility', 'Reliability', 'Dignity'],
     particles: 'dust',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('justar'),
+    realmBackdrop: RP('justice'),
     guardian: {
       name: 'Justar', title: 'the Balancer', source: 'notes',
       warrior: 'paladin of the balance',
@@ -300,7 +307,8 @@ export const REALMS = [
     landscape: 'Blooming meadows, rivers of empathy, groves of bioluminescent vines, bridges of woven light.',
     virtues: ['Love', 'Empathy', 'Compassion', 'Loyalty', 'Unity', 'Kindness', 'Patience', 'Peace', 'Harmony', 'Generosity', 'Acceptance', 'Gentleness'],
     particles: 'lanterns',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('amara'),
+    realmBackdrop: RP('humanity'),
     guardian: {
       name: 'Amara', title: 'the Heartbloom', source: 'notes',
       warrior: 'warrior-healer',
@@ -355,7 +363,8 @@ export const REALMS = [
     landscape: 'Serene meadows and calm seas with minimalist architecture; a tempering pool.',
     virtues: ['Temperance', 'Moderation', 'Self-discipline', 'Forgiveness', 'Humility', 'Contentment', 'Tact', 'Commitment', 'Modesty'],
     particles: 'mist',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('moder'),
+    realmBackdrop: RP('temperance'),
     guardian: {
       name: 'Moder', title: 'the Equilibrator', source: 'notes',
       warrior: 'disciplined monk-warrior',
@@ -410,7 +419,8 @@ export const REALMS = [
     landscape: 'Ancient forests of glowing trees, crystal-clear lakes reflecting infinite possibilities, floating libraries.',
     virtues: ['Wisdom', 'Vision', 'Understanding', 'Creativity', 'Imagination', 'Equanimity', 'Wonder', 'Orderliness', 'Purposefulness', 'Preparedness', 'Idealism', 'Flexibility', 'Ethicality'],
     particles: 'motes',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('sophia'),
+    realmBackdrop: RP('wisdom'),
     guardian: {
       name: 'Sophia', title: 'the Eternal Oracle', source: 'notes',
       warrior: 'battle-sage',
@@ -465,7 +475,8 @@ export const REALMS = [
     landscape: 'Ethereal clouds and starry voids, with temples that phase in and out of visibility.',
     virtues: ['Gratitude', 'Hope', 'Joyfulness', 'Beauty', 'Reverence', 'Faith', 'Service', 'Thankfulness'],
     particles: 'stars',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('auria'),
+    realmBackdrop: RP('transcendence'),
     guardian: {
       name: 'Auria', title: 'the Awestruck', source: 'notes',
       warrior: 'celestial seraph-knight',
@@ -521,7 +532,8 @@ export const REALMS = [
     virtues: [], // cautionary aspects, not virtues
     aspects: ['Revenge (Vexara)', 'Envy (Invidia)', 'Deceit (Slytheron)', 'Destructive Desire (Ravena)', 'Greed (Aurum)', 'Wrath'],
     particles: 'fog',
-    guardianPortrait: null, // later: guardianPortrait: GP('<realm id>') once assets/aretoria/guardians/<realm id>.jpg exists
+    guardianPortrait: GP('shadow'),
+    realmBackdrop: RP('shadow'),
     guardian: {
       name: 'Guardian of the Veil', title: 'the Veiled Sentinel', source: 'neutral',
       warrior: 'veiled sentinel',
@@ -576,15 +588,17 @@ export const REALMS = [
 export const REALM_IDS = REALMS.map((r) => r.id);
 
 /* -------------------------------------------------------------------------- */
-/* Guardians: presentation + optional portraits                                */
+/* Guardians + Guide portraits; realm painted backdrops                        */
 /*                                                                            */
-/* To give a Guardian a portrait later: drop a landscape 1024×576 JPEG at      */
-/* assets/aretoria/guardians/<realm id>.jpg and set that realm's               */
-/* `guardianPortrait: GP('<realm id>')`. It is lazy-loaded (never precached), */
-/* and the drawn figure stays as the fallback if the file is missing.          */
+/* Guardian: assets/aretoria/guardians/<slug>.jpg via GP('<slug>').            */
+/* Guide:    assets/aretoria/guardians/irishnu.jpg via IRISHNU_PORTRAIT.       */
+/* Backdrop: assets/aretoria/realms/<realm id>.jpg via RP('<realm id>').       */
+/* All are lazy-loaded (never precached); drawn SVG / CSS scenes are fallback. */
 /* -------------------------------------------------------------------------- */
 
-/* GUARDIAN_DIR and GP() are defined above REALMS so realm entries can use GP(). */
+/* GUARDIAN_DIR / GP() / REALM_DIR / RP() are defined above REALMS. */
+export const IRISHNU_PORTRAIT = GP('irishnu');
+GUIDE.portrait = IRISHNU_PORTRAIT;
 
 /** "Guardian of Courage" … "Guardian of the Shadow Realm". */
 export function guardianRole(r) {
@@ -606,6 +620,14 @@ function article(w) { return /^[aeiou]/i.test(w || '') ? 'an' : 'a'; }
 /** Portrait path for a realm's Guardian, or null to use the drawn figure. */
 export function guardianPortraitPath(r) {
   return r && typeof r.guardianPortrait === 'string' && r.guardianPortrait ? r.guardianPortrait : null;
+}
+/** Irishnu the Guide portrait path, or null to use the drawn Guide figure. */
+export function irishnuPortraitPath() {
+  return GUIDE && typeof GUIDE.portrait === 'string' && GUIDE.portrait ? GUIDE.portrait : null;
+}
+/** Painted realm backdrop path, or null to keep the CSS/SVG-only scene. */
+export function realmBackdropPath(r) {
+  return r && typeof r.realmBackdrop === 'string' && r.realmBackdrop ? r.realmBackdrop : null;
 }
 
 /* -------------------------------------------------------------------------- */
