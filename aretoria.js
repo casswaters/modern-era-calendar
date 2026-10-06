@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl3';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl3';
+} from './aretoria-data.js?v=cl4';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl4';
 
-const VERSION = 'cl3';
+const VERSION = 'cl4';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -368,8 +368,8 @@ function layoutHub() {
   gates.forEach((g, i) => {
     let x, y;
     if (g.dataset.realm === 'shadow') {
-      // Mobile: nudge Shadow right + lower so Irishnu's Guide portrait does not cover it.
-      x = mobile ? cx + Math.min(w * 0.18, 72) : cx;
+      // Axial hub: Shadow stays on the horizontal axis; vertical stays low so Irishnu leaves it clear/tappable.
+      x = cx;
       y = cy + ry * (mobile ? 0.92 : 0.62);
     } else {
       const th = (170 - i * 32) * Math.PI / 180;
