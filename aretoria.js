@@ -22,10 +22,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl4';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl4';
+} from './aretoria-data.js?v=cl5';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl5';
 
-const VERSION = 'cl4';
+const VERSION = 'cl5';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -853,12 +853,13 @@ function startIntro(target) {
   img.style.backgroundImage = `url('${shrine}')`;
   img.dataset.arDesk = SHRINE_IMAGE;
   // Place the zoom origin + gold arch on the shrine's glowing doorway.
-  // Desktop shrine 900×675 (door ≈55.5%, 36%); mobile portrait crop is door-centered (~50%, 40%).
+  // Desktop shrine 1280×960 with sky headroom (door ≈55.5%, 47%);
+  // mobile portrait crop door-centered (~50%, 46%). Intro uses contain.
   const W = window.innerWidth, H = window.innerHeight;
   const mobile = preferMobileArt();
-  const iw = mobile ? 576 : 900, ih = mobile ? 1024 : 675;
-  const dx = mobile ? 0.50 : 0.555, dy = mobile ? 0.40 : 0.36;
-  const s = Math.max(W / iw, H / ih);
+  const iw = mobile ? 576 : 1280, ih = mobile ? 1024 : 960;
+  const dx = mobile ? 0.5007 : 0.5550, dy = mobile ? 0.4605 : 0.4699;
+  const s = Math.min(W / iw, H / ih);
   const ox = (W - iw * s) / 2 + dx * iw * s, oy = (H - ih * s) / 2 + dy * ih * s;
   intro.style.setProperty('--ox', `${ox}px`); intro.style.setProperty('--oy', `${oy}px`);
   intro.style.setProperty('--as', `${(0.24 * ih * s) / 170}`);
