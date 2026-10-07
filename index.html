@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <script>
+    /* v38: Aretoria lives at its own site. Old in-app links (#aretoria, #realms, #portal/…, ?aretoria, ?realm=…) go there. */
+    (function () {
+      var h = location.hash, q = location.search;
+      if (/^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q)) location.replace('https://casswaters.github.io/aretoria/');
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0d1a" />
-  <meta name="description" content="Captain’s Log — a daily journal with the Modern Era Calendar, Aretoria, and more." />
+  <meta name="description" content="Captain’s Log — a daily journal with the Modern Era Calendar, local sky weather, and a doorway to Aretoria." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Captain’s Log" />
@@ -19,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=cl19" />
+  <link rel="stylesheet" href="styles.css?v=cl38" />
 </head>
 <body>
   <div class="app">
@@ -89,7 +96,7 @@
       <aside class="tri-col tri-log" id="captains-log" aria-label="Captain's Log">
         <div class="log-card">
           <div class="log-head">
-            <div class="log-kicker">Captain’s Log</div>
+            <div class="log-kicker">Captain’s Log <span class="log-who" id="log-who" hidden></span></div>
             <div class="log-datebar">
               <button class="icon-btn sm" id="log-prev" type="button" aria-label="Previous day">‹</button>
               <div class="log-date">
@@ -101,14 +108,23 @@
             <div class="log-actions">
               <button class="btn xs" id="log-today" type="button">Today</button>
               <button class="btn xs" id="log-copy" type="button" title="Copy this entry as plain text">Copy text</button>
-              <button class="btn xs" id="log-settings-btn" type="button" aria-expanded="false" aria-controls="log-settings">Birthday</button>
+              <button class="btn xs" id="log-settings-btn" type="button" aria-expanded="false" aria-controls="log-settings">Profile</button>
             </div>
             <div class="log-settings" id="log-settings" hidden>
-              <label for="log-birthday">Birthday (optional, shows your life-day count)</label>
-              <div class="log-settings-row">
+              <p class="log-settings-note">All optional, kept only in this browser. Blank fields use neutral defaults.</p>
+              <div class="log-settings-grid">
+                <label for="log-name">Name <span class="log-hint">shared with Aretoria</span></label>
+                <input type="text" id="log-name" autocomplete="given-name" autocapitalize="words" spellcheck="false" />
+                <label for="log-initials">Initials</label>
+                <input type="text" id="log-initials" autocapitalize="characters" spellcheck="false" />
+                <label for="log-enterprise">Main work / enterprise</label>
+                <input type="text" id="log-enterprise" />
+                <label for="log-venture">Second venture</label>
+                <input type="text" id="log-venture" />
+                <label for="log-birthday">Birthday <span class="log-hint">life-day count</span></label>
                 <input type="date" id="log-birthday" />
-                <button class="btn xs" id="log-birthday-clear" type="button">Clear</button>
               </div>
+              <div class="log-settings-row"><button class="btn xs" id="log-profile-clear" type="button">Clear profile</button></div>
             </div>
             <div class="log-beliefs">
               <p>Belief creates consequence.</p>
@@ -123,21 +139,18 @@
         </div>
       </aside>
 
-      <!-- Column 3: Aretoria portal -->
-      <aside class="tri-col tri-portal" aria-label="Aretoria portal">
-        <div class="portal-card" id="portal-card">
-          <div class="portal-arch">
-            <div class="portal-nebula" aria-hidden="true"></div>
-            <div class="portal-ring" id="portal-ring" aria-hidden="true"></div>
-            <div class="portal-core" aria-hidden="true">✦</div>
+      <!-- Column 3: Aretoria (its own site since v38; Captain's Log links to it instead of carrying a copy) -->
+      <aside class="tri-col tri-portal" aria-label="Aretoria">
+        <a class="portal-card portal-link" id="portal-card" href="https://casswaters.github.io/aretoria/">
+          <div class="portal-arch" aria-hidden="true">
+            <div class="portal-nebula"></div>
+            <div class="portal-core">✦</div>
           </div>
           <div class="portal-title">Aretoria</div>
           <div class="portal-sub">The Seven Realms</div>
-          <ul class="realm-legend" id="realm-legend"></ul>
-          <button class="btn primary portal-enter" id="portal-enter" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="portal-realms">Enter the Realms</button>
-          <a class="portal-standalone" href="https://casswaters.github.io/aretoria/" title="Open Aretoria as its own app">Open standalone Aretoria ↗</a>
-          <div class="portal-realms" id="portal-realms" hidden></div>
-        </div>
+          <span class="btn primary portal-enter">Enter Aretoria</span>
+          <span class="portal-note">Opens casswaters.github.io/aretoria</span>
+        </a>
       </aside>
       </div><!-- /tri -->
     </section>
@@ -194,8 +207,8 @@
           <h2>About Captain’s Log</h2>
           <p>
             <strong>Captain’s Log</strong> is a personal daily companion: a journal for the day,
-            the <strong>Modern Era Calendar</strong> as a dating tool, local sky weather, and the
-            enterable <strong>Aretoria</strong> portal (also available as its own site).
+            the <strong>Modern Era Calendar</strong> as a dating tool, local sky weather, and a doorway to
+            <a href="https://casswaters.github.io/aretoria/" style="color:var(--gold)">Aretoria</a>, which lives at its own site.
             Nothing here syncs to Apple Notes or another device — entries stay in this browser;
             use “Copy text” to paste elsewhere.
           </p>
@@ -283,23 +296,20 @@
           <h2>Captain’s Log &amp; Aretoria</h2>
           <p>
             On wide screens the Calendar view shows three columns: the calendar, a blank
-            Captain’s Log for the day, and the Aretoria portal. On phones they stack in that order.
-            Log entries and realm reflections are saved only in this browser (one entry per
-            Gregorian date). They are not synced to Apple Notes or any other device; use
-            “Copy text” to paste an entry elsewhere.
+            Captain’s Log for the day, and the doorway to Aretoria. On phones they stack in that order.
+            Log entries are saved only in this browser (one entry per Gregorian date). They are not synced
+            to Apple Notes or any other device; use “Copy text” to paste an entry elsewhere.
           </p>
           <p>
-            <strong>Enter the Realms</strong> opens Aretoria full screen: a shrine fly-through into the Axial hub
-            (its own painted floating-island backdrop), seven realm
-            environments (Wisdom, Courage, Humanity, Justice, Temperance, Transcendence and Shadow), each
-            with a painted realm scene and its Guardian’s painted portrait (drawn figures remain the fallback),
-            Irishnu the Guide, who greets you at the central portal of the axis, the virtue advisors (portraits from the Aretoria note, with generated art for the rest), a Hall of Virtues and the Creed.
-            The advisors are <strong>scripted for now</strong>: no AI and no server. Their questions save a
-            short answer in this browser, under the same per-day realm reflections. The opening and closing
-            lines wait for you: tap or click anywhere, or press Enter or Space, to continue. Esc or ✕ leaves.
-            Aretoria loads only when you enter it, and it honors reduced motion.
-            You can also open the standalone Aretoria app at
-            <a href="https://casswaters.github.io/aretoria/" style="color:var(--gold)">casswaters.github.io/aretoria</a>.
+            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names and birthday, all
+            optional and kept only in this browser; blank fields use neutral defaults. Your name is shared with
+            Aretoria on this device.
+          </p>
+          <p>
+            <strong>Enter Aretoria</strong> opens the Aretoria site,
+            <a href="https://casswaters.github.io/aretoria/" style="color:var(--gold)">casswaters.github.io/aretoria</a>,
+            where the realms, Guardians, virtue advisors, Hall of Virtues and Creed live. Realm reflections you
+            saved here before stay in this browser, and Aretoria reads the same ones.
           </p>
         </div>
         <div class="card">
@@ -319,9 +329,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=cl19"></script>
-  <script type="module" src="captains-log.js?v=cl19"></script>
-  <script type="module" src="portal.js?v=cl19"></script>
-  <script type="module" src="scene.js?v=cl19"></script>
+  <script type="module" src="app.js?v=cl38"></script>
+  <script type="module" src="captains-log.js?v=cl38"></script>
+  <script type="module" src="scene.js?v=cl38"></script>
 </body>
 </html>

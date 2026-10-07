@@ -8,13 +8,15 @@ import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
 } from './mec.js?v=cl19';
+import { readProfile, profileView, saveField, clearProfile, BDAY_KEY, NAME_MAX, INITIALS_MAX, LABEL_MAX } from './profile.js?v=cl38';
 
 const KEY_PREFIX = 'mec-log:';
-const BDAY_KEY = 'mec-log-birthday';
 const OPEN_KEY = 'mec-log-open';
 
 /* ---------- Template (edit here to change prompts) ----------
-   field types: cue (read-only standing prompt), text, area, check, scale (1–10), head */
+   field types: cue (read-only standing prompt), text, area, check, scale (1–10), head
+   A label may be a function of the profile (v38: enterprise names come from Profile, never hard-coded).
+   Field ids stay as they were so saved entries keep their values. */
 const SECTIONS = [
   {
     id: 'gratitude', title: 'Gratitude exercise', open: true,
@@ -60,9 +62,9 @@ const SECTIONS = [
   {
     id: 'career', title: 'Career',
     fields: [
-      { id: 'cw_head', type: 'head', label: 'CW Enterprises' },
+      { id: 'cw_head', type: 'head', label: (p) => p.enterprise },
       { id: 'cw_checkin', type: 'area', label: 'Check in — Schedule · Emails · Deals', rows: 3 },
-      { id: 'anam_head', type: 'head', label: 'Anam' },
+      { id: 'anam_head', type: 'head', label: (p) => p.venture },
       { id: 'anam_pipeline', type: 'area', label: 'Pipeline — Introductions · Submissions · Outbound · Inbound', rows: 3 },
       { id: 'anam_other', type: 'area', label: 'Business chats · Organization · News', rows: 2 }
     ]
@@ -102,6 +104,8 @@ const SECTIONS = [
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
 const isoOf = (g) => `${g.year}-${pad(g.month)}-${pad(g.day)}`;
+let P = profileView(readProfile());
+const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
 function todayG() {
   const n = new Date();
   return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() };
@@ -131,7 +135,7 @@ function openState() {
 
 /** Life day: 1 on the birthday itself (calendar days, timezone-safe via UTC). */
 function lifeDay(g) {
-  const b = localStorage.getItem(BDAY_KEY);
+  const b = P.birthday;
   if (!b || !/^\d{4}-\d{2}-\d{2}$/.test(b)) return null;
   const [by, bm, bd] = b.split('-').map(Number);
   const n = Math.round((Date.UTC(g.year, g.month - 1, g.day) - Date.UTC(by, bm - 1, bd)) / 86400000) + 1;
@@ -145,23 +149,23 @@ const form = $('log-form');
 function fieldHtml(f) {
   const id = `log-f-${f.id}`;
   const cls = 'log-field' + (f.half ? ' half' : '') + (f.third ? ' third' : '');
-  if (f.type === 'head') return `<div class="log-subhead">${esc(f.label)}</div>`;
+  if (f.type === 'head') return `<div class="log-subhead" data-head="${f.id}">${esc(labelOf(f))}</div>`;
   if (f.type === 'cue') {
     const hint = f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '';
-    return `<div class="log-cue"><p class="log-cue-q">${esc(f.label)}</p>${hint}</div>`;
+    return `<div class="log-cue"><p class="log-cue-q">${esc(labelOf(f))}</p>${hint}</div>`;
   }
   if (f.type === 'check') {
-    return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(f.label)}</span></label>`;
+    return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(labelOf(f))}</span></label>`;
   }
   if (f.type === 'scale') {
     const opts = ['<option value="">—</option>'].concat(
       Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`)).join('');
-    return `<div class="${cls}"><label for="${id}">${esc(f.label)} <span class="log-hint">1–10</span></label><select id="${id}" data-k="${f.id}">${opts}</select></div>`;
+    return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))} <span class="log-hint">1–10</span></label><select id="${id}" data-k="${f.id}">${opts}</select></div>`;
   }
   if (f.type === 'area') {
-    return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><textarea id="${id}" data-k="${f.id}" rows="${f.rows || 2}" placeholder="${esc(f.placeholder || '')}"></textarea></div>`;
+    return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))}</label><textarea id="${id}" data-k="${f.id}" rows="${f.rows || 2}" placeholder="${esc(f.placeholder || '')}"></textarea></div>`;
   }
-  return `<div class="${cls}"><label for="${id}">${esc(f.label)}</label><input type="text" id="${id}" data-k="${f.id}" placeholder="${esc(f.placeholder || '')}" /></div>`;
+  return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))}</label><input type="text" id="${id}" data-k="${f.id}" placeholder="${esc(f.placeholder || '')}" /></div>`;
 }
 
 function buildForm() {
@@ -261,20 +265,20 @@ function asText() {
   const g = current;
   const data = readForm();
   const lines = [];
-  lines.push(`Captain’s Log — ${format_gregorian(g.year, g.month, g.day)}`);
+  lines.push(`Captain’s Log${P.name ? ` · ${P.name}` : ''} — ${format_gregorian(g.year, g.month, g.day)}`);
   lines.push($('log-meta').textContent.replace(/(Day \d+ of \d+)/, '$1 · '));
   lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
   for (const s of SECTIONS) {
     lines.push('', s.title.toUpperCase());
     for (const f of s.fields) {
-      if (f.type === 'head') { lines.push(`[${f.label}]`); continue; }
+      if (f.type === 'head') { lines.push(`[${labelOf(f)}]`); continue; }
       if (f.type === 'cue') {
-        lines.push(f.cue ? `${f.label} — ${f.cue}` : f.label);
+        lines.push(f.cue ? `${labelOf(f)} — ${f.cue}` : labelOf(f));
         continue;
       }
       const v = data[f.id];
       const out = f.type === 'check' ? (v ? '☑' : '☐') : (v || '');
-      lines.push(`${f.label}: ${out}`);
+      lines.push(`${labelOf(f)}: ${out}`);
     }
   }
   return lines.join('\n');
@@ -305,26 +309,48 @@ $('log-clear').addEventListener('click', () => {
   setStatus('Entry cleared');
 });
 
+/* ---------- Profile (v38): name, initials, enterprise names, birthday; this browser only ---------- */
 const settingsBtn = $('log-settings-btn');
 const settings = $('log-settings');
-const bdayInput = $('log-birthday');
-bdayInput.value = localStorage.getItem(BDAY_KEY) || '';
+const FIELDS = { name: 'log-name', initials: 'log-initials', enterprise: 'log-enterprise', venture: 'log-venture', birthday: 'log-birthday' };
+function renderProfile() {
+  const raw = readProfile();
+  P = profileView(raw);
+  for (const [k, id] of Object.entries(FIELDS)) { const el = $(id); if (document.activeElement !== el) el.value = raw[k] || ''; } // stored values are already clean
+  $('log-initials').placeholder = P.initials && !raw.initials ? P.initials : 'e.g. AL';
+  $('log-enterprise').placeholder = P.enterprise;
+  $('log-venture').placeholder = P.venture;
+  const who = $('log-who');
+  who.textContent = P.name ? `· ${P.name}` : '';
+  who.hidden = !P.name;
+  form.querySelectorAll('[data-head]').forEach((el) => {
+    const f = SECTIONS.flatMap((s) => s.fields).find((x) => x.id === el.dataset.head);
+    if (f) el.textContent = labelOf(f);
+  });
+  renderHeader();
+}
+$('log-name').maxLength = NAME_MAX; $('log-initials').maxLength = INITIALS_MAX;
+$('log-enterprise').maxLength = LABEL_MAX; $('log-venture').maxLength = LABEL_MAX;
 settingsBtn.addEventListener('click', () => {
   settings.hidden = !settings.hidden;
   settingsBtn.setAttribute('aria-expanded', String(!settings.hidden));
 });
-bdayInput.addEventListener('change', () => {
-  if (bdayInput.value) localStorage.setItem(BDAY_KEY, bdayInput.value);
-  else localStorage.removeItem(BDAY_KEY);
-  renderHeader();
+for (const [k, id] of Object.entries(FIELDS)) {
+  const el = $(id);
+  if (k !== 'birthday') el.addEventListener('input', () => { saveField(k, el.value); renderProfile(); });
+  el.addEventListener('change', () => { el.value = saveField(k, el.value); renderProfile(); });
+}
+$('log-profile-clear').addEventListener('click', () => {
+  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
+  clearProfile();
+  Object.values(FIELDS).forEach((id) => { $(id).value = ''; });
+  renderProfile();
 });
-$('log-birthday-clear').addEventListener('click', () => {
-  bdayInput.value = '';
-  localStorage.removeItem(BDAY_KEY);
-  renderHeader();
-});
+// another tab (or Aretoria) changed the shared name
+window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday))$/.test(e.key)) renderProfile(); });
 
 window.addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 
 show(current);
+renderProfile();
