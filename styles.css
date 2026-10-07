@@ -1002,8 +1002,8 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 /* ---------- v38: Captain's Log profile ---------- */
 .log-who { font-family: var(--serif); font-style: italic; letter-spacing: 0; text-transform: none; color: var(--pearl); }
 .log-who[hidden] { display: none; }
-.log-home-row { display: flex; gap: 6px; align-items: center; min-width: 0; }
-.log-home-row input { flex: 1; min-width: 0; }
+.log-home-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.log-home-row input { flex: 1 1 10em; min-width: 0; } /* the button wraps below when the column is narrow, so the city never truncates */
 .log-home-row .btn { flex-shrink: 0; min-height: 36px; }
 .log-home-status { grid-column: 1 / -1; margin: -2px 0 2px; font-size: .74rem; color: var(--text-muted); min-height: 1em; }
 .log-home-status:empty { display: none; }
