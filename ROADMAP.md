@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-07, 4:00 PM MT
+**Last updated:** 2026-10-07, 4:12 PM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -17,7 +17,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Settle the open decisions below.
 
 ## Next
-- Make the remaining personal template content editable (see open decisions): supplements schedule, wake/bed times, standing cues.
+- Decide on the remaining personal template content (see open decisions): standing cues, header beliefs, weather fallback place.
 
 ## Later
 - 3D animated companion (cross-ref: Aretoria ROADMAP, Later): the visitor's reflection guide (Irishnu for Cassidy) as a 3D animated character who hangs around the user's Captain's Log in various moods and character phases. Ties to Aretoria's reflection-guide feature (custom fantasy name + costume).
@@ -28,11 +28,12 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Link a Captain's Log entry to the Aretoria virtue reflected on that day (both sites share the casswaters.github.io origin, so the shared name and realm reflections are already visible to both).
 
 ## Open decisions (waiting on Cassidy)
-- Personal template content still hard-coded (flagged in v38, unchanged): supplements (OptimalAmino, Electrolytes, Creatine, AG1, Omega 3, D3 + K2, Psyllium at 6:20am / 9:30am / 9pm), Daily Tracker labels "6am ☀️" / "10pm 💤", the standing cues and the two beliefs in the header. Move into Profile/editable template, or keep as your template?
+- Personal template content still in code (flagged, unchanged): the standing cues under the gratitude questions ("S.C.O.R.E.", "Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.", "Navigate consciously. Don’t over promise.", "Stay grounded in the miracle. Compound efforts. Create. Build.") and the two header beliefs. Keep as the shared template, or make them editable? (Supplements and wake/bed targets moved to Profile in v39.)
 - Weather fallback place is St. George, UT (used before location is shared): keep, or switch to a neutral "no location" default?
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-07 16:12 — v39: Profile also holds wake/bed targets and a daily checklist (up to 6 lines; first three keep the old supplement ids so saved ticks stay); neutral defaults "Wake ☀️" / "Bed 💤" and Morning/Midday/Evening supplements; no personal supplement list or times in code.
 - 2026-10-07 16:00 — v38: Aretoria no longer embedded (card links to casswaters.github.io/aretoria, same tab; old in-app Aretoria links redirect there; code, data, art and tests removed). Captain's Log Profile: name (shared with Aretoria), initials, enterprise names and birthday in this browser only, with neutral defaults ("Main work" / "Side venture"); no hard-coded personal values.
 - 2026-10-07 15:26 — v36: Aretoria lore pass (Eirena removed, six great temples share the 81 virtues 14/14/14/13/13/13).
 - 2026-10-07 14:58 — v35: Aretoria iOS hub painting fix after the arrival pull-back; Irishnu lore pass.
