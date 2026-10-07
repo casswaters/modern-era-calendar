@@ -4,7 +4,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   --gold: #e3bf6c; --gold-b: #fff1c1; --gold-d: #9c7330; --ivory: #f6efdf; --rc: #f1d58e;
   --display: "Cinzel", "Trajan Pro", "Cormorant Garamond", Georgia, serif;
   --serif: "Cormorant Garamond", "Iowan Old Style", Palatino, Georgia, serif;
-  position: fixed; inset: 0; z-index: 1000; height: 100dvh; overflow: hidden; overflow: clip; /* clip: focusing an edge figure must not scroll the stage sideways */
+  position: fixed; inset: 0; z-index: 1000; /* inset:0 alone fills to the screen bottom under iOS Safari's floating toolbar (an explicit 100dvh stopped short of it) */ overflow: hidden; overflow: clip; /* clip: focusing an edge figure must not scroll the stage sideways */
   color: var(--ivory); background: #05040e; font-family: var(--serif);
   -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
 }
@@ -504,3 +504,6 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-tablet > p { text-align: left; hyphens: manual; }
   .ar-affirm p { text-align: center; }
 }
+
+/* iOS Safari: keep the page behind the stage the same night colour, so no band ever shows below a full-screen view */
+html:has(.ar:not([hidden])), html:has(.ar:not([hidden])) body { background: #05040e; }

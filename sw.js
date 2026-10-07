@@ -1,5 +1,5 @@
-/* MEC service worker — network-first app shell, offline fallback (Captain's Log / Aretoria; captains-log-v20) */
-const CACHE = 'captains-log-v20';
+/* MEC service worker — network-first app shell, offline fallback (Captain's Log / Aretoria; captains-log-v21) */
+const CACHE = 'captains-log-v21';
 /* Aretoria portrait/shrine/guardian/realm images (assets/aretoria/) are deliberately NOT precached;
    they are fetched only when the portal is entered, then kept by the runtime cache. */
 const ASSETS = [
