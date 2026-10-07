@@ -177,7 +177,8 @@ function build() {
     S.tx = Math.max(-1, Math.min(1, e.gamma / 25));
     S.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
   });
-  window.addEventListener('resize', () => { if (S.open) { layoutHub(); fitHallNames(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (S.open) placeStage(); }).observe($('.ar-dlg'));
+  window.addEventListener('resize', () => { if (S.open) { placeStage(); layoutHub(); fitHallNames(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
   const onArtMq = () => { refreshArtIfBreakpointChanged(); };
   if (artMQ.addEventListener) artMQ.addEventListener('change', onArtMq);
   else if (artMQ.addListener) artMQ.addListener(onArtMq);
@@ -723,7 +724,31 @@ function showStage({ src, label, wide, desk }) {
     if (desk && failed !== desk && !S.badPortraits.has(desk)) { img.src = desk; return; }
     st.classList.remove('show'); st.hidden = true; st.innerHTML = '';
   });
-  requestAnimationFrame(() => st.classList.add('show'));
+  requestAnimationFrame(() => { placeStage(); st.classList.add('show'); });
+}
+
+/** Phones: centre the stage portrait in the gap between the header subtitle and the dialogue panel,
+    with even gaps above and below (shrinks the card if the gap is short). */
+function placeStage() {
+  const st = root && $('.ar-stage');
+  const frame = st && st.querySelector('.ar-stage-frame');
+  if (!frame) return;
+  frame.style.width = ''; st.style.top = ''; st.style.transform = '';
+  if (window.innerWidth >= 700 || st.hidden) return;
+  const head = $('.ar-top').getBoundingClientRect().bottom;
+  const d = $('.ar-dlg');
+  // layout box, not the rect: the panel slides in with a transform, so its rect is still moving here
+  const dlgTop = d && !d.hidden ? root.clientHeight - d.offsetHeight - (parseFloat(getComputedStyle(d).bottom) || 0) : window.innerHeight;
+  const gap = dlgTop - head, pad = 14;
+  const r = frame.getBoundingClientRect();
+  const aspect = r.width / r.height;
+  if (r.height > gap - pad * 2) frame.style.width = `${Math.max(60, (gap - pad * 2) * aspect)}px`;
+  st.style.top = `${(head + dlgTop) / 2}px`;
+  st.style.transform = 'translate(-50%, -50%)';
+  // centre the card itself (the stage box may carry a hidden caption / padding)
+  const fr = frame.getBoundingClientRect();
+  const off = (fr.top + fr.bottom) / 2 - (head + dlgTop) / 2;
+  if (Math.abs(off) > 0.5) st.style.top = `${(head + dlgTop) / 2 - off}px`;
 }
 
 function closeDialogue(silent) {
