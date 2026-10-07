@@ -951,8 +951,6 @@ export const IRISHNU_PORTRAIT = GP('irishnu');
 GUIDE.portrait = IRISHNU_PORTRAIT;
 /** Irishnu is Cassidy's own LARP persona (he/him). Face crop for the round dialogue avatar. */
 export const IRISHNU_AVATAR = GP('irishnu-face');
-/** Hub card moving portrait (muted loop; poster only under prefers-reduced-motion). Never precached. */
-export const IRISHNU_CLIP = { mp4: `${GUARDIAN_DIR}irishnu.mp4`, webm: `${GUARDIAN_DIR}irishnu.webm`, poster: GP('irishnu-poster') };
 /** Axial hub painted floating-island backdrop (entry cinematic still uses SHRINE_IMAGE). */
 HUB.realmBackdrop = RP('axial');
 
