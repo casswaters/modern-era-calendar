@@ -1,5 +1,5 @@
 /**
- * Captain's Log — a blank daily journal that lives beside the calendar.
+ * Captain's Log: a blank daily journal that lives beside the calendar.
  * Entries are stored only in this browser (localStorage), one record per
  * Gregorian date: key "mec-log:YYYY-MM-DD". Nothing is synced anywhere.
  * Date labels reuse mec.js helpers; no calendar math is done here.
@@ -63,9 +63,9 @@ const SECTIONS = [
     id: 'career', title: 'Career',
     fields: [
       { id: 'cw_head', type: 'head', label: (p) => p.enterprise },
-      { id: 'cw_checkin', type: 'area', label: 'Check in — Schedule · Emails · Deals', rows: 3 },
+      { id: 'cw_checkin', type: 'area', label: 'Check in (Schedule · Emails · Deals)', rows: 3 },
       { id: 'anam_head', type: 'head', label: (p) => p.venture },
-      { id: 'anam_pipeline', type: 'area', label: 'Pipeline — Introductions · Submissions · Outbound · Inbound', rows: 3 },
+      { id: 'anam_pipeline', type: 'area', label: 'Pipeline (Introductions · Submissions · Outbound · Inbound)', rows: 3 },
       { id: 'anam_other', type: 'area', label: 'Business chats · Organization · News', rows: 2 }
     ]
   },
@@ -73,12 +73,12 @@ const SECTIONS = [
     id: 'notes', title: 'Life Journal · Notes · Communication · Social · Care',
     fields: [
       { id: 'notes', type: 'area', label: 'Life Journal / Notes', rows: 5, placeholder: 'Freeform notes…' },
-      { id: 'comm_out', type: 'area', label: 'Personal Communication — Outbound', rows: 2 },
-      { id: 'comm_in', type: 'area', label: 'Personal Communication — Inbound', rows: 2 },
-      { id: 'social_fam', type: 'text', label: 'Social — Family' },
-      { id: 'social_friends', type: 'text', label: 'Social — Friends' },
-      { id: 'social_col', type: 'text', label: 'Social — Colleagues & Associates' },
-      { id: 'social_adv', type: 'text', label: 'Social — To Adventure & Fellowship' },
+      { id: 'comm_out', type: 'area', label: 'Personal Communication (Outbound)', rows: 2 },
+      { id: 'comm_in', type: 'area', label: 'Personal Communication (Inbound)', rows: 2 },
+      { id: 'social_fam', type: 'text', label: 'Social (Family)' },
+      { id: 'social_friends', type: 'text', label: 'Social (Friends)' },
+      { id: 'social_col', type: 'text', label: 'Social (Colleagues & Associates)' },
+      { id: 'social_adv', type: 'text', label: 'Social (To Adventure & Fellowship)' },
       { id: 'care', type: 'area', label: 'Personal Care & Activities', rows: 2 }
     ]
   },
@@ -160,7 +160,7 @@ function fieldHtml(f) {
     return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(labelOf(f))}</span></label>`;
   }
   if (f.type === 'scale') {
-    const opts = ['<option value="">—</option>'].concat(
+    const opts = ['<option value="">·</option>'].concat(
       Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`)).join('');
     return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))} <span class="log-hint">1–10</span></label><select id="${id}" data-k="${f.id}">${opts}</select></div>`;
   }
@@ -267,7 +267,7 @@ function asText() {
   const g = current;
   const data = readForm();
   const lines = [];
-  lines.push(`Captain’s Log${P.name ? ` · ${P.name}` : ''} — ${format_gregorian(g.year, g.month, g.day)}`);
+  lines.push(`Captain’s Log${P.name ? ` · ${P.name}` : ''} · ${format_gregorian(g.year, g.month, g.day)}`);
   lines.push($('log-meta').textContent.replace(/(Day \d+ of \d+)/, '$1 · '));
   lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
   for (const s of SECTIONS) {
@@ -275,7 +275,10 @@ function asText() {
     for (const f of fieldsOf(s)) {
       if (f.type === 'head') { lines.push(`[${labelOf(f)}]`); continue; }
       if (f.type === 'cue') {
-        lines.push(f.cue ? `${labelOf(f)} — ${f.cue}${f.note ? ` ${f.note}` : ''}` : labelOf(f));
+        // v41: cue and note go on their own lines under the question (no em dash separator)
+        lines.push(labelOf(f));
+        if (f.cue) lines.push(f.cue);
+        if (f.note) lines.push(f.note);
         continue;
       }
       const v = data[f.id];
