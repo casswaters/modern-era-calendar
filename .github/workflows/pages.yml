@@ -1,0 +1,34 @@
+# Publish main to GitHub Pages (gh-pages branch) without repo-only files.
+# ROADMAP.md is a planning file: it stays on main and must never ship to the live site.
+# Deploy = push to main. Do not push main to gh-pages by hand (that would publish ROADMAP.md).
+name: Publish Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Pages (gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          force_orphan: false
+          exclude_assets: '.github,ROADMAP.md'
+          commit_message: 'Publish Pages (repo-only files excluded)'
