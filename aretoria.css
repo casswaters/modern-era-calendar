@@ -514,3 +514,10 @@ html:has(.ar:not([hidden])), html:has(.ar:not([hidden])) body { background: #050
   .ar .ar-dlg-close { width: 44px; height: 44px; top: 6px; right: 6px; }
   .ar .ar-pill, .ar .ar-filter, .ar .ar-choice { min-height: 44px; }
 }
+
+/* short phone skies: hide guardian lines under hub gates so rows never overlap (layoutHub toggles this) */
+.ar-hubgrid-tight .ar-gate-sub { display: none !important; }
+/* short phones: Irishnu stays at the bottom-left of the hub, never up on the gate grid */
+@media (max-width: 699px) and (max-height: 720px) {
+  .ar .ar-guide.ar-host-photo { top: auto; bottom: 50px; }
+}

@@ -378,7 +378,13 @@ function layoutHub() {
     const head = root.querySelector('.ar-top');   // title + ✕ button
     const top0 = (head ? head.getBoundingClientRect().bottom : 60) + 2;
     const bandTop = toScreen([0, art.band[1]])[1];
-    const rowH = Math.max((bandTop - 2 - top0) / 3, 70);
+    // Rows must fit a whole tile (arch + name + guardian line) so no gate ever touches the label above it;
+    // when the sky is short, drop the guardian lines (tight) and, if needed, let the grid run into the band.
+    root.classList.remove('ar-hubgrid-tight');
+    const avail = (bandTop - 2 - top0) / 3;
+    const tileH = () => Math.max(...[...gates].map((g) => g.offsetHeight)) + 8;
+    if (avail < tileH()) root.classList.add('ar-hubgrid-tight');
+    const rowH = Math.max(avail, tileH(), 70);
     const colW = Math.min((w - 12) / 3, 124);
     gates.forEach((g) => {
       const id = g.dataset.realm;            // map by realm name, never by index
