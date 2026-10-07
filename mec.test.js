@@ -662,9 +662,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v38 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v38';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v39 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v39';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl38', /app\.js\?v=cl38/.test(html) && /captains-log\.js\?v=cl38/.test(html) && /scene\.js\?v=cl38/.test(html) && /styles\.css\?v=cl38/.test(html));
+  assert('scripts and styles on cl39', /app\.js\?v=cl39/.test(html) && /captains-log\.js\?v=cl39/.test(html) && /scene\.js\?v=cl39/.test(html) && /styles\.css\?v=cl39/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
@@ -673,7 +673,7 @@ console.log('\n=== ambient weather scene ===\n');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
   const OWNER = String.fromCharCode(67, 97, 115, 115, 105, 100, 121);
   const served = ['./index.html', './app.js', './captains-log.js', './profile.js', './scene.js', './weather.js', './mec.js', './styles.css', './sw.js', './manifest.webmanifest', './aretoria.js', './aretoria/index.html', './mec.test.js'];
-  const PERSONAL = new RegExp([OWNER, ['C', 'W'].join('') + ' Enterprises', '\\b' + ['An', 'am'].join('') + '\\b'].join('|'), 'i'); // built at runtime so this file stays clean
+  const PERSONAL = new RegExp([OWNER, ['C', 'W'].join('') + ' Enterprises', '\\b' + ['An', 'am'].join('') + '\\b', ['Optimal', 'Amino'].join(''), '\\b' + ['A', 'G1'].join('') + '\\b', ['Psyl', 'lium'].join(''), ['Crea', 'tine 10g'].join(''), '6:20' + 'am'].join('|'), 'i'); // built at runtime so this file stays clean
   const hits = served.filter((f) => PERSONAL.test(src(f)));
   assert('no hard-coded personal name, initials or enterprise names in served files', hits.length === 0, hits.join(', '));
   const cl = src('./captains-log.js');
@@ -683,7 +683,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('initials derive from the name and feed the enterprise default ("AKL Enterprises")', deriveInitials('Ada King-Lovelace') === 'AKL' && profileView({ name: 'Ada King-Lovelace' }).enterprise === 'AKL Enterprises' && profileView({ name: 'Ada', initials: 'al' }).enterprise === 'AL Enterprises');
   assert('typed values win over defaults', (() => { const v = profileView({ name: 'Ada', initials: 'AL', enterprise: 'Lovelace Labs', venture: 'Engines', birthday: '1815-12-10' }); return v.enterprise === 'Lovelace Labs' && v.venture === 'Engines' && v.birthday === '1815-12-10' && v.initials === 'AL'; })());
   assert('cleaning: names like Aretoria (unicode letters, spaces, - \', 24 max); initials letters ≤ 4 upper; labels ≤ 40 without markup', cleanName("  Seán O’Brien ") === "Seán O’Brien" && cleanName('<b>x</b>') === 'bxb' && Array.from(cleanName('y'.repeat(50))).length === 24 && cleanInitials('a.b-c d e') === 'ABCD' && cleanLabel('<script>Acme</script>{x}') === 'scriptAcme/scriptx' && cleanLabel('z'.repeat(80)).length === 40 && cleanDate('2026-13-99') === '2026-13-99' && cleanDate('nope') === '');
-  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 5);
+  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 8);
   const pj = src('./profile.js');
   assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
   assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
@@ -693,6 +693,22 @@ console.log('\n=== ambient weather scene ===\n');
   assert('clear profile keeps log entries', /clearProfile\(\)/.test(cl) && !/removeItem\(KEY_PREFIX[^)]*\)[^;]*;\s*\n\s*Object\.values\(FIELDS\)/.test(cl) && /function clearProfile\(\) \{ try \{ PROFILE_KEYS\.forEach/.test(pj));
   assert('export header carries the name when set', /Captain’s Log\$\{P\.name \? ` · \$\{P\.name\}` : ''\}/.test(cl));
   assert('life day reads the profile birthday', /const b = P\.birthday;/.test(cl));
+}
+
+{
+  console.log('\n--- v39: tracker targets + daily checklist from Profile (no personal supplement list or times in code) ---');
+  const P = await import('./profile.js?v=t39');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), html = src('./index.html');
+  const v0 = P.profileView({});
+  assert('neutral fallbacks: "Wake ☀️" / "Bed 💤" labels and a generic three-item checklist', v0.wake === 'Wake' && v0.bed === 'Bed' && JSON.stringify(v0.supplements) === JSON.stringify(['Morning supplements', 'Midday supplements', 'Evening supplements']));
+  const v = P.profileView({ wake: '5:30am', bed: '9:30pm', supplements: 'Fish oil\n\n  Vitamin D <b>\nMagnesium\nA\nB\nC\nD' });
+  assert('typed targets and checklist win; checklist cleaned, blank lines dropped, capped at 6', v.wake === '5:30am' && v.bed === '9:30pm' && v.supplements.length === 6 && v.supplements[1] === 'Vitamin D b' && v.supplements[0] === 'Fish oil');
+  assert('saved entries keep their values: first three checklist lines reuse the old ids', JSON.stringify(P.SUPP_IDS.slice(0, 3)) === JSON.stringify(['supp_620', 'supp_930', 'supp_9pm']) && P.SUPP_IDS.length === 6);
+  assert('keys mec-log-wake / -bed / -supplements; times ≤ 12 chars', P.WAKE_KEY === 'mec-log-wake' && P.BED_KEY === 'mec-log-bed' && P.SUPPS_KEY === 'mec-log-supplements' && P.cleanTime('x'.repeat(30)).length === 12);
+  assert('log renders tracker labels and checklist from the profile', /label: \(p\) => `\$\{p\.wake\} ☀️`/.test(cl) && /label: \(p\) => `\$\{p\.bed\} 💤`/.test(cl) && /\{ id: 'supps', type: 'supps' \}/.test(cl) && /P\.supplements\.map\(\(label, i\) => \(\{ id: SUPP_IDS\[i\], type: 'check', label \}\)\)/.test(cl));
+  assert('a changed checklist rebuilds the form without losing the day\'s entry', /if \(shape && next !== shape\) \{ flush\(\); buildForm\(\); fillForm\(\); \}/.test(cl));
+  assert('Profile panel has wake, bed and checklist fields', ['log-wake', 'log-bed', 'log-supplements'].every((id) => html.includes(`id="${id}"`)));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

@@ -994,7 +994,8 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 .log-settings-note { margin: 0 0 8px; font-size: .78rem; color: var(--text-muted); }
 .log-settings-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
 .log-settings-grid label { margin: 0; font-size: .8rem; color: var(--text); }
-.log-settings-grid input { min-width: 0; min-height: 36px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border); background: color-mix(in srgb, var(--bg-deep) 62%, transparent); color: var(--text); font: inherit; }
-.log-settings-grid input:focus { outline: none; border-color: var(--gold); }
-@media (max-width: 420px) { .log-settings-grid { grid-template-columns: 1fr; gap: 3px; } .log-settings-grid input { margin-bottom: 6px; } }
+.log-settings-grid input, .log-settings-grid textarea { min-width: 0; min-height: 36px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border); background: color-mix(in srgb, var(--bg-deep) 62%, transparent); color: var(--text); font: inherit; }
+.log-settings-grid input:focus, .log-settings-grid textarea:focus { outline: none; border-color: var(--gold); }
+@media (max-width: 420px) { .log-settings-grid { grid-template-columns: 1fr; gap: 3px; } .log-settings-grid input, .log-settings-grid textarea { margin-bottom: 6px; } }
 .log-settings .log-settings-row { margin-top: 8px; justify-content: flex-end; }
+.log-settings-grid textarea { resize: vertical; font-size: .9rem; line-height: 1.35; }

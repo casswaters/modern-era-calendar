@@ -8,7 +8,7 @@ import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
 } from './mec.js?v=cl19';
-import { readProfile, profileView, saveField, clearProfile, BDAY_KEY, NAME_MAX, INITIALS_MAX, LABEL_MAX } from './profile.js?v=cl38';
+import { readProfile, profileView, saveField, clearProfile, NAME_MAX, INITIALS_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl39';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -55,8 +55,8 @@ const SECTIONS = [
   {
     id: 'tracker', title: 'Daily Tracker',
     fields: [
-      { id: 'wake', type: 'text', label: '6am ☀️', placeholder: 'Wake time' },
-      { id: 'bed', type: 'text', label: '10pm 💤', placeholder: 'Bedtime' }
+      { id: 'wake', type: 'text', label: (p) => `${p.wake} ☀️`, placeholder: 'Wake time' },
+      { id: 'bed', type: 'text', label: (p) => `${p.bed} 💤`, placeholder: 'Bedtime' }
     ]
   },
   {
@@ -86,9 +86,7 @@ const SECTIONS = [
     id: 'io', title: 'Inputs & Outputs',
     fields: [
       { id: 'supp_head', type: 'head', label: 'Supplements' },
-      { id: 'supp_620', type: 'check', label: '6:20am — OptimalAmino · Electrolytes · Creatine 10g' },
-      { id: 'supp_930', type: 'check', label: '9:30am — AG1 · Omega 3 · Vitamin D3 + K2' },
-      { id: 'supp_9pm', type: 'check', label: '9pm — OptimalAmino · Psyllium Husk' },
+      { id: 'supps', type: 'supps' }, // v39: one check per Profile checklist line (ids from SUPP_IDS)
       { id: 'drank', type: 'area', label: '💧 Drank', rows: 2 },
       { id: 'ate', type: 'area', label: '🥩 Ate', rows: 2 },
       { id: 'dreams', type: 'area', label: '🛌 Dreams', rows: 2, placeholder: 'Physical setting, mental perspective, emotional feelings, themes, messages, symbols, thoughts' },
@@ -106,6 +104,9 @@ const pad = (n) => String(n).padStart(2, '0');
 const isoOf = (g) => `${g.year}-${pad(g.month)}-${pad(g.day)}`;
 let P = profileView(readProfile());
 const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
+/** A section's fields with the Profile checklist expanded into check fields. */
+const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.map((label, i) => ({ id: SUPP_IDS[i], type: 'check', label })) : [f]));
+const formShape = () => JSON.stringify(SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f)])));
 function todayG() {
   const n = new Date();
   return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() };
@@ -174,7 +175,7 @@ function buildForm() {
     const open = s.id in saved ? saved[s.id] : !!s.open;
     return `<details class="log-sec" data-sec="${s.id}"${open ? ' open' : ''}>` +
       `<summary><span class="log-sec-title">${esc(s.title)}</span><span class="log-count" data-count="${s.id}"></span></summary>` +
-      `<div class="log-grid">${s.fields.map(fieldHtml).join('')}</div></details>`;
+      `<div class="log-grid">${fieldsOf(s).map(fieldHtml).join('')}</div></details>`;
   }).join('');
   form.querySelectorAll('details.log-sec').forEach(d => {
     d.addEventListener('toggle', () => {
@@ -195,7 +196,7 @@ function readForm() {
 
 function updateCounts(data) {
   for (const s of SECTIONS) {
-    const keys = s.fields.filter(f => f.type !== 'head' && f.type !== 'cue').map(f => f.id);
+    const keys = fieldsOf(s).filter(f => f.type !== 'head' && f.type !== 'cue').map(f => f.id);
     const filled = keys.filter(k => data[k] && data[k] !== '').length;
     const el = form.querySelector(`[data-count="${s.id}"]`);
     if (el) {
@@ -270,7 +271,7 @@ function asText() {
   lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
   for (const s of SECTIONS) {
     lines.push('', s.title.toUpperCase());
-    for (const f of s.fields) {
+    for (const f of fieldsOf(s)) {
       if (f.type === 'head') { lines.push(`[${labelOf(f)}]`); continue; }
       if (f.type === 'cue') {
         lines.push(f.cue ? `${labelOf(f)} — ${f.cue}` : labelOf(f));
@@ -312,7 +313,9 @@ $('log-clear').addEventListener('click', () => {
 /* ---------- Profile (v38): name, initials, enterprise names, birthday; this browser only ---------- */
 const settingsBtn = $('log-settings-btn');
 const settings = $('log-settings');
-const FIELDS = { name: 'log-name', initials: 'log-initials', enterprise: 'log-enterprise', venture: 'log-venture', birthday: 'log-birthday' };
+const FIELDS = { name: 'log-name', initials: 'log-initials', enterprise: 'log-enterprise', venture: 'log-venture', birthday: 'log-birthday',
+  wake: 'log-wake', bed: 'log-bed', supplements: 'log-supplements' };
+let shape = '';
 function renderProfile() {
   const raw = readProfile();
   P = profileView(raw);
@@ -323,31 +326,37 @@ function renderProfile() {
   const who = $('log-who');
   who.textContent = P.name ? `· ${P.name}` : '';
   who.hidden = !P.name;
-  form.querySelectorAll('[data-head]').forEach((el) => {
+  const next = formShape();
+  if (shape && next !== shape) { flush(); buildForm(); fillForm(); } // labels/checklist changed: rebuild, keeping today's entry
+  else form.querySelectorAll('[data-head]').forEach((el) => {
     const f = SECTIONS.flatMap((s) => s.fields).find((x) => x.id === el.dataset.head);
     if (f) el.textContent = labelOf(f);
   });
+  shape = next;
+  $('log-wake').placeholder = P.wake; $('log-bed').placeholder = P.bed;
+  $('log-supplements').placeholder = P.supplements.join('\n');
   renderHeader();
 }
 $('log-name').maxLength = NAME_MAX; $('log-initials').maxLength = INITIALS_MAX;
 $('log-enterprise').maxLength = LABEL_MAX; $('log-venture').maxLength = LABEL_MAX;
+$('log-wake').maxLength = TIME_MAX; $('log-bed').maxLength = TIME_MAX;
 settingsBtn.addEventListener('click', () => {
   settings.hidden = !settings.hidden;
   settingsBtn.setAttribute('aria-expanded', String(!settings.hidden));
 });
 for (const [k, id] of Object.entries(FIELDS)) {
   const el = $(id);
-  if (k !== 'birthday') el.addEventListener('input', () => { saveField(k, el.value); renderProfile(); });
+  if (k !== 'birthday' && k !== 'supplements') el.addEventListener('input', () => { saveField(k, el.value); renderProfile(); });
   el.addEventListener('change', () => { el.value = saveField(k, el.value); renderProfile(); });
 }
 $('log-profile-clear').addEventListener('click', () => {
-  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
+  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
   clearProfile();
   Object.values(FIELDS).forEach((id) => { $(id).value = ''; });
   renderProfile();
 });
 // another tab (or Aretoria) changed the shared name
-window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday))$/.test(e.key)) renderProfile(); });
+window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday|wake|bed|supplements))$/.test(e.key)) renderProfile(); });
 
 window.addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });

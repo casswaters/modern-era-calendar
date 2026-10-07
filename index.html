@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=cl38" />
+  <link rel="stylesheet" href="styles.css?v=cl39" />
 </head>
 <body>
   <div class="app">
@@ -123,6 +123,12 @@
                 <input type="text" id="log-venture" />
                 <label for="log-birthday">Birthday <span class="log-hint">life-day count</span></label>
                 <input type="date" id="log-birthday" />
+                <label for="log-wake">Wake target</label>
+                <input type="text" id="log-wake" />
+                <label for="log-bed">Bed target</label>
+                <input type="text" id="log-bed" />
+                <label for="log-supplements">Daily checklist <span class="log-hint">one per line, up to 6</span></label>
+                <textarea id="log-supplements" rows="3"></textarea>
               </div>
               <div class="log-settings-row"><button class="btn xs" id="log-profile-clear" type="button">Clear profile</button></div>
             </div>
@@ -301,7 +307,8 @@
             to Apple Notes or any other device; use “Copy text” to paste an entry elsewhere.
           </p>
           <p>
-            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names and birthday, all
+            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names, birthday, wake and bed
+            targets and a daily checklist (supplements or anything else), all
             optional and kept only in this browser; blank fields use neutral defaults. Your name is shared with
             Aretoria on this device.
           </p>
@@ -329,8 +336,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=cl38"></script>
-  <script type="module" src="captains-log.js?v=cl38"></script>
-  <script type="module" src="scene.js?v=cl38"></script>
+  <script type="module" src="app.js?v=cl39"></script>
+  <script type="module" src="captains-log.js?v=cl39"></script>
+  <script type="module" src="scene.js?v=cl39"></script>
 </body>
 </html>
