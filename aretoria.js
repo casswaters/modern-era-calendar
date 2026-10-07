@@ -20,7 +20,7 @@ import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
-  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART,
+  guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART, IRISHNU_AVATAR, IRISHNU_CLIP,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ
 } from './aretoria-data.js?v=cl19';
 import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl19';
@@ -333,7 +333,14 @@ function guideHostHtml() {
   }
   const desk = irishnuPortraitPath();
   return `<button type="button" class="ar-host ar-guide ar-host-photo" data-act="guide" aria-label="Speak with Irishnu, ${esc(GUIDE.title)}">` +
-    `<span class="ar-gframe"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"${desk ? ` data-ar-desk="${esc(desk)}"` : ''}></span><span class="ar-host-name">Irishnu</span></button>`;
+    `<span class="ar-gframe" style="position:relative"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"${desk ? ` data-ar-desk="${esc(desk)}"` : ''}>${guideClipHtml()}</span><span class="ar-host-name">Irishnu</span></button>`;
+}
+/** Subtle moving portrait over the still; skipped entirely under prefers-reduced-motion. */
+function guideClipHtml() {
+  if (!IRISHNU_CLIP || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return '';
+  return `<video class="ar-gclip" muted autoplay loop playsinline preload="metadata" aria-hidden="true" poster="${esc(IRISHNU_CLIP.poster)}" ` +
+    `style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 16%;border-radius:inherit;pointer-events:none" ` +
+    `onerror="this.remove()"><source src="${esc(IRISHNU_CLIP.webm)}" type="video/webm"><source src="${esc(IRISHNU_CLIP.mp4)}" type="video/mp4"></video>`;
 }
 function irishnuPhoto() {
   return resolveArt(irishnuPortraitPath());
@@ -657,7 +664,7 @@ function speakerFor(opts) {
     const deskAttr = desk ? ` data-ar-desk="${esc(desk)}"` : '';
     return {
       name: GUIDE.name, title: GUIDE.title, tree: GUIDE.dialogue, key: null, el: '.ar-guide',
-      portrait: photo ? `<img src="${esc(photo)}" alt="" class="ar-gport"${deskAttr}>` : figureSvg('irishnu', 'pirs', true),
+      portrait: photo ? `<img src="${esc(IRISHNU_AVATAR)}" alt="" class="ar-gport" style="object-position:50% 40%" onerror="this.onerror=null;this.src='${esc(photo)}'">` : figureSvg('irishnu', 'pirs', true),
       stage: photo ? { src: photo, label: `${GUIDE.name} ${GUIDE.title}`, wide: true, desk } : null,
       guide: true
     };

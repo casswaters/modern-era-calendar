@@ -12,7 +12,7 @@
  * v27 adds the Axial hub painted backdrop (HUB.realmBackdrop = RP('axial')); entry still uses SHRINE_IMAGE.
  * v28: mobile portrait siblings under .../mobile/ (~576×1024); pickArtPath + ART_MOBILE_MQ for responsive art.
  *
- * (Authoring note, never shown to visitors: Irishnu is a wise fool at heart. He does
+ * (Authoring note, never shown to visitors: Irishnu is Cassidy himself, his old LARP name (he/him). He does
  * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
  * sincere guidance always comes first and the humour is never announced or named.)
  *
@@ -949,6 +949,10 @@ export const REALM_IDS = REALMS.map((r) => r.id);
 /* GUARDIAN_DIR / GP() / REALM_DIR / RP() are defined above REALMS. */
 export const IRISHNU_PORTRAIT = GP('irishnu');
 GUIDE.portrait = IRISHNU_PORTRAIT;
+/** Irishnu is Cassidy's own LARP persona (he/him). Face crop for the round dialogue avatar. */
+export const IRISHNU_AVATAR = GP('irishnu-face');
+/** Hub card moving portrait (muted loop; poster only under prefers-reduced-motion). Never precached. */
+export const IRISHNU_CLIP = { mp4: `${GUARDIAN_DIR}irishnu.mp4`, webm: `${GUARDIAN_DIR}irishnu.webm`, poster: GP('irishnu-poster') };
 /** Axial hub painted floating-island backdrop (entry cinematic still uses SHRINE_IMAGE). */
 HUB.realmBackdrop = RP('axial');
 

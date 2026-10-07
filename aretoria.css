@@ -472,7 +472,7 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-hubgrid .ar-gate-done { right: calc(50% - 26px); }
   .ar-hubgrid .ar-orb { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
   .ar-hubgrid .ar-orb span { inset: -10px; }
-  /* Irishnu's dialogue already shows her avatar: on the phone hub the big stage portrait would sit on top of
+  /* Irishnu's dialogue already shows his avatar: on the phone hub the big stage portrait would sit on top of
      the gate grid, so it stays hidden there, and gate labels never clip. */
   .ar-hubgrid[data-realm="axial"] .ar-stage { display: none !important; }
   .ar-hubgrid .ar-gate-name { white-space: nowrap; overflow: visible; }
