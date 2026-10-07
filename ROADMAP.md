@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-07, 4:56 PM MT
+**Last updated:** 2026-10-07, 5:05 PM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -33,6 +33,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-07 17:05: v44: the no-location earth vista is time-neutral. One fixed, softly and evenly lit Earth from orbit (slow rotation kept, still under reduced motion); it never reads the clock or time zone, so no time-of-day label, sun, moon, terminator or city lights. Caption is just "Earth vista". Real time of day returns once a device or home location is set. Test proves the scene and SVG are identical across clocks and time zones.
 - 2026-10-07 16:56: v43: Profile Home location field no longer truncates the city on desktop (the Use my location button wraps below in narrow columns).
 - 2026-10-07 16:54: v42: no built-in weather place. Profile gains an optional Home location (typed city, looked up with Open-Meteo place search, or "Use my location"). With no location set or shared: a calm earth vista (Earth from orbit at the current time of day: daylight, golden hour or twilight over the limb, night with city lights), no weather numbers, and a "Set a location for local weather" link that opens Profile. Old cached default readings are dropped. Every em dash and tilde in served copy replaced (About text, Renaissance Days list, market notes, scene caption, permission message; empty placeholders are a middle dot); a test scans all served copy.
 - 2026-10-07 16:23: v41: no em dashes or tildes in Captain's Log text. Copy text puts each cue and note on its own line under the question; the header uses " · " before the date; field labels use parentheses (e.g. "Social (Family)", "Check in (Schedule · Emails · Deals)"); the empty 1 to 10 option shows "·". Test guards it.

@@ -9,8 +9,9 @@
  *    hemisphere, sky / precipitation from the WMO (Open-Meteo) or wttr.in code refined by cloud
  *    cover, wind from mph, warmth from °F, and day / golden hour / night from solar elevation.
  *  - With a place but no reading yet: a season-only landscape for that place (no weather invented).
- *  - Without any place (v42): a calm earth vista, Earth seen from orbit at the current time of
- *    day (sunlit, sunrise or sunset over the limb, or night with city lights). No weather is shown.
+ *  - Without any place (v42, time-neutral since v44): a calm earth vista, Earth seen from orbit,
+ *    softly and evenly lit. It never reads the clock or the time zone, so it implies no time of
+ *    day, no season and no weather until a location is shared or set in Profile.
  *  - prefers-reduced-motion: a single still frame (no CSS loops, no canvas loop, no SVG animation).
  *
  * Pure helpers are exported for tests (node mec.test.js); DOM wiring lives in initScene().
@@ -177,6 +178,15 @@ export function parse_scene_override(str) {
 
 const CAP = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** The one fixed earth vista scene (v44): no time, season, sun position or weather in it. */
+const VISTA_SCENE = () => ({
+  key: 'vista',
+  located: false, hasPlace: false, terrain: 'vista', season: null, sky: 'clear', precip: 'none', heavy: false, time: 'neutral',
+  warm: false, cold: false, heat: false, windMph: 0, tempF: null, particles: 'none', lightning: false,
+  sun: { elevation: 0, hourAngle: 0, morning: false },
+  label: 'Earth vista'
+});
+
 /**
  * Decide the scene. Inputs:
  *   weather  : reading from weather.js (or null when there is no location weather)
@@ -188,6 +198,9 @@ export function pick_scene({ weather = null, lat = null, lon = null, date = new 
   const o = override || {};
   const hasPlace = !o.generic && typeof lat === 'number' && typeof lon === 'number';
   const located = hasPlace && !!weather; // a live (or cached) reading for a place
+  // No place at all (or a ?scene=vista preview): the earth vista. v44: time-neutral, so return
+  // before anything reads the date, the clock or the browser's time zone.
+  if (o.terrain === 'vista' || (!hasPlace && !o.terrain)) return VISTA_SCENE();
   // Coordinates for the sun: the reading's place, else a guess from the browser's UTC offset.
   const sLat = typeof lat === 'number' ? lat : 40;
   const sLon = typeof lon === 'number' ? lon : -date.getTimezoneOffset() / 4;
@@ -197,20 +210,9 @@ export function pick_scene({ weather = null, lat = null, lon = null, date = new 
 
   const season = o.season || season_for(date, sLat);
   // Terrain follows the place even before the first reading lands (no meadow→desert flash).
-  // No place at all (v42): the earth vista, never a made-up local landscape.
-  const terrain = o.terrain || (!hasPlace ? 'vista' : is_desert(lat, lon) ? 'desert' : 'meadow');
+  const terrain = o.terrain || (is_desert(lat, lon) ? 'desert' : 'meadow');
   // Solar elevation at the reading's coordinates (finer than is_day: gives golden hour / twilight).
   const time = o.time || time_of_day(sun.elevation);
-  if (terrain === 'vista') {
-    const timeWord = time === 'dusk' ? (sun.elevation >= 0 ? 'golden hour' : 'twilight') : time === 'night' ? 'night' : 'daylight';
-    return {
-      key: ['vista', time].join('-'),
-      located: false, hasPlace: false, terrain, season, sky: 'clear', precip: 'none', heavy: false, time,
-      warm: false, cold: false, heat: false, windMph: 0, tempF: null, particles: 'none', lightning: false,
-      sun: { elevation: sun.elevation, hourAngle: sun.hourAngle, morning: sun.hourAngle < 0 },
-      label: `Earth vista · ${timeWord}`
-    };
-  }
 
   let sky, precip, heavy = false;
   const wx = located ? classify_weather(weather) : null;
@@ -302,16 +304,12 @@ const TERRAIN = {
   }
 };
 
-/** Earth vista palettes: space, planet surface, limb glow (shared ivory/gold/indigo mood). */
-const VISTA = {
-  day: { top: '#03061a', sky: '#0b1640', hor: '#24508f', ocean: '#1d4c80', ocean2: '#2f6aa3', land: '#6f8a5e', land2: '#a8926a', cloud: '#f4efe4', limb: '#9fd0ff', city: '#f1d58e' },
-  dusk: { top: '#04051a', sky: '#151640', hor: '#5a3a5e', ocean: '#16284f', ocean2: '#27406e', land: '#4c5a4a', land2: '#7a6650', cloud: '#e9c2a6', limb: '#ffb27a', city: '#f1d58e' },
-  night: { top: '#020309', sky: '#070b22', hor: '#14284a', ocean: '#081227', ocean2: '#0d1a36', land: '#121c30', land2: '#18233a', cloud: '#2a3350', limb: '#6fd8c6', city: '#f1d58e' }
-};
+/** Earth vista palette (v44: one fixed, evenly lit rendering on the shared indigo/ivory mood). */
+const VISTA = { top: '#04071c', sky: '#0c1640', hor: '#1d3b72', ocean: '#1f4a7a', ocean2: '#2c6194', land: '#5d785a', land2: '#8b7f63', cloud: '#eef0f2', limb: '#a6d2ff' };
 
 /** Full palette for a scene (sky gradient + terrain tones after atmosphere tinting). */
 export function palette(s) {
-  if (s.terrain === 'vista') return { ...(VISTA[s.time] || VISTA.day) };
+  if (s.terrain === 'vista') return { ...VISTA };
   const sk = (SKIES[s.time] || SKIES.day)[s.sky] || SKIES.day.clear;
   let [top, midSky, hor] = sk;
   if (s.time === 'day' && (s.sky === 'clear' || s.sky === 'partly')) hor = mix(hor, HORIZON_BY_SEASON[s.season], 0.45);
@@ -423,68 +421,50 @@ function tuft(x, y, h, color, R) {
   return `<path d="${d}" stroke="${color}" stroke-width=".9" fill="none" stroke-linecap="round"/>`;
 }
 
-/** Earth seen from orbit: the planet's limb across the lower band, space above. */
+/** Earth seen from orbit, softly and evenly lit: no sun, moon, terminator or city lights (v44). */
 function vistaSvg(W, s, P) {
   const R = rng(4242);
-  const night = s.time === 'night', dusk = s.time === 'dusk';
-  const ha = Math.max(-100, Math.min(100, s.sun.hourAngle));
-  const sunLeft = s.sun.morning; // morning light comes from the left (east), evening from the right
   // Planet: a huge circle whose top edge (the limb) arcs across the band.
   const rad = Math.max(W * 1.6, 900), cx = W / 2, top = 122, cy = top + rad;
   let stars = '';
-  const nStars = Math.round(W / (night ? 9 : dusk ? 13 : 22));
-  for (let i = 0; i < nStars; i++) {
-    const x = R() * W, y = R() * 118, r = R() < 0.1 ? 1.1 : 0.45 + R() * 0.45;
-    stars += `<circle class="${R() < 0.3 ? 'sc-tw' : ''}" style="animation-delay:${f1(R() * 6)}s" cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="${R() < 0.2 ? '#f1d58e' : '#f3ecdc'}" opacity="${f1((night ? 0.45 : dusk ? 0.35 : 0.2) + R() * 0.45)}"/>`;
+  for (let i = 0; i < Math.round(W / 15); i++) {
+    const x = R() * W, y = R() * 116, r = R() < 0.1 ? 1 : 0.45 + R() * 0.4;
+    stars += `<circle class="${R() < 0.3 ? 'sc-tw' : ''}" style="animation-delay:${f1(R() * 6)}s" cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="${R() < 0.2 ? '#f1d58e' : '#f3ecdc'}" opacity="${f1(0.3 + R() * 0.4)}"/>`;
   }
   // Land masses and cloud streaks drawn as soft blobs, clipped to the planet.
-  let land = '', clouds = '', lights = '';
+  let land = '', clouds = '';
   for (let i = 0; i < Math.max(3, Math.round(W / 260)); i++) {
     const x = R() * W, y = top + 10 + R() * 60, rx = 40 + R() * 110, ry = 8 + R() * 16;
-    land += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${R() < 0.6 ? P.land : P.land2}" opacity="${night ? 0.9 : 0.75}"/>`;
-    land += `<ellipse cx="${f1(x + rx * 0.5)}" cy="${f1(y - ry * 0.4)}" rx="${f1(rx * 0.45)}" ry="${f1(ry * 0.7)}" fill="${P.land}" opacity="${night ? 0.9 : 0.6}"/>`;
-    if (night) for (let k = 0; k < 14 + Math.round(R() * 18); k++) {
-      const lx = x + (R() - 0.5) * rx * 1.6, ly = y + (R() - 0.5) * ry * 1.4;
-      lights += `<circle cx="${f1(lx)}" cy="${f1(ly)}" r="${f1(0.6 + R() * 0.9)}" fill="${P.city}" opacity="${f1(0.5 + R() * 0.45)}"/>`;
-    }
+    land += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${R() < 0.6 ? P.land : P.land2}" opacity=".7"/>`;
+    land += `<ellipse cx="${f1(x + rx * 0.5)}" cy="${f1(y - ry * 0.4)}" rx="${f1(rx * 0.45)}" ry="${f1(ry * 0.7)}" fill="${P.land}" opacity=".55"/>`;
   }
   for (let i = 0; i < Math.round(W / 120); i++) {
     const x = R() * W, y = top + 6 + R() * 70, rx = 30 + R() * 90, ry = 2 + R() * 4;
-    clouds += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${P.cloud}" opacity="${f1((night ? 0.18 : 0.45) + R() * 0.25)}"/>`;
+    clouds += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${P.cloud}" opacity="${f1(0.4 + R() * 0.2)}"/>`;
   }
-  // Sun: overhead in daylight, sitting on the limb at golden hour / twilight, the moon at night.
-  const sunX = dusk ? (sunLeft ? W * 0.16 : W * 0.84) : W * (0.5 + (ha / 100) * 0.38);
-  const sunY = dusk ? top - 1 + Math.max(-6, Math.min(4, -s.sun.elevation)) : 44;
-  const body = night
-    ? `<circle cx="${f1(W * 0.78)}" cy="40" r="26" fill="url(#vs-glow)"/><circle cx="${f1(W * 0.78)}" cy="40" r="6.5" fill="#f2ecd8" opacity=".9"/><circle cx="${f1(W * 0.78 + 2.8)}" cy="38.6" r="5.8" fill="${P.top}" opacity=".9"/>`
-    : `<circle cx="${f1(sunX)}" cy="${f1(sunY)}" r="${dusk ? 70 : 46}" fill="url(#vs-glow)"/><circle cx="${f1(sunX)}" cy="${f1(sunY)}" r="${dusk ? 6 : 5}" fill="${dusk ? '#ffe2b0' : '#fffaf0'}"/>`;
-  const shadeFrom = sunLeft ? 0 : 1; // terminator: the side away from the sun is in shadow at dusk
   return `<svg class="sc-land sc-vista" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
   <defs>
     <linearGradient id="vs-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.top}"/><stop offset=".6" stop-color="${P.sky}"/><stop offset="1" stop-color="${P.hor}"/></linearGradient>
-    <radialGradient id="vs-glow"><stop offset="0" stop-color="${night ? '#f2ecd8' : dusk ? '#ffcf8a' : '#fff4d6'}" stop-opacity="${night ? 0.3 : 0.75}"/><stop offset="1" stop-color="${night ? '#f2ecd8' : '#ffcf8a'}" stop-opacity="0"/></radialGradient>
-    <linearGradient id="vs-term" x1="${shadeFrom}" y1="0" x2="${1 - shadeFrom}" y2="0"><stop offset="0" stop-color="#020617" stop-opacity="0"/><stop offset=".45" stop-color="#020617" stop-opacity="0"/><stop offset=".62" stop-color="#ff9a5a" stop-opacity=".18"/><stop offset=".72" stop-color="#030817" stop-opacity=".72"/><stop offset="1" stop-color="#030817" stop-opacity=".86"/></linearGradient>
-    <linearGradient id="vs-limb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${P.limb}" stop-opacity="${dusk && sunLeft ? 1 : 0.55}"/><stop offset=".5" stop-color="${P.limb}" stop-opacity="${dusk ? 0.45 : 0.85}"/><stop offset="1" stop-color="${P.limb}" stop-opacity="${dusk && !sunLeft ? 1 : 0.55}"/></linearGradient>
+    <radialGradient id="vs-halo" cx=".5" cy="1" r=".75"><stop offset="0" stop-color="${P.limb}" stop-opacity=".16"/><stop offset="1" stop-color="${P.limb}" stop-opacity="0"/></radialGradient>
     <filter id="vs-blur" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
     <filter id="vs-soft" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
     <clipPath id="vs-planet"><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad)}"/></clipPath>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#vs-space)"/>
+  <rect width="${W}" height="${H}" fill="url(#vs-halo)"/>
   ${stars}
-  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 7)}" fill="none" stroke="url(#vs-limb)" stroke-width="14" opacity="${night ? 0.18 : 0.28}" filter="url(#vs-blur)"/>
+  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 7)}" fill="none" stroke="${P.limb}" stroke-width="14" opacity=".22" filter="url(#vs-blur)"/>
   <g clip-path="url(#vs-planet)">
     <rect x="0" y="${top - 2}" width="${W}" height="${H - top + 2}" fill="${P.ocean}"/>
     <rect x="0" y="${top - 2}" width="${W}" height="30" fill="${P.ocean2}" opacity=".7" filter="url(#vs-blur)"/>
-    <g class="sc-orbit"><g filter="url(#vs-soft)">${land}</g>${lights}<g filter="url(#vs-blur)">${clouds}</g></g>
-    ${dusk ? `<rect x="0" y="${top - 2}" width="${W}" height="${H - top + 2}" fill="url(#vs-term)"/>` : ''}
-    <rect x="0" y="${top - 2}" width="${W}" height="10" fill="${P.limb}" opacity="${night ? 0.06 : 0.14}" filter="url(#vs-blur)"/>
+    <g class="sc-orbit"><g filter="url(#vs-soft)">${land}</g><g filter="url(#vs-blur)">${clouds}</g></g>
+    <rect x="0" y="${top - 2}" width="${W}" height="10" fill="${P.limb}" opacity=".12" filter="url(#vs-blur)"/>
   </g>
-  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 0.6)}" fill="none" stroke="url(#vs-limb)" stroke-width="${night ? 1 : 1.6}" opacity="${night ? 0.55 : 0.9}"/>
-  ${body}
+  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 0.6)}" fill="none" stroke="${P.limb}" stroke-width="1.4" opacity=".75"/>
 </svg>`;
 }
 
-function landscapeSvg(W, s, P, reduced) {
+export function landscapeSvg(W, s, P, reduced) {
   if (s.terrain === 'vista') return vistaSvg(W, s, P);
   const R = rng(20261005 + (s.terrain === 'desert' ? 7 : 0));
   const night = s.time === 'night';
