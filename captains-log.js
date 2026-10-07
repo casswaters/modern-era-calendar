@@ -14,14 +14,14 @@ const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
 
 /* ---------- Template (edit here to change prompts) ----------
-   field types: cue (read-only standing prompt), text, area, check, scale (1–10), head
+   field types: cue (read-only standing prompt; optional note = one plain explanatory line under it), text, area, check, scale (1–10), head
    A label may be a function of the profile (v38: enterprise names come from Profile, never hard-coded).
    Field ids stay as they were so saved entries keep their values. */
 const SECTIONS = [
   {
     id: 'gratitude', title: 'Gratitude exercise', open: true,
     fields: [
-      { id: 'g1', type: 'cue', label: '1. What am I grateful for?', cue: 'S.C.O.R.E.' },
+      { id: 'g1', type: 'cue', label: '1. What am I grateful for?', cue: 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.', note: 'A way to anchor in gratitude instead of breezing through it.' },
       { id: 'g2', type: 'cue', label: '2. Who do I love?', cue: 'Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.' },
       { id: 'g3', type: 'cue', label: '3. Why am I so happy?' },
       { id: 'g4', type: 'cue', label: '4. What am I committed to?', cue: 'Navigate consciously. Don’t over promise.' },
@@ -152,7 +152,8 @@ function fieldHtml(f) {
   const cls = 'log-field' + (f.half ? ' half' : '') + (f.third ? ' third' : '');
   if (f.type === 'head') return `<div class="log-subhead" data-head="${f.id}">${esc(labelOf(f))}</div>`;
   if (f.type === 'cue') {
-    const hint = f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '';
+    const hint = (f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '')
+      + (f.note ? `<p class="log-cue-hint log-cue-note">${esc(f.note)}</p>` : '');
     return `<div class="log-cue"><p class="log-cue-q">${esc(labelOf(f))}</p>${hint}</div>`;
   }
   if (f.type === 'check') {
@@ -274,7 +275,7 @@ function asText() {
     for (const f of fieldsOf(s)) {
       if (f.type === 'head') { lines.push(`[${labelOf(f)}]`); continue; }
       if (f.type === 'cue') {
-        lines.push(f.cue ? `${labelOf(f)} — ${f.cue}` : labelOf(f));
+        lines.push(f.cue ? `${labelOf(f)} — ${f.cue}${f.note ? ` ${f.note}` : ''}` : labelOf(f));
         continue;
       }
       const v = data[f.id];
