@@ -648,7 +648,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('all dialogue trees valid (choices → real nodes, all reachable)', allErr.length === 0, allErr.slice(0, 5).join('; '));
   for (const r of REALMS) {
     const n = Object.keys(r.dialogue.nodes).length;
-    assert(`${r.id}: 3–5 dialogue nodes`, n >= 3 && n <= 5, String(n));
+    assert(`${r.id}: 3–6 dialogue nodes`, n >= 3 && n <= 6, String(n));
     assert(`${r.id}: has a saving reflection node`, Object.values(r.dialogue.nodes).some((x) => x.input && x.choices.some((c) => c.save)));
   }
   assert('Irishnu tree valid', validateTree(GUIDE.dialogue).length === 0);
@@ -684,7 +684,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
   assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
   const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is captains-log-v19 and precaches Aretoria code', /captains-log-v19/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
+  assert('SW is captains-log-v24 and precaches Aretoria code', /captains-log-v24/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
   assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
 }
 
@@ -762,7 +762,7 @@ console.log('\n=== ambient weather scene ===\n');
   const css = src('./aretoria.css');
   assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
   const sw = src('./sw.js');
-  assert('SW is captains-log-v19 and does not precache guardians or realms', /captains-log-v19/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
+  assert('SW is captains-log-v24 and does not precache guardians or realms', /captains-log-v24/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
   assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
   const guideText = JSON.stringify(GUIDE);
   assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
@@ -786,7 +786,7 @@ console.log('\n=== ambient weather scene ===\n');
   // Stronger: hub prefers painted; shrine only as fallback when painted missing
   assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /SCENES\.axial\(shrine\)/.test(aj));
   const sw = src('./sw.js');
-  assert('SW captains-log-v19 does not precache axial.jpg / realms/', /captains-log-v19/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
+  assert('SW captains-log-v24 does not precache axial.jpg / realms/', /captains-log-v24/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
   assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
 }
 
@@ -881,7 +881,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('all guardian + irishnu mobile portraits exist', [...Object.values(GUARDIAN_SLUG), 'irishnu'].every((s) => existsSync(new URL(GPm(s), import.meta.url))));
   const aj = noComments(src('./aretoria.js'));
   assert('aretoria.js has resolveArt + artMQ listener', /resolveArt/.test(aj) && /ART_MOBILE_MQ/.test(aj) && /refreshArtIfBreakpointChanged/.test(aj));
-  assert('SW captains-log-v19; VERSION cl19', /captains-log-v19/.test(src('./sw.js')) && /const VERSION = 'cl19';/.test(src('./aretoria.js')));
+  assert('SW captains-log-v24; VERSION cl19', /captains-log-v24/.test(src('./sw.js')) && /const VERSION = 'cl19';/.test(src('./aretoria.js')));
   assert('virtue thumbs stay shared (gap: no mobile virtue portraits this pass)', VIRTUES.filter((v) => v.portrait).every((v) => !String(v.portrait).includes('/mobile/')));
 }
 

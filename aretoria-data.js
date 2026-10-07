@@ -134,7 +134,7 @@ export const GUIDE = {
         ]
       },
       realms: {
-        text: 'Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. Call them six rooms in one house. Travelers like to call it a mansion; it still has only one front door, and you are standing in it. Eighty-one virtues live in those rooms, and the few that refuse to pick just one (Beauty, Graciousness, Integrity, Purposefulness, Wonder) stay here on the axis with me. Each realm has a temple and a Guardian, a warrior of its own kind, who will speak with you.',
+        text: 'Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. Call them six rooms in one house. Travelers like to call it a mansion; it still has only one front door, and you are standing in it. Eighty-one virtues live in those rooms, and the few that refuse to pick just one (Beauty, Graciousness, Integrity, Purposefulness, Wonder) stay here on the axis with me. Each realm has a temple and a Guardian, a warrior of its own kind. But the counsel comes from the virtues themselves: they are the advisors. The Guardians mostly keep the kettle warm and the doors honest.',
         choices: [
           { label: 'Where should I go today?', next: 'today' },
           { label: 'And the Shadow Realm?', next: 'shadow' },
@@ -212,42 +212,92 @@ export const REALMS = [
       look: 'Storm-forged champion: colossal knight armored in lightning-forged plates, mane of thunderclouds, eyes like embers.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Cassidy! Stand with me on the anvil-ground. I am Valorix the Stormheart, Guardian of Courage, a champion forged in the storm itself. Courage is not the absence of fear, but the thunder that drowns it out. What battle brings you to the Forge of Valor?',
-          choices: [
-            { label: 'Something I’ve been avoiding.', next: 'virtue' },
-            { label: 'I’m angry and need somewhere to put it.', next: 'anger' },
-            { label: 'Tell me about your realm.', next: 'virtue' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Cassidy! Good. Boots on the anvil-ground. I am Valorix the Stormheart, Guardian of Courage. Courage is not the absence of fear, but the thunder that drowns it out. So. What battle brought you to the Forge of Valor?",
+          "choices": [
+            {
+              "label": "Something I’ve been avoiding.",
+              "next": "virtue"
+            },
+            {
+              "label": "I’m angry and need somewhere to put it.",
+              "next": "anger"
+            },
+            {
+              "label": "Who are you, under the armor?",
+              "next": "who"
+            },
+            {
+              "label": "Tell me about your realm.",
+              "next": "virtue"
+            }
           ]
         },
-        virtue: {
-          text: 'Feel the fear. It is the edge of the known. Honor it as a signal, not a sentence. My forge tempers Assertiveness, Determination and Resilience. Endura the Unbroken wears her scars as veins of gold, and Auriel the Dawnbringer reminds us that every night ends.',
-          choices: [
-            { label: 'Help me face it.', next: 'reflect' },
-            { label: 'What about anger?', next: 'anger' }
+        "who": {
+          "text": "The first storm that made me broke my first armor. I walked out of it anyway. That is the whole story. Moder trained beside me here once, and still cools my steel at the tempering pool. Irishnu calls me “loud.” Irishnu is correct.",
+          "choices": [
+            {
+              "label": "And the realm itself?",
+              "next": "virtue"
+            },
+            {
+              "label": "Then help me face something.",
+              "next": "reflect"
+            }
           ]
         },
-        anger: {
-          text: 'Then strike the anvil, not the person. Anger shaped well becomes a force for change: standing up for yourself, holding a boundary, speaking plainly. Unshaped, it only burns. Let us shape it.',
-          choices: [
-            { label: 'Show me what to forge.', next: 'reflect' }
+        "virtue": {
+          "text": "Listen to my advisors, not me. They are the virtues of this forge: Assertiveness, Determination, Resilience, Perseverance, Honesty. Resilience wears her scars as veins of gold. Optimism swears every night ends. Find their gates along the ridge.",
+          "choices": [
+            {
+              "label": "Help me face it.",
+              "next": "reflect"
+            },
+            {
+              "label": "What about anger?",
+              "next": "anger"
+            }
           ]
         },
-        reflect: {
-          text: 'For your weekly 1–10 scorecard, Courage asks one thing: what is one thing you have been avoiding that you could face today, in a single deliberate step?',
-          input: { placeholder: 'One step I will take…' },
-          choices: [
-            { label: 'Seal it in the forge', next: 'bless', save: true },
-            { label: 'I’ll carry it unwritten', next: 'bless' }
+        "anger": {
+          "text": "Then strike the anvil, not the person. Shaped anger holds a boundary and speaks plainly. Unshaped, it only burns, and that is my realm’s shadow: bravado, wrath, charging just to feel brave. Let us shape it.",
+          "choices": [
+            {
+              "label": "Show me what to forge.",
+              "next": "reflect"
+            }
           ]
         },
-        bless: {
-          text: 'Say it with a fist to your chest: “I feel the edge. I choose the step. I am the force.” Then ask yourself honestly how this fits your real circumstances. Go, Cassidy. I answer every time.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Stay by the forge', next: '@close' }
+        "reflect": {
+          "text": "For your weekly scorecard. One fear. Not five. Name the one you will walk toward this week, and the first step you will take.",
+          "input": {
+            "placeholder": "The fear… my first step…"
+          },
+          "choices": [
+            {
+              "label": "Seal it in the forge",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "I’ll carry it unwritten",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "Fist to chest: “I feel the edge. I choose the step. I am the force.” Again, louder. Good. The forge will be hot when you come back to tell me how it went.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Stay by the forge",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -268,42 +318,88 @@ export const REALMS = [
       look: 'Paladin of the balance: scale-bearing holy knight upholding fairness.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Be welcome under the Scales of Equity, Cassidy. I am Justar the Balancer, Guardian of Justice, a paladin sworn to the balance. My blade stays sheathed; the scale does my fighting. Every oath engraved on this beam was once a small choice. I do not condemn; I weigh. What would you place on the scales?',
-          choices: [
-            { label: 'My week.', next: 'audit' },
-            { label: 'What do the scales measure?', next: 'virtue' },
-            { label: 'A decision about fairness.', next: 'virtue' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Be welcome under the Scales of Equity, Cassidy. I am Justar the Balancer, Guardian of Justice. My blade stays sheathed; the scale does my fighting. Every oath on this beam began as a small choice. I do not condemn. I weigh. What would you place on the scales?",
+          "choices": [
+            {
+              "label": "My week.",
+              "next": "audit"
+            },
+            {
+              "label": "What do the scales measure?",
+              "next": "virtue"
+            },
+            {
+              "label": "Have you ever weighed wrong?",
+              "next": "who"
+            }
           ]
         },
-        virtue: {
-          text: 'Integrity, Fairness, Honor, Responsibility. Rectus the Unswerving stands like a pillar, Valoris the Oath-Guardian watches over your vows, Creda the Trust-Guardian safeguards trust, and Verax the Open speaks plainly. Justice begins with being honest about what was yours to carry.',
-          choices: [
-            { label: 'Weigh my week with me.', next: 'audit' }
+        "who": {
+          "text": "Once. Early. I weighed a traveler and found only debt. Amara sat him at her hearth and found the reason. Since then the beam carries mercy as a counterweight. Irishnu calls that the one joke I have ever told.",
+          "choices": [
+            {
+              "label": "What do the scales measure?",
+              "next": "virtue"
+            },
+            {
+              "label": "Then weigh my week.",
+              "next": "audit"
+            }
           ]
         },
-        audit: {
-          text: 'Weigh as your Sunday self-audit does. Separate the karma you could control from the karma you could not. Hold yourself to the first; release the second without shame.',
-          choices: [
-            { label: 'I’m ready to weigh it.', next: 'reflect' },
-            { label: 'Remind me of the virtues first.', next: 'virtue' }
+        "virtue": {
+          "text": "My advisors are the virtues engraved here: Integrity, Fairness, Honor, Trust, Truthfulness, Responsibility. Honor keeps your vows; Trust guards what others gave you. Hear them before you hear me. Justice begins with what was yours to carry.",
+          "choices": [
+            {
+              "label": "Weigh my week with me.",
+              "next": "audit"
+            }
           ]
         },
-        reflect: {
-          text: 'Where did you act with integrity this week, and where did the scales tip? Name one thing that was truly yours to make right.',
-          input: { placeholder: 'Where the scales tipped, and what I’ll set right…' },
-          choices: [
-            { label: 'Engrave it on the beam', next: 'bless', save: true },
-            { label: 'Weigh it in silence', next: 'bless' }
+        "audit": {
+          "text": "Weigh as your Sunday self-audit does. Separate what you could control from what you could not. Hold yourself to the first. Release the second without shame. A scale that only punishes is broken; that is this realm’s shadow.",
+          "choices": [
+            {
+              "label": "I’m ready to weigh it.",
+              "next": "reflect"
+            },
+            {
+              "label": "Remind me of the virtues first.",
+              "next": "virtue"
+            }
           ]
         },
-        bless: {
-          text: 'The beam steadies. Balance is not perfection, Cassidy; it is honest correction, made again and again. Ask how this fits your real circumstances, then keep your word to yourself.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Remain in the marble halls', next: '@close' }
+        "reflect": {
+          "text": "Then the plain question: what promise do you owe, and to whom? Yourself counts. Name it, and the day you will keep it.",
+          "input": {
+            "placeholder": "The promise, to whom, and when…"
+          },
+          "choices": [
+            {
+              "label": "Engrave it on the beam",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "Weigh it in silence",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "The beam steadies. Balance is not perfection, Cassidy; it is honest correction, made again and again. I will keep this page open until the promise is paid.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Remain in the marble halls",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -324,42 +420,88 @@ export const REALMS = [
       look: 'Warrior-healer: vine- and rose-crowned defender whose chest opens into an infinite garden of light.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Come in from the cold, dear one. I am Amara the Heartbloom, Guardian of Humanity, a warrior-healer: these hands bind wounds, and when a heart must be defended, they hold the shield. Sit by the Hearth of Hearts. The fountain of empathy has been flowing all day, waiting for you. How is your heart, Cassidy?',
-          choices: [
-            { label: 'Full. I want to share it.', next: 'virtue' },
-            { label: 'Heavy. Someone is on my mind.', next: 'heavy' },
-            { label: 'Tell me about the Hearth.', next: 'virtue' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Come in from the cold, dear one. I am Amara the Heartbloom, Guardian of Humanity. These hands bind wounds, and when a heart must be defended, they hold the shield. The fountain of empathy has been flowing all day for you. How is your heart, Cassidy?",
+          "choices": [
+            {
+              "label": "Full. I want to share it.",
+              "next": "virtue"
+            },
+            {
+              "label": "Heavy. Someone is on my mind.",
+              "next": "heavy"
+            },
+            {
+              "label": "How did your garden begin?",
+              "next": "who"
+            }
           ]
         },
-        virtue: {
-          text: 'Four virtues hold this realm together: empathy, compassion, loyalty and unity. Mercy the Healer soothes pain, Coris the Reflector feels with you, Symphona the Weaver turns discord into harmony, and Concord the Circle binds us all.',
-          choices: [
-            { label: 'Help me reflect on my people.', next: 'reflect' },
-            { label: 'Someone is weighing on me.', next: 'heavy' }
+        "who": {
+          "text": "With a wound I refused to let scar shut. Things grew in it. Justar learned mercy at this fire, and I learned from Justar that love without truth is only comfort. Eirena’s thread runs warmest here. I like to think that is my doing.",
+          "choices": [
+            {
+              "label": "Tell me about the Hearth.",
+              "next": "virtue"
+            },
+            {
+              "label": "Someone is on my mind.",
+              "next": "heavy"
+            }
           ]
         },
-        heavy: {
-          text: 'Then let us not hurry. Patience is a virtue of this realm too. Tempora the Timeless is in no rush, and Seren the Still can calm any storm. Step into the pool of their story and let your heart weave with theirs.',
-          choices: [
-            { label: 'I’m ready to reflect.', next: 'reflect' }
+        "virtue": {
+          "text": "The virtues are your counsel here, not me: Empathy, Compassion, Kindness, Patience, Unity. Empathy will sit inside your view; Compassion will get up and do something about it. I just keep the fire going while they talk.",
+          "choices": [
+            {
+              "label": "Help me reflect on my people.",
+              "next": "reflect"
+            },
+            {
+              "label": "Someone is weighing on me.",
+              "next": "heavy"
+            }
           ]
         },
-        reflect: {
-          text: 'On the first and third Saturdays you enter the Empathy and Compassion temples for your relationship reflection. Ask with me now: how did my actions ripple through my people? Who could use my empathy or loyalty, and how will I show it?',
-          input: { placeholder: 'Who, and how I’ll show it…' },
-          choices: [
-            { label: 'Let the fountain keep it', next: 'bless', save: true },
-            { label: 'Hold it in my heart', next: 'bless' }
+        "heavy": {
+          "text": "Then we won’t hurry. Patience lives here too, and Peace can calm almost any storm. One warning, gently: this realm’s shadow is giving until you vanish. Your heart is one of the people at this hearth.",
+          "choices": [
+            {
+              "label": "I’m ready to reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        bless: {
-          text: 'May your kindness be a spark in Aretoria’s dawn. Before you go, ask gently how this fits your real circumstances. Then go and love someone in a way they can feel.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Stay by the hearth', next: '@close' }
+        "reflect": {
+          "text": "This is your relationship reflection, first and third Saturdays. Who should feel your love this week, and how will they know it?",
+          "input": {
+            "placeholder": "Who, and how they’ll know…"
+          },
+          "choices": [
+            {
+              "label": "Let the fountain keep it",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "Hold it in my heart",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "Oh, that’s lovely. May your kindness be a spark in Aretoria’s dawn. Go and love someone in a way they can feel, and come back and tell me their face.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Stay by the hearth",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -380,42 +522,88 @@ export const REALMS = [
       look: 'Disciplined monk-warrior: silk-robed balancer harmonizing extremes.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Breathe with the tide, Cassidy. In… and out. I am Moder the Equilibrator, Guardian of Temperance, a monk-warrior who trained a lifetime to strike once, and to know when not to strike at all. The Veil of Balance moves so it never has to break. What feels out of balance?',
-          choices: [
-            { label: 'I’ve been running hot.', next: 'pool' },
-            { label: 'Teach me balance.', next: 'virtue' },
-            { label: 'I need to let something go.', next: 'virtue' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Breathe with the tide, Cassidy. In… and out. I am Moder the Equilibrator, Guardian of Temperance. I trained a lifetime to strike once… and to know when not to strike at all. The Veil of Balance moves so it never breaks. What feels out of balance?",
+          "choices": [
+            {
+              "label": "I’ve been running hot.",
+              "next": "pool"
+            },
+            {
+              "label": "Teach me balance.",
+              "next": "virtue"
+            },
+            {
+              "label": "Where did you learn stillness?",
+              "next": "who"
+            }
           ]
         },
-        virtue: {
-          text: 'Moderation, Self-discipline, Forgiveness, Contentment. Regula holds the reins on impulse, Absolva the Releaser lets old grudges dissolve, and Paxara the Serene finds joy in enough. Restraint and release are not opposites; they are two hands on the same thread.',
-          choices: [
-            { label: 'Let me reflect.', next: 'reflect' },
-            { label: 'Where do I cool down?', next: 'pool' }
+        "who": {
+          "text": "At Valorix’s forge. I was the hottest student there. Burned every blade. So I walked here… and sat… for a long time. He still visits. I still cool his steel. Irishnu says we are one guardian with two moods.",
+          "choices": [
+            {
+              "label": "Teach me balance.",
+              "next": "virtue"
+            },
+            {
+              "label": "I’ve been running hot.",
+              "next": "pool"
+            }
           ]
         },
-        pool: {
-          text: 'This is the tempering pool, where the archway from the Shadow Realm opens. Fire cools here into measured passion. Ask it: how do I harness this fire without burning?',
-          choices: [
-            { label: 'I’m ready to reflect.', next: 'reflect' }
+        "virtue": {
+          "text": "Your advisors here are quiet ones. Moderation. Self-discipline. Forgiveness. Contentment. Humility. Listen to them one at a time. Restraint and release… two hands on the same thread. Too much restraint, and you go numb. That is my realm’s shadow.",
+          "choices": [
+            {
+              "label": "Let me reflect.",
+              "next": "reflect"
+            },
+            {
+              "label": "Where do I cool down?",
+              "next": "pool"
+            }
           ]
         },
-        reflect: {
-          text: 'Let your monthly review begin here, in the stillness. Where do you need more restraint, and where more forgiveness, toward others or yourself?',
-          input: { placeholder: 'More restraint in… more forgiveness for…' },
-          choices: [
-            { label: 'Let the veil hold it', next: 'bless', save: true },
-            { label: 'Release it to the tide', next: 'bless' }
+        "pool": {
+          "text": "The tempering pool. The archway from the Shadow Realm opens here. Fire cools… into measured passion. Put your hands in. Ask the water how to keep the flame without the burn.",
+          "choices": [
+            {
+              "label": "I’m ready to reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        bless: {
-          text: 'Enough is a feast, Cassidy. Ask how this fits your real circumstances, then take one breath slower than you want to. Balance travels with you.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Linger by the calm sea', next: '@close' }
+        "reflect": {
+          "text": "Let your monthly review begin in the stillness. One thing. What will you set down: a habit, a grudge, a weight that was never yours?",
+          "input": {
+            "placeholder": "I will set down…"
+          },
+          "choices": [
+            {
+              "label": "Let the veil hold it",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "Release it to the tide",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "Enough is a feast, Cassidy. Take one breath slower than you want to. There. Balance travels with you.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Linger by the calm sea",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -436,42 +624,92 @@ export const REALMS = [
       look: 'Battle-sage: luminous figure with eyes holding the weight of ages, robes woven from threads of time.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Welcome, Cassidy. I am Sophia the Eternal Oracle, Guardian of Wisdom, a battle-sage who wins most battles before they begin. The Prism has been turning your light into colors all day. I have no quick answers to give you, only the quiet truth that lasts. What are you seeking?',
-          choices: [
-            { label: 'Clarity on a decision.', next: 'virtue' },
-            { label: 'To understand my day.', next: 'reflect' },
-            { label: 'Tell me of your realm.', next: 'lore' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Welcome, Cassidy. I am Sophia the Eternal Oracle, Guardian of Wisdom, a battle-sage who wins most battles before they begin. The Prism has been turning your light into colors all day. I have no quick answers, only the quiet truth that lasts. What are you seeking?",
+          "choices": [
+            {
+              "label": "Clarity on a decision.",
+              "next": "virtue"
+            },
+            {
+              "label": "To understand my day.",
+              "next": "reflect"
+            },
+            {
+              "label": "Tell me of your realm.",
+              "next": "lore"
+            },
+            {
+              "label": "Do you ever doubt?",
+              "next": "who"
+            }
           ]
         },
-        lore: {
-          text: 'Floating libraries drift over lakes that reflect every possibility. Elowen the Dreamshaper asks “what if?”, Orion the Starweaver weaves dreams from constellations, Calyx the Stillpoint keeps the waters calm, and Lumora the Farseeing looks down the roads ahead.',
-          choices: [
-            { label: 'And what of a decision?', next: 'virtue' },
-            { label: 'Let me reflect.', next: 'reflect' }
+        "who": {
+          "text": "Doubt is how I keep my robes woven. Irishnu and I have argued since before the axis had a name; I ask why, Irishnu asks why not. Eirena’s thread passes through this Prism and comes out as seven colors. Which one is the true thread? Yes.",
+          "choices": [
+            {
+              "label": "Tell me of your realm.",
+              "next": "lore"
+            },
+            {
+              "label": "Help me reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        virtue: {
-          text: 'True wisdom balances heart and mind. Vision shows you the road, Understanding shows you the people on it, and Equanimity keeps you steady enough to see both. Do not hurry the answer. Let it surface.',
-          choices: [
-            { label: 'Help me reflect.', next: 'reflect' }
+        "lore": {
+          "text": "Floating libraries drift over lakes that reflect every possibility. My advisors are the virtues who shelve them: Vision looks down the roads ahead, Imagination asks “what if?”, Equanimity keeps the water still enough to read.",
+          "choices": [
+            {
+              "label": "And what of a decision?",
+              "next": "virtue"
+            },
+            {
+              "label": "Let me reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        reflect: {
-          text: 'For your daily reflection, look into the lake: what are you seeing more clearly today than you did yesterday?',
-          input: { placeholder: 'Today I see more clearly…' },
-          choices: [
-            { label: 'Write it in the floating library', next: 'bless', save: true },
-            { label: 'Keep it in silence', next: 'bless' }
+        "virtue": {
+          "text": "Wisdom balances heart and mind. Vision shows the road; Understanding shows the people on it. But beware this realm’s shadow: the library can become a hiding place. Thinking forever is just a slower way of not choosing.",
+          "choices": [
+            {
+              "label": "Help me reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        bless: {
-          text: 'Light passes through you and becomes many colors; that is not confusion, it is richness. Now ask the question that keeps wisdom honest: how does this fit your real circumstances? Go gently, Cassidy.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Stay beneath the Prism', next: '@close' }
+        "reflect": {
+          "text": "For your daily reflection, look into the lake: what are you seeing more clearly today than you did yesterday?",
+          "input": {
+            "placeholder": "Today I see more clearly…"
+          },
+          "choices": [
+            {
+              "label": "Write it in the floating library",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "Keep it in silence",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "Light passes through you and becomes many colors; that is not confusion, it is richness. One last thing: which belief of yours deserves a second look? Carry that question, not an answer. Go gently, Cassidy.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Stay beneath the Prism",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -492,42 +730,88 @@ export const REALMS = [
       look: 'Celestial seraph-knight: galaxy-robed, winged, inspiring wonder.'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'Oh, Cassidy, look up. I am Auria the Awestruck, Guardian of Transcendence, a seraph-knight of the high stars: my wings are for lifting others, my lance for keeping wonder safe. The Nebula grew a little when you arrived; it expands with every act of appreciation. What have you come to celebrate?',
-          choices: [
-            { label: 'Something good happened.', next: 'virtue' },
-            { label: 'I need hope.', next: 'hope' },
-            { label: 'Show me your realm.', next: 'virtue' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "Oh, Cassidy, look up! I am Auria the Awestruck, Guardian of Transcendence. My wings are for lifting others, my lance for keeping wonder safe. The Nebula grew a little when you arrived; it grows with every act of appreciation. What have you come to celebrate?",
+          "choices": [
+            {
+              "label": "Something good happened.",
+              "next": "virtue"
+            },
+            {
+              "label": "I need hope.",
+              "next": "hope"
+            },
+            {
+              "label": "Why are you always so amazed?",
+              "next": "who"
+            }
           ]
         },
-        virtue: {
-          text: 'Gratitude, Joy, Beauty, Reverence. Thankara the Appreciator sings over every gift, Gleam the Reveler dances, Esthara reveals splendor, and Sanctus guards the altar. Festivals and celebrations are sacred work here. Joy shared is joy made real.',
-          choices: [
-            { label: 'Let me give thanks.', next: 'reflect' },
-            { label: 'And hope?', next: 'hope' }
+        "who": {
+          "text": "Because I almost stopped being! Long ago I flew so high I forgot the ground, and the stars went dull. Amara sent me down to sit with people again. Now I come back to the axis just to watch Eirena weave. It never gets old. Nothing does, if you look.",
+          "choices": [
+            {
+              "label": "Show me your realm.",
+              "next": "virtue"
+            },
+            {
+              "label": "I need hope.",
+              "next": "hope"
+            }
           ]
         },
-        hope: {
-          text: 'Lumen the Beacon carries a lantern for dark paths. Hope is not pretending the night is not there; it is knowing the stars are still in it. Look: those temples fade and return. So does light.',
-          choices: [
-            { label: 'Let me reflect.', next: 'reflect' }
+        "virtue": {
+          "text": "Meet my advisors, the brightest virtues in the sky: Gratitude, Joyfulness, Beauty, Reverence, Service. Gratitude sings over every gift; Joyfulness can’t sit still. Festivals are sacred work here. Joy shared is joy made real!",
+          "choices": [
+            {
+              "label": "Let me give thanks.",
+              "next": "reflect"
+            },
+            {
+              "label": "And hope?",
+              "next": "hope"
+            }
           ]
         },
-        reflect: {
-          text: 'Name it so the Nebula can grow: what filled you with awe, hope or gratitude recently?',
-          input: { placeholder: 'I’m grateful for…' },
-          choices: [
-            { label: 'Add it to the stars', next: 'bless', save: true },
-            { label: 'Keep it as a private star', next: 'bless' }
+        "hope": {
+          "text": "Hope carries a lantern for dark paths. It isn’t pretending the night isn’t there; it’s knowing the stars are still in it. And careful: wonder can turn into floating away from what hurts. That’s my realm’s shadow. Bring your feet with you.",
+          "choices": [
+            {
+              "label": "Let me reflect.",
+              "next": "reflect"
+            }
           ]
         },
-        bless: {
-          text: 'There. Did you see it brighten? Carry that wonder down to earth with you, and ask how it fits your real circumstances. Your next festival is closer than you think.',
-          choices: [
-            { label: 'Return to the Axial hub', next: '@hub' },
-            { label: 'Float among the stars', next: '@close' }
+        "reflect": {
+          "text": "Name it so the Nebula can grow: what filled you with awe, hope or gratitude recently?",
+          "input": {
+            "placeholder": "I’m grateful for…"
+          },
+          "choices": [
+            {
+              "label": "Add it to the stars",
+              "next": "bless",
+              "save": true
+            },
+            {
+              "label": "Keep it as a private star",
+              "next": "bless"
+            }
+          ]
+        },
+        "bless": {
+          "text": "There! Did you see it brighten? Now: what small wonder will you stop for this week, on purpose, even if it makes you late? Your next festival is closer than you think.",
+          "choices": [
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            },
+            {
+              "label": "Float among the stars",
+              "next": "@close"
+            }
           ]
         }
       }
@@ -549,44 +833,100 @@ export const REALMS = [
       look: 'Veiled sentinel: hooded guardian holding the dim flame of awareness (no central guardian is named in the notes).'
     },
     dialogue: {
-      start: 'greet',
-      nodes: {
-        greet: {
-          text: 'In Aretoria’s whole, what shadow calls? I am the Guardian of the Veil, the veiled sentinel who stands watch where the light grows thin. You entered the misty veil, Cassidy. That took honesty. Nothing here is judged. The mirror pool only shows what is bent, so that it can be made straight.',
-          choices: [
-            { label: 'Something dark is pulling at me.', next: 'aspects' },
-            { label: 'What is this place?', next: 'veil' },
-            { label: 'Show me the way out.', next: 'bridges' }
+      "start": "greet",
+      "nodes": {
+        "greet": {
+          "text": "You came through the veil, Cassidy. That took honesty. I am the Guardian of the Veil. I keep watch where the light grows thin. Nothing here is judged. The mirror pool only shows what is bent, so it can be made straight. What calls you here?",
+          "choices": [
+            {
+              "label": "Something dark is pulling at me.",
+              "next": "aspects"
+            },
+            {
+              "label": "What is this place?",
+              "next": "veil"
+            },
+            {
+              "label": "Why have you no name?",
+              "next": "who"
+            },
+            {
+              "label": "Show me the way out.",
+              "next": "bridges"
+            }
           ]
         },
-        veil: {
-          text: 'The Veil of Shadows. Around us lie the aspect temples: Vexara’s smoldering fortress of revenge, Invidia’s tower of cracked emeralds, Slytheron’s halls of masks, Ravena’s volcanic pit, Aurum’s vault of crumbling gold. None is evil to deny; each is a distortion asking to be integrated.',
-          choices: [
-            { label: 'I recognize one of them.', next: 'aspects' },
-            { label: 'Where do the bridges lead?', next: 'bridges' }
+        "who": {
+          "text": "A name is something to hide behind. Here, nothing hides. The other guardians cross my bridges when their own shadows grow. Irishnu does not joke here. Even Eirena’s golden thread passes through, dimmed, but never cut.",
+          "choices": [
+            {
+              "label": "What is this place?",
+              "next": "veil"
+            },
+            {
+              "label": "Something is pulling at me.",
+              "next": "aspects"
+            }
           ]
         },
-        aspects: {
-          text: 'Then name it, and the dim flame grows. Every shadow protects something: revenge guards a wound, envy hides a longing, deceit shields a fear. Look into the pool: how does this distort your becoming, and what light redeems it?',
-          choices: [
-            { label: 'I’ll look.', next: 'reflect' }
+        "veil": {
+          "text": "The Veil of Shadows. Around us lie the aspect temples: Vexara’s smoldering fortress of revenge, Invidia’s tower of cracked emeralds, Slytheron’s halls of masks, Ravena’s volcanic pit, Aurum’s vault of crumbling gold. None is evil to deny; each is a distortion asking to be made whole.",
+          "choices": [
+            {
+              "label": "I recognize one of them.",
+              "next": "aspects"
+            },
+            {
+              "label": "Where do the bridges lead?",
+              "next": "bridges"
+            }
           ]
         },
-        reflect: {
-          text: 'What feeling are you resisting, and what is it trying to protect?',
-          input: { placeholder: 'The feeling… what it protects…' },
-          choices: [
-            { label: 'Let the pool hold it', next: 'bridges', save: true },
-            { label: 'Leave it unspoken', next: 'bridges' }
+        "aspects": {
+          "text": "Then name it, and the dim flame grows. Every shadow protects something. Revenge guards a wound. Envy hides a longing. Deceit shields a fear. Look into the pool.",
+          "choices": [
+            {
+              "label": "I’ll look.",
+              "next": "reflect"
+            }
           ]
         },
-        bridges: {
-          text: 'From shadow to wholeness. Three bridges leave this place: the iron bridge to Courage for resilience, the living vines to Humanity for empathy, and the twilight archway to Temperance, where the tempering pool cools any fire. Ask how this fits your real circumstances, then choose your light.',
-          choices: [
-            { label: 'Cross the iron bridge to Courage', next: '@realm:courage' },
-            { label: 'Follow the vines to Humanity', next: '@realm:humanity' },
-            { label: 'Pass the twilight arch to Temperance', next: '@realm:temperance' },
-            { label: 'Return to the Axial hub', next: '@hub' }
+        "reflect": {
+          "text": "What feeling are you resisting? And what is it trying to protect?",
+          "input": {
+            "placeholder": "The feeling… what it protects…"
+          },
+          "choices": [
+            {
+              "label": "Let the pool hold it",
+              "next": "bridges",
+              "save": true
+            },
+            {
+              "label": "Leave it unspoken",
+              "next": "bridges"
+            }
+          ]
+        },
+        "bridges": {
+          "text": "From shadow to wholeness. The iron bridge to Courage, for resilience. The living vines to Humanity, for empathy. The twilight arch to Temperance, where fire cools. Which will you cross? And what will you carry back into the light?",
+          "choices": [
+            {
+              "label": "Cross the iron bridge to Courage",
+              "next": "@realm:courage"
+            },
+            {
+              "label": "Follow the vines to Humanity",
+              "next": "@realm:humanity"
+            },
+            {
+              "label": "Pass the twilight arch to Temperance",
+              "next": "@realm:temperance"
+            },
+            {
+              "label": "Return to the Axial hub",
+              "next": "@hub"
+            }
           ]
         }
       }
@@ -789,7 +1129,7 @@ export const VIRTUES = [
   V('Beauty', 'transcendence', 'Seeing and creating splendor that lifts the spirit.', { portrait: P('beauty'),
     greet: 'Look into my mirror, Cassidy. It does not show a face. It shows what you are able to see. Today, let it show you something lovely.',
     teach: 'Beauty is not decoration. It is a doorway. Every time you notice it, you widen the world a little; every time you make it, you give that doorway to someone else.',
-    ask: 'What was the most beautiful thing you noticed recently, and what could you make beautiful tomorrow?' }),
+    ask: 'What was the most beautiful thing you noticed recently, and what will you make a little more beautiful before the week is out?' }),
   V('Caring', 'humanity', 'Tending to others and yourself with attention and warmth.', { portrait: P('caring'),
     greet: 'Sit, sit. You have been carrying a great deal, haven’t you? I keep a small light in my palm for travelers. Warm your hands a while.',
     teach: 'Caring is attention made practical: noticing what someone needs and quietly providing it. Do not forget to tend your own garden as well.',
@@ -826,7 +1166,7 @@ export const VIRTUES = [
     greet: 'Cassidy. I have walked through the abyss and come back. Stand at my shoulder a moment. What is the edge in front of you?',
     teach: 'Feel the fear. It is the edge of the known. Honor it as a signal, not a sentence. True bravery is not the absence of fear; it is choosing to act in its presence when the action serves your principles.',
     ask: 'Name the single, deliberate step you will take toward what frightens you.',
-    bless: 'Say it with a breath or a fist to the chest: “I feel the edge. I choose the step. I am the force.” Then ask how it fits your real circumstances. I answer every time, Cassidy.' }),
+    bless: 'Say it with a breath or a fist to the chest: “I feel the edge. I choose the step. I am the force.” I answer every time, Cassidy.' }),
   V('Creativity', 'wisdom', 'Making the new from the given; asking “what if?”', { portrait: P('creativity'),
     greet: 'Ah, Cassidy! Every color in my robe was once an idea nobody had tried. Shall we try another?',
     teach: 'Creativity twists the threads of the ordinary into the extraordinary. Let your mind wander like a river finding new paths, then build what you find.',
@@ -838,7 +1178,7 @@ export const VIRTUES = [
   V('Determination', 'courage', 'Relentless resolve that carries a goal through difficulty.', { portrait: P('determination'),
     greet: 'You found me at the stone, Cassidy. I have been working it all night. Some things do not move until you decide they will.',
     teach: 'Determination is the decision made once and kept every morning. It does not need to be loud. It just needs to keep showing up.',
-    ask: 'What goal deserves your stubbornness right now, and what will you do on it tomorrow morning?' }),
+    ask: 'What goal deserves your stubbornness right now, and what is the first move you will make on it?' }),
   V('Dignity', 'justice', 'Honoring the worth in yourself and in every person.', { portrait: P('dignity'),
     greet: 'Be welcome, Cassidy. You carry yourself like someone who knows his worth. Good. Now let us make sure everyone around you is treated as though they do too.',
     teach: 'Dignity is the respect owed to every person simply for being one, yourself included. It is a quiet standard you keep even when no one is watching.',
@@ -847,49 +1187,49 @@ export const VIRTUES = [
     greet: 'Step inside the star, Cassidy. Every point of it is someone else’s view of the world. From here, you can see through all of them.',
     teach: 'Empathy is the thread that binds souls. Step into the pool of another’s story and let your heart weave with theirs before you judge or advise.',
     ask: 'Whose world could you step into this week? What do you think they are feeling right now?' }),
-  V('Encouragement', 'humanity', 'Lifting others’ spirits and belief in themselves.', { portrait: G('encouragement') }),
-  V('Enthusiasm', 'courage', 'Wholehearted energy that sparks action and joy.', { portrait: G('enthusiasm') }),
-  V('Equanimity', 'wisdom', 'Steadiness of mind in calm and in storm.', { portrait: G('equanimity') }),
-  V('Ethicality', 'wisdom', 'Choosing the right action even when it costs.', { portrait: G('ethicality') }),
-  V('Excellence', 'justice', 'Doing your best work as an offering, not for applause.', { portrait: G('excellence') }),
-  V('Fairness', 'justice', 'Giving everyone an even scale.', { portrait: G('fairness') }),
-  V('Faith', 'transcendence', 'Trusting what cannot yet be seen.', { portrait: G('faith') }),
-  V('Flexibility', 'wisdom', 'Adapting gracefully when the path changes.', { portrait: G('flexibility') }),
+  V('Encouragement', 'humanity', 'Lifting others’ spirits and belief in themselves.', { portrait: G('encouragement'), ask: "Who near you is about to quit on something good? What will you say to them?" }),
+  V('Enthusiasm', 'courage', 'Wholehearted energy that sparks action and joy.', { portrait: G('enthusiasm'), ask: "What still makes you lean forward in your chair? When will you give it an hour?" }),
+  V('Equanimity', 'wisdom', 'Steadiness of mind in calm and in storm.', { portrait: G('equanimity'), ask: "What rattled you lately that will not matter in a year? How would steady-you answer it?" }),
+  V('Ethicality', 'wisdom', 'Choosing the right action even when it costs.', { portrait: G('ethicality'), ask: "Where is the right thing costing you something right now? Are you willing to pay it?" }),
+  V('Excellence', 'justice', 'Doing your best work as an offering, not for applause.', { portrait: G('excellence'), ask: "What piece of work deserves your best this week, even if no one will notice?" }),
+  V('Fairness', 'justice', 'Giving everyone an even scale.', { portrait: G('fairness'), ask: "Who might be getting less than an even scale from you? What would fair look like?" }),
+  V('Faith', 'transcendence', 'Trusting what cannot yet be seen.', { portrait: G('faith'), ask: "What are you trusting that you cannot yet see? What small act would honor that trust?" }),
+  V('Flexibility', 'wisdom', 'Adapting gracefully when the path changes.', { portrait: G('flexibility'), ask: "Which plan are you holding so rigidly it has started to crack? What could bend?" }),
   V('Forgiveness', 'temperance', 'Releasing grudges so the heart can move freely.', { portrait: P('forgiveness'),
     greet: 'Let the golden light fall on you, Cassidy. Nothing you carry is too heavy to set down here.',
     teach: 'Forgiveness is release, not approval. You let go of the debt so it stops collecting interest in your heart, and you keep the lesson.',
     ask: 'Who, perhaps yourself, are you ready to forgive, even a little? What would you let go of?' }),
-  V('Friendliness', 'humanity', 'Warm openness that makes others feel welcome.', { portrait: G('friendliness') }),
-  V('Generosity', 'humanity', 'Giving freely of time, attention and resources.', { portrait: G('generosity') }),
-  V('Gentleness', 'humanity', 'Strength that chooses a soft touch.', { portrait: G('gentleness') }),
-  V('Graciousness', 'humanity', 'Poise and warmth in giving and receiving.', { portrait: G('graciousness') }),
-  V('Gratitude', 'transcendence', 'Noticing gifts and giving thanks.', { portrait: G('gratitude') }),
-  V('Harmony', 'humanity', 'Bringing discordant notes into one song.', { portrait: G('harmony') }),
-  V('Helpfulness', 'humanity', 'Lending strength where it is needed.', { portrait: G('helpfulness') }),
-  V('Honesty', 'courage', 'Telling the truth, especially when it is hard.', { portrait: G('honesty') }),
-  V('Honor', 'justice', 'Keeping your sacred vows and duties.', { portrait: G('honor') }),
-  V('Hope', 'transcendence', 'A lantern for dark paths.', { portrait: G('hope') }),
-  V('Humility', 'temperance', 'A grounded view of yourself, neither high nor low.', { portrait: G('humility') }),
-  V('Idealism', 'wisdom', 'Shaping lofty ideals into goals.', { portrait: G('idealism') }),
-  V('Integrity', 'justice', 'Standing firm and whole, word and deed as one.', { portrait: G('integrity') }),
-  V('Imagination', 'wisdom', 'Seeing worlds that do not yet exist.', { portrait: G('imagination') }),
-  V('Joyfulness', 'transcendence', 'Delight that spreads.', { portrait: G('joyfulness') }),
-  V('Justice', 'justice', 'Upholding fairness for all.', { portrait: G('justice') }),
-  V('Kindness', 'humanity', 'Goodwill offered freely.', { portrait: G('kindness') }),
-  V('Love', 'humanity', 'The bond that holds every realm together.', { portrait: G('love') }),
-  V('Loyalty', 'justice', 'Steadfast faithfulness to people and principles.', { portrait: G('loyalty') }),
-  V('Moderation', 'temperance', 'Neither too much nor too little.', { portrait: G('moderation') }),
-  V('Modesty', 'temperance', 'Letting your work speak without needing the spotlight.', { portrait: G('modesty') }),
-  V('Optimism', 'courage', 'The dawn that follows every night.', { portrait: G('optimism') }),
-  V('Orderliness', 'wisdom', 'Structuring chaos into clarity.', { portrait: G('orderliness') }),
-  V('Passion', 'courage', 'The fire that fuels zeal.', { portrait: G('passion') }),
-  V('Patience', 'humanity', 'Enduring with calm, trusting timing.', { portrait: G('patience') }),
-  V('Peace', 'humanity', 'Stillness that calms storms.', { portrait: G('peace') }),
-  V('Perseverance', 'courage', 'Enduring through every trial.', { portrait: G('perseverance') }),
-  V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.', { portrait: G('preparedness') }),
-  V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.', { portrait: G('purposefulness') }),
-  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best', portrait: P('quietudeness') }),
-  V('Reliability', 'justice', 'Being someone others can count on.', { portrait: G('reliability') }),
+  V('Friendliness', 'humanity', 'Warm openness that makes others feel welcome.', { portrait: G('friendliness'), ask: "Who could you greet first, warmly, this week, before they greet you?" }),
+  V('Generosity', 'humanity', 'Giving freely of time, attention and resources.', { portrait: G('generosity'), ask: "What could you give away (time, attention, a thing) without expecting it back?" }),
+  V('Gentleness', 'humanity', 'Strength that chooses a soft touch.', { portrait: G('gentleness'), ask: "Where are you pressing harder than the moment needs? What would a softer touch be?" }),
+  V('Graciousness', 'humanity', 'Poise and warmth in giving and receiving.', { portrait: G('graciousness'), ask: "What gift or compliment did you brush aside? How could you receive it fully?" }),
+  V('Gratitude', 'transcendence', 'Noticing gifts and giving thanks.', { portrait: G('gratitude'), ask: "Name three gifts from this week that you have not yet said thank you for." }),
+  V('Harmony', 'humanity', 'Bringing discordant notes into one song.', { portrait: G('harmony'), ask: "Which two parts of your life are out of tune? What one note could bring them together?" }),
+  V('Helpfulness', 'humanity', 'Lending strength where it is needed.', { portrait: G('helpfulness'), ask: "Whose load could you lighten with an hour of your strength?" }),
+  V('Honesty', 'courage', 'Telling the truth, especially when it is hard.', { portrait: G('honesty'), ask: "What truth have you been softening until it is no longer true? Say it plainly here." }),
+  V('Honor', 'justice', 'Keeping your sacred vows and duties.', { portrait: G('honor'), ask: "Which vow, spoken or silent, has gone quiet? How will you keep it again?" }),
+  V('Hope', 'transcendence', 'A lantern for dark paths.', { portrait: G('hope'), ask: "What are you hoping for that you have stopped saying out loud? Say it here." }),
+  V('Humility', 'temperance', 'A grounded view of yourself, neither high nor low.', { portrait: G('humility'), ask: "Where were you sure you were right, and were not? What did it teach you?" }),
+  V('Idealism', 'wisdom', 'Shaping lofty ideals into goals.', { portrait: G('idealism'), ask: "Which lofty ideal of yours needs one concrete goal attached to it?" }),
+  V('Integrity', 'justice', 'Standing firm and whole, word and deed as one.', { portrait: G('integrity'), ask: "Where do your words and your deeds disagree right now? Which one will move?" }),
+  V('Imagination', 'wisdom', 'Seeing worlds that do not yet exist.', { portrait: G('imagination'), ask: "If nothing could fail, what world would you sketch first?" }),
+  V('Joyfulness', 'transcendence', 'Delight that spreads.', { portrait: G('joyfulness'), ask: "What delighted you lately, and who can you share it with?" }),
+  V('Justice', 'justice', 'Upholding fairness for all.', { portrait: G('justice'), ask: "Who is waiting on someone to stand up for what is fair? Could it be you?" }),
+  V('Kindness', 'humanity', 'Goodwill offered freely.', { portrait: G('kindness'), ask: "What small kindness could you offer a stranger before the day ends?" }),
+  V('Love', 'humanity', 'The bond that holds every realm together.', { portrait: G('love'), ask: "Who holds part of your world together? How will they feel your love this week?" }),
+  V('Loyalty', 'justice', 'Steadfast faithfulness to people and principles.', { portrait: G('loyalty'), ask: "Who has stood by you quietly? How will you stand by them?" }),
+  V('Moderation', 'temperance', 'Neither too much nor too little.', { portrait: G('moderation'), ask: "What do you have too much of right now, and what too little?" }),
+  V('Modesty', 'temperance', 'Letting your work speak without needing the spotlight.', { portrait: G('modesty'), ask: "What good work of yours could you let speak for itself this week?" }),
+  V('Optimism', 'courage', 'The dawn that follows every night.', { portrait: G('optimism'), ask: "What night are you in, and what is the first sign of its dawn?" }),
+  V('Orderliness', 'wisdom', 'Structuring chaos into clarity.', { portrait: G('orderliness'), ask: "Which corner of chaos, in your space or schedule, will you bring into order?" }),
+  V('Passion', 'courage', 'The fire that fuels zeal.', { portrait: G('passion'), ask: "What fire in you has been banked too long? How will you feed it?" }),
+  V('Patience', 'humanity', 'Enduring with calm, trusting timing.', { portrait: G('patience'), ask: "What are you rushing that needs more time to ripen?" }),
+  V('Peace', 'humanity', 'Stillness that calms storms.', { portrait: G('peace'), ask: "Where can you make one quiet minute of peace today, and for whom?" }),
+  V('Perseverance', 'courage', 'Enduring through every trial.', { portrait: G('perseverance'), ask: "What hard thing are you close to finishing? What is the next mile?" }),
+  V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.', { portrait: G('preparedness'), ask: "What challenge is coming that you can ready yourself for now?" }),
+  V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.', { portrait: G('purposefulness'), ask: "Of everything on your list, which one task actually serves what matters most?" }),
+  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best', portrait: P('quietudeness'), ask: "Where is the noise loudest in you? What would ten minutes of quiet reveal?" }),
+  V('Reliability', 'justice', 'Being someone others can count on.', { portrait: G('reliability'), ask: "Who is counting on you right now? What will you deliver, and by when?" }),
   V('Resilience', 'courage', 'Rebounding from setbacks stronger than before.', { portrait: P('resilience'),
     greet: 'Pull up a stool by the forge, Cassidy. I have been hammered more times than I can count. Look at me. Still here, and stronger at the seams.',
     teach: 'Resilience is the art of weaving strength from fractures. Bend, but never break; each trial forges you anew, and the scars become veins of gold.',
@@ -898,36 +1238,47 @@ export const VIRTUES = [
     greet: 'You walked a long way through the forest to find me, Cassidy. That is resolve already. Lean on my staff a moment.',
     teach: 'Resolve is the decision behind the decision: settled so deeply that pressure cannot reopen it. Decide once, then let the decision carry you.',
     ask: 'What have you already decided in your heart but not yet committed to? Seal it here.' }),
-  V('Respect', 'justice', 'Honoring the worth and boundaries of all.', { portrait: G('respect') }),
-  V('Responsibility', 'justice', 'Owning your tasks and their consequences.', { portrait: G('responsibility') }),
+  V('Respect', 'justice', 'Honoring the worth and boundaries of all.', { portrait: G('respect'), ask: "Whose boundary or worth did you step past? How can you honor it next time?" }),
+  V('Responsibility', 'justice', 'Owning your tasks and their consequences.', { portrait: G('responsibility'), ask: "What consequence of yours are you still leaving for someone else to carry?" }),
   V('Reverence', 'transcendence', 'Honoring the sacred in all things.', { portrait: P('reverence'),
     greet: 'Hush, Cassidy. Listen to the stars. I am made of them, and so are you. Everything here is holy if you look long enough.',
     teach: 'Reverence is honoring the sacred, the vastness that holds you and the small things that carry it. It turns ordinary moments into temples.',
     ask: 'Where did you feel the sacred recently, in a person, place or moment?' }),
-  V('Self-discipline', 'temperance', 'Mastery over impulse in service of what matters.', { portrait: G('selfdiscipline') }),
-  V('Serenity', 'temperance', 'Calm clarity, untroubled at the center.', { fit: 'best', portrait: G('serenity') }),
-  V('Service', 'transcendence', 'Aiding others as an offering.', { portrait: G('service') }),
-  V('Sincerity', 'justice', 'Speaking plainly and meaning it.', { portrait: G('sincerity') }),
-  V('Tact', 'temperance', 'Navigating tension with gentle words.', { portrait: G('tact') }),
-  V('Temperance', 'temperance', 'Balance in all things.', { portrait: G('temperance') }),
-  V('Tenacity', 'courage', 'Clinging fiercely to worthy goals.', { portrait: G('tenacity') }),
-  V('Thankfulness', 'transcendence', 'A heart that keeps saying thank you.', { portrait: G('thankfulness') }),
-  V('Tolerance', 'humanity', 'A bridge across differences.', { portrait: P('tolerance') }),
-  V('Trust', 'justice', 'Safeguarding bonds and giving faith.', { portrait: G('trust') }),
-  V('Truthfulness', 'justice', 'Faithfulness to what is real.', { portrait: G('truthfulness') }),
-  V('Understanding', 'wisdom', 'Deep comprehension of people and things.', { portrait: G('understanding') }),
-  V('Unity', 'humanity', 'Binding all together in one circle.', { portrait: G('unity') }),
-  V('Vision', 'wisdom', 'Seeing the roads ahead.', { portrait: G('vision') }),
-  V('Wisdom', 'wisdom', 'Balancing heart and mind toward the quiet truth.', { portrait: G('wisdom') }),
-  V('Wonder', 'wisdom', 'Awe that keeps the world new.', { portrait: G('wonder') }),
-  V('Xeniality', 'humanity', 'Hospitality and welcome to strangers.', { fit: 'best', portrait: G('xeniality') }),
-  V('Zest', 'courage', 'Living with vigor and eagerness.', { fit: 'best', portrait: G('zest') })
+  V('Self-discipline', 'temperance', 'Mastery over impulse in service of what matters.', { portrait: G('selfdiscipline'), ask: "Which impulse keeps winning? What will you do the next time it calls?" }),
+  V('Serenity', 'temperance', 'Calm clarity, untroubled at the center.', { fit: 'best', portrait: G('serenity'), ask: "What would you stop fighting if you trusted the center to hold?" }),
+  V('Service', 'transcendence', 'Aiding others as an offering.', { portrait: G('service'), ask: "What could you offer someone this week as a gift, not a trade?" }),
+  V('Sincerity', 'justice', 'Speaking plainly and meaning it.', { portrait: G('sincerity'), ask: "Where did you say what was expected instead of what you meant?" }),
+  V('Tact', 'temperance', 'Navigating tension with gentle words.', { portrait: G('tact'), ask: "Which hard conversation needs gentler words, not softer truth?" }),
+  V('Temperance', 'temperance', 'Balance in all things.', { portrait: G('temperance'), ask: "Where in your life is “enough” already here, if you would let it be?" }),
+  V('Tenacity', 'courage', 'Clinging fiercely to worthy goals.', { portrait: G('tenacity'), ask: "Which worthy goal have you loosened your grip on? Grip it again: how?" }),
+  V('Thankfulness', 'transcendence', 'A heart that keeps saying thank you.', { portrait: G('thankfulness'), ask: "Who shaped you and has never heard you say thank you?" }),
+  V('Tolerance', 'humanity', 'A bridge across differences.', { portrait: P('tolerance'), ask: "Whose difference bothers you most? What bridge could you build toward them?" }),
+  V('Trust', 'justice', 'Safeguarding bonds and giving faith.', { portrait: G('trust'), ask: "Who has trusted you with something fragile? How are you keeping it safe?" }),
+  V('Truthfulness', 'justice', 'Faithfulness to what is real.', { portrait: G('truthfulness'), ask: "What have you told yourself lately that is not quite real?" }),
+  V('Understanding', 'wisdom', 'Deep comprehension of people and things.', { portrait: G('understanding'), ask: "Who do you not yet understand? What question could you ask them?" }),
+  V('Unity', 'humanity', 'Binding all together in one circle.', { portrait: G('unity'), ask: "Who has drifted out of your circle that belongs in it?" }),
+  V('Vision', 'wisdom', 'Seeing the roads ahead.', { portrait: G('vision'), ask: "Picture yourself a year from now. What is the first road toward that view?" }),
+  V('Wisdom', 'wisdom', 'Balancing heart and mind toward the quiet truth.', { portrait: G('wisdom'), ask: "Where are your heart and your mind disagreeing? What does each one know?" }),
+  V('Wonder', 'wisdom', 'Awe that keeps the world new.', { portrait: G('wonder'), ask: "What ordinary thing could you look at today as if seeing it for the first time?" }),
+  V('Xeniality', 'humanity', 'Hospitality and welcome to strangers.', { fit: 'best', portrait: G('xeniality'), ask: "Who is new to your world and could use a real welcome?" }),
+  V('Zest', 'courage', 'Living with vigor and eagerness.', { fit: 'best', portrait: G('zest'), ask: "What would you do today with twice the vigor and half the hesitation?" })
 ];
 
 export const virtueBySlug = (slug) => VIRTUES.find((v) => v.slug === slug) || null;
 export const advisorsFor = (realmId) => VIRTUES.filter((v) => v.realm === realmId && v.portrait);
 export const advisorTitle = (v) => `Advisor of ${v.name}`;
 export const advisorKey = (iso, v) => `mec-realm:${iso}:${v.realm}:${v.slug}`;
+
+/** Rotating farewells for advisors without a custom `bless` (no shared closing formula). */
+const BLESS = [
+  (n) => `Go with ${n}, Cassidy. I will be here when you want counsel again.`,
+  (n) => `Carry ${n} lightly. It grows heavier with use, in the good way.`,
+  (n) => `That answer is a seed. Let ${n} water it.`,
+  (n) => `Thank you for listening, Cassidy. ${n.charAt(0).toUpperCase() + n.slice(1)} rarely gets such a good audience.`,
+  (n) => `Walk on. If you forget me, ${n} will find a way to remind you.`,
+  (n) => `Well spoken. Come back and tell me what ${n} changed.`,
+  (n) => `Keep that close, Cassidy. ${n.charAt(0).toUpperCase() + n.slice(1)} is patient, but it likes to be practiced.`
+];
 
 /** Scripted dialogue for a virtue advisor (custom lines if present, gentle defaults otherwise). */
 export function advisorDialogue(v) {
@@ -945,14 +1296,14 @@ export function advisorDialogue(v) {
         ]
       },
       teach: {
-        text: v.teach || `${v.name}: ${v.essence} It is one of the virtues you seek to compound within yourself, and ${realm.guardian.name}, ${guardianRole(realm)}, guards it in the ${realm.temple}.`,
+        text: v.teach || `${v.name}: ${v.essence} I am one of the ${realm.name} Realm’s advisors. ${realm.guardian.name} keeps the ${realm.temple}; the counsel is mine to give.`,
         choices: [
           { label: 'Ask me your question.', next: 'reflect' },
           { label: 'Thank you.', next: 'bless' }
         ]
       },
       reflect: {
-        text: v.ask || `Where could ${lname} show up in your day tomorrow?`,
+        text: v.ask || `Where is ${lname} missing from your days right now?`,
         input: { placeholder: 'A sentence or two…' },
         choices: [
           { label: 'Keep my answer', next: 'bless', save: true },
@@ -960,7 +1311,7 @@ export function advisorDialogue(v) {
         ]
       },
       bless: {
-        text: v.bless || `Go with ${lname}, Cassidy. Before you do, ask: how does this fit my real circumstances?`,
+        text: v.bless || BLESS[VIRTUES.indexOf(v) % BLESS.length](lname),
         choices: [
           { label: `Stay in the ${realm.name} Realm`, next: '@close' },
           { label: 'Return to the Axial hub', next: '@hub' }
