@@ -563,7 +563,8 @@ class FX {
     const mk = (o) => P.push(Object.assign({ x: R() * w, y: R() * h, r: 1.5, a: 1, ph: R() * 6.28, vx: 0, vy: 0, kind: 'glow', c: '#ffffff' }, o));
     switch (this.mode) {
       case 'motes': for (let i = 0; i < n(70); i++) mk({ r: 1 + R() * 2.6, vy: -(6 + R() * 14), sw: 10 + R() * 20, c: ['#cfe6ff', '#ffffff', '#ffe9a8', '#c9a7f0'][i % 4] });
-        for (let i = 0; i < n(8); i++) mk({ kind: 'scroll', r: 7 + R() * 5, vy: -(5 + R() * 6), sw: 18, rot: R() * 6 });
+        // Distant drifting pages: tiny, many, faint and slow, so the temples read as enormous (nearer = a touch larger/brighter).
+        for (let i = 0; i < n(34); i++) { const z = R() * R(); mk({ kind: 'scroll', r: 1.4 + z * 2.4, a: 0.18 + z * 0.32, vy: -(1.5 + z * 3), sw: 6 + z * 8, rot: R() * 6 }); }
         break;
       case 'embers': for (let i = 0; i < n(95); i++) mk({ r: 0.8 + R() * 2, vy: -(30 + R() * 70), vx: 8 + R() * 18, sw: 14, c: ['#ffb347', '#ff6a2a', '#ffd27a'][i % 3], kind: 'ember' }); break;
       case 'lanterns': for (let i = 0; i < n(14); i++) mk({ kind: 'lantern', r: 6 + R() * 8, vy: -(6 + R() * 10), sw: 14 });
@@ -641,10 +642,9 @@ class FX {
   scroll(g, p) {
     g.globalCompositeOperation = 'source-over';
     g.save(); g.translate(p.x, p.y); g.rotate(Math.sin(p.ph * 0.5) * 0.4 + p.rot);
-    g.globalAlpha = 0.55; g.fillStyle = '#f3e6c4'; g.fillRect(-p.r, -p.r * 0.45, p.r * 2, p.r * 0.9);
-    g.fillStyle = '#d9b56a'; g.fillRect(-p.r - 2, -p.r * 0.55, 3, p.r * 1.1); g.fillRect(p.r - 1, -p.r * 0.55, 3, p.r * 1.1);
-    g.strokeStyle = 'rgba(120,90,40,.5)'; g.lineWidth = 0.8;
-    for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(-p.r * 0.7, i * p.r * 0.22); g.lineTo(p.r * 0.7, i * p.r * 0.22); g.stroke(); }
+    // a distant page is just a pale fleck with gold edges (no ruled lines at this size)
+    g.globalAlpha = p.a; g.fillStyle = '#f3e6c4'; g.fillRect(-p.r, -p.r * 0.45, p.r * 2, p.r * 0.9);
+    const e = Math.max(0.6, p.r * 0.3); g.fillStyle = '#d9b56a'; g.fillRect(-p.r - e * 0.5, -p.r * 0.55, e, p.r * 1.1); g.fillRect(p.r - e * 0.5, -p.r * 0.55, e, p.r * 1.1);
     g.restore(); g.globalCompositeOperation = 'lighter';
   }
   drawStatic() { this.draw(); }
