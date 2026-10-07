@@ -2,8 +2,8 @@
  * Aretoria v1 — realm, guardian and dialogue data (no DOM, importable in node for tests).
  *
  * Cosmology: V1 "horizontal" Aretoria — six VIA-virtue realms plus the Shadow Realm
- * (seven environments), entered from the Axial Realm (the shared realm of existence,
- * where Eirena the Eternal Weaver holds the golden thread). Irishnu, the Guide, greets
+ * (seven environments), entered from the Axial Realm (the shared realm of existence; the golden thread is the
+ * gold light running through every bridge and portal that joins the realms into one whole). Irishnu, the Guide, greets
  * you in the hub. Names, temples and virtues come from Cassidy's Aretoria project notes;
  * the Shadow Realm has no named central guardian there, so it uses the neutral name
  * "Guardian of the Veil". Since v25 every realm host is presented as that realm's
@@ -17,8 +17,10 @@
  * The visitor arrives through the central blue portal of the Axial Realm and Irishnu greets him there (v35
  * 'arrive' node). He does what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but
  * the sincere guidance always comes first and the humour is never announced or named. v35 lore pass: robe →
- * armor, portal arrival, all 81 virtues live in the six realms (five are also shared by the axis), Guardians
- * are advisors alongside the virtues, Shadow lies across its own bridge.)
+ * armor, portal arrival, Guardians are advisors alongside the virtues, Shadow lies across its own bridge.
+ * v36 (Cassidy): six great temples, each holding one great virtue; the 81 virtues are shared among the six
+ * temples (14/14/14/13/13/13), none on the axis. The golden thread is a feature of the world, not a being:
+ * nobody holds or weaves it.)
  *
  * Dialogue trees are scripted (no AI). A choice's `next` is a node id in the same tree
  * or one of: '@hub' (return to the Axial hub), '@close' (close the dialogue),
@@ -80,7 +82,7 @@ export function ritualFor(date) {
   if (dow === 0) return { id: 'sunday-audit', name: 'the Sunday self-audit', realm: 'justice',
     line: 'It is Sunday: the evening of your weekly self-audit and 1–10 scorecard.' };
   if (dow === 6 && (dom <= 7 || (dom >= 15 && dom <= 21))) return { id: 'relationship', name: 'the relationship reflection', realm: 'humanity',
-    line: 'It is the ' + (dom <= 7 ? 'first' : 'third') + ' Saturday: your relationship reflection, held in the Empathy and Compassion temples.' };
+    line: 'It is the ' + (dom <= 7 ? 'first' : 'third') + ' Saturday: your relationship reflection, with Empathy and Compassion in the Hearth of Hearts.' };
   if (dom === last) return { id: 'monthly', name: 'the monthly review', realm: 'temperance',
     line: 'It is the last day of the month: time for your monthly review.' };
   return { id: 'daily', name: 'the daily reflection', realm: 'wisdom',
@@ -115,8 +117,8 @@ export const HUB = {
   id: 'axial',
   name: 'The Axial Realm',
   sub: 'The shared realm of existence',
-  virtues: ['Beauty', 'Graciousness', 'Integrity', 'Purposefulness', 'Wonder'],
-  thread: 'Eirena the Eternal Weaver holds the golden thread that connects every realm.'
+  // no virtues live on the axis (v36): all 81 are shared among the six great temples
+  thread: 'The golden thread: the gold light running through every bridge and portal, joining the realms into one whole.'
 };
 
 export const GUIDE = {
@@ -131,7 +133,7 @@ export const GUIDE = {
     arrivalStart: 'arrive', // the first-visit greeting at the portal (Axial arrival); later taps on his card open 'greet'
     nodes: {
       arrive: {
-        text: "Cassidy. Steady now; the portal sets everyone down a little dazzled. You are standing at the center of the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. Eirena the Eternal Weaver holds the golden thread. I hold the threshold, and, when it is needed, the traveler’s attention.",
+        text: "Cassidy. Steady now; the portal sets everyone down a little dazzled. You are standing at the center of the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. The golden thread runs through every bridge and portal. I hold the threshold, and, when it is needed, the traveler’s attention.",
         choices: [
           { label: 'What are the realms?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -140,7 +142,7 @@ export const GUIDE = {
         ]
       },
       greet: {
-        text: "Ah, Cassidy. Right on time, or time is right on you; from the center it is hard to tell which. This is the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. Eirena the Eternal Weaver holds the golden thread. I hold the threshold, and, when it is needed, the traveler’s attention.",
+        text: "Ah, Cassidy. Right on time, or time is right on you; from the center it is hard to tell which. This is the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. The golden thread runs through every bridge and portal. I hold the threshold, and, when it is needed, the traveler’s attention.",
         choices: [
           { label: 'What are the realms?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -149,7 +151,7 @@ export const GUIDE = {
         ]
       },
       realms: {
-        text: "Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence, and the Shadow Realm across its own bridge. Call them rooms in one house; this shared realm is the hall that joins them, and the portal set you down in the middle of it. Eighty-one virtues live in the six rooms of light, every one with a home. Five of them (Beauty, Graciousness, Integrity, Purposefulness, Wonder) also belong to the axis, because they refuse to stay in one room. Each realm keeps a temple and a Guardian, a warrior of its own kind and the first advisor you meet there: Sophia, Valorix, Amara, Justar, Moder, Auria, and the Guardian of the Veil. The virtues wait beside them as advisors too.",
+        text: "Six great temples, Cassidy, each holding one great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. The eighty-one virtues are shared among those six temples, each with a single home. Every temple’s Guardian is its first advisor: Sophia, Valorix, Amara, Justar, Moder and Auria, in that order. The virtues housed with them are advisors too. Across its own bridge lies the Shadow Realm, watched by the Guardian of the Veil. And this is the Axial Realm, the shared hall that joins them all; the portal set you down in the middle of it. Every door opens from here. That is rather the point of a hall.",
         choices: [
           { label: 'Where should I go today?', next: 'today' },
           { label: 'And the Shadow Realm?', next: 'shadow' },
@@ -217,7 +219,7 @@ export const REALMS = [
     temple: 'Forge of Valor',
     templeDesc: 'An anvil-shaped fortress of obsidian, glowing with inner flames, where virtues are tempered like steel.',
     landscape: 'Jagged mountains, rivers of molten determination, storm-swept peaks.',
-    virtues: ['Courage', 'Assertiveness', 'Confidence', 'Determination', 'Enthusiasm', 'Optimism', 'Passion', 'Perseverance', 'Resilience', 'Tenacity', 'Honesty'],
+    virtues: ['Courage', 'Assertiveness', 'Confidence', 'Determination', 'Enthusiasm', 'Optimism', 'Passion', 'Perseverance', 'Resilience', 'Tenacity', 'Honesty', 'Resolve', 'Zest'],
     particles: 'embers',
     guardianPortrait: GP('valorix'),
     realmBackdrop: RP('courage'),
@@ -264,7 +266,7 @@ export const REALMS = [
           ]
         },
         "virtue": {
-          "text": "Listen to my advisors, not me. They are the virtues of this forge: Assertiveness, Determination, Resilience, Perseverance, Honesty. Resilience wears her scars as veins of gold. Optimism swears every night ends. Find their gates along the ridge.",
+          "text": "I speak first. Then listen to the other virtues of this forge: Assertiveness, Determination, Resilience, Perseverance, Honesty. Resilience wears her scars as veins of gold. Optimism swears every night ends. Find their gates along the ridge.",
           "choices": [
             {
               "label": "Help me face it.",
@@ -323,7 +325,7 @@ export const REALMS = [
     temple: 'Scales of Equity',
     templeDesc: 'An enormous balance beam suspended in the air, engraved in gold with laws and oaths.',
     landscape: 'Grand halls of marble and balanced scales amid orderly cities.',
-    virtues: ['Justice', 'Fairness', 'Integrity', 'Honor', 'Loyalty', 'Trust', 'Sincerity', 'Truthfulness', 'Respect', 'Responsibility', 'Reliability', 'Dignity'],
+    virtues: ['Justice', 'Fairness', 'Integrity', 'Honor', 'Loyalty', 'Trust', 'Sincerity', 'Truthfulness', 'Respect', 'Responsibility', 'Reliability', 'Dignity', 'Authenticity', 'Cooperation'],
     particles: 'dust',
     guardianPortrait: GP('justar'),
     realmBackdrop: RP('justice'),
@@ -425,7 +427,7 @@ export const REALMS = [
     temple: 'Hearth of Hearts',
     templeDesc: 'A circular pavilion of living wood and crystal veins, warm as an eternal bonfire, with a fountain of empathy at its core.',
     landscape: 'Blooming meadows, rivers of empathy, groves of bioluminescent vines, bridges of woven light.',
-    virtues: ['Love', 'Empathy', 'Compassion', 'Loyalty', 'Unity', 'Kindness', 'Patience', 'Peace', 'Harmony', 'Generosity', 'Acceptance', 'Gentleness'],
+    virtues: ['Love', 'Empathy', 'Compassion', 'Unity', 'Kindness', 'Generosity', 'Gentleness', 'Caring', 'Consideration', 'Encouragement', 'Friendliness', 'Helpfulness', 'Tolerance', 'Xeniality'],
     particles: 'lanterns',
     guardianPortrait: GP('amara'),
     realmBackdrop: RP('humanity'),
@@ -455,7 +457,7 @@ export const REALMS = [
           ]
         },
         "who": {
-          "text": "With a wound I refused to let scar shut. Things grew in it. Justar learned mercy at this fire, and I learned from Justar that love without truth is only comfort. Eirena’s thread runs warmest here. I like to think that is my doing.",
+          "text": "With a wound I refused to let scar shut. Things grew in it. Justar learned mercy at this fire, and I learned from Justar that love without truth is only comfort. The golden thread runs warmest here. I like to think that is my doing.",
           "choices": [
             {
               "label": "Tell me about the Hearth.",
@@ -468,7 +470,7 @@ export const REALMS = [
           ]
         },
         "virtue": {
-          "text": "The virtues are your counsel here, not me: Empathy, Compassion, Kindness, Patience, Unity. Empathy will sit inside your view; Compassion will get up and do something about it. I just keep the fire going while they talk.",
+          "text": "I counsel first, dear one, but never alone: Empathy, Compassion, Kindness, Generosity, Unity. Empathy will sit inside your view; Compassion will get up and do something about it. I keep the fire going while we all talk.",
           "choices": [
             {
               "label": "Help me reflect on my people.",
@@ -481,7 +483,7 @@ export const REALMS = [
           ]
         },
         "heavy": {
-          "text": "Then we won’t hurry. Patience lives here too, and Peace can calm almost any storm. One warning, gently: this realm’s shadow is giving until you vanish. Your heart is one of the people at this hearth.",
+          "text": "Then we won’t hurry. Gentleness lives here too, and Kindness can soften almost any storm. One warning, gently: this realm’s shadow is giving until you vanish. Your heart is one of the people at this hearth.",
           "choices": [
             {
               "label": "I’m ready to reflect.",
@@ -527,7 +529,7 @@ export const REALMS = [
     temple: 'Veil of Balance',
     templeDesc: 'A translucent dome of silk-like energy that shifts to keep its equilibrium.',
     landscape: 'Serene meadows and calm seas with minimalist architecture; a tempering pool.',
-    virtues: ['Temperance', 'Moderation', 'Self-discipline', 'Forgiveness', 'Humility', 'Contentment', 'Tact', 'Commitment', 'Modesty'],
+    virtues: ['Temperance', 'Moderation', 'Self-discipline', 'Forgiveness', 'Humility', 'Contentment', 'Patience', 'Harmony', 'Tact', 'Commitment', 'Modesty', 'Serenity', 'Quietudeness', 'Cleanliness'],
     particles: 'mist',
     guardianPortrait: GP('moder'),
     realmBackdrop: RP('temperance'),
@@ -663,7 +665,7 @@ export const REALMS = [
           ]
         },
         "who": {
-          "text": "Doubt is how I keep my robes woven. Irishnu and I have argued since before the axis had a name; I ask why, Irishnu asks why not. Eirena’s thread passes through this Prism and comes out as seven colors. Which one is the true thread? Yes.",
+          "text": "Doubt is how I keep my robes woven. Irishnu and I have argued since before the axis had a name; I ask why, Irishnu asks why not. The golden thread passes through my Prism and comes out as seven colors. Which one is the true thread? Yes.",
           "choices": [
             {
               "label": "Tell me of your realm.",
@@ -734,8 +736,8 @@ export const REALMS = [
     id: 'transcendence', name: 'Transcendence', color: '#c9a7f0', order: 6,
     temple: 'Nebula of Awe',
     templeDesc: 'A swirling galaxy-shaped sanctuary that expands with every act of appreciation.',
-    landscape: 'Ethereal clouds and starry voids, with temples that phase in and out of visibility.',
-    virtues: ['Gratitude', 'Hope', 'Joyfulness', 'Beauty', 'Reverence', 'Faith', 'Service', 'Thankfulness'],
+    landscape: 'Ethereal clouds and starry voids, where the Nebula of Awe phases in and out of visibility.',
+    virtues: ['Gratitude', 'Hope', 'Joyfulness', 'Beauty', 'Reverence', 'Faith', 'Peace', 'Acceptance', 'Detachment', 'Excellence', 'Graciousness', 'Service', 'Thankfulness'],
     particles: 'stars',
     guardianPortrait: GP('auria'),
     realmBackdrop: RP('transcendence'),
@@ -765,7 +767,7 @@ export const REALMS = [
           ]
         },
         "who": {
-          "text": "Because I almost stopped being! Long ago I flew so high I forgot the ground, and the stars went dull. Amara sent me down to sit with people again. Now I come back to the axis just to watch Eirena weave. It never gets old. Nothing does, if you look.",
+          "text": "Because I almost stopped being! Long ago I flew so high I forgot the ground, and the stars went dull. Amara sent me down to sit with people again. Now I come back to the axis just to watch the golden thread shine as the bridges catch the light. It never gets old. Nothing does, if you look.",
           "choices": [
             {
               "label": "Show me your realm.",
@@ -872,7 +874,7 @@ export const REALMS = [
           ]
         },
         "who": {
-          "text": "A name is something to hide behind. Here, nothing hides. The other guardians cross my bridges when their own shadows grow. Irishnu does not joke here. Even Eirena’s golden thread passes through, dimmed, but never cut.",
+          "text": "A name is something to hide behind. Here, nothing hides. The other guardians cross my bridges when their own shadows grow. Irishnu does not joke here. Even the golden thread passes through, dimmed, never cut.",
           "choices": [
             {
               "label": "What is this place?",
@@ -1140,6 +1142,7 @@ export function validateAll() {
 /*                                                                            */
 /* realm: from the V1 realm mapping in Cassidy's Grok notes (fit: 'notes').    */
 /* Six virtues are not mapped there and use a best fit (fit: 'best').          */
+/* v36: eight moved to balance the temples at 14/14/14/13/13/13 ('balanced').  */
 /* -------------------------------------------------------------------------- */
 
 export const PORTRAIT_DIR = 'assets/aretoria/portraits/';
@@ -1153,13 +1156,16 @@ const G = (slug) => { WIDE.add(slug); return P(slug); };
 const WIDE = new Set();
 export const slugify = (name) => String(name).toLowerCase().replace(/[^a-z]/g, '');
 
+/* v36 balance (Cassidy): three temples hold 14 virtues and three hold 13, with the fewest moves from the notes'
+   mapping; the eight moved virtues carry fit: 'balanced'. */
+const BALANCED = new Set(['acceptance', 'detachment', 'peace', 'graciousness', 'patience', 'harmony', 'excellence', 'cleanliness']);
 function V(name, realm, essence, extra = {}) {
   const slug = slugify(name);
-  return { slug, name, realm, fit: 'notes', essence, ...extra, ...(WIDE.has(slug) ? { wide: true } : {}) };
+  return { slug, name, realm, fit: BALANCED.has(slug) ? 'balanced' : 'notes', essence, ...extra, ...(WIDE.has(slug) ? { wide: true } : {}) };
 }
 
 export const VIRTUES = [
-  V('Acceptance', 'humanity', 'Embracing what is, so you can act from peace instead of resistance.', { portrait: P('acceptance'),
+  V('Acceptance', 'transcendence', 'Embracing what is, so you can act from peace instead of resistance.', { portrait: P('acceptance'),
     greet: 'Come closer, Cassidy. I am woven of starlight and stillness. I do not ask the universe to be other than it is. I only ask it what comes next.',
     teach: 'Acceptance is not surrender. It is the ground you stand on before you move. Whatever you stop fighting, you can finally work with.',
     ask: 'What are you still arguing with that has already happened? What would change if you accepted it today?' }),
@@ -1179,7 +1185,7 @@ export const VIRTUES = [
     greet: 'Sit, sit. You have been carrying a great deal, haven’t you? I keep a small light in my palm for travelers. Warm your hands a while.',
     teach: 'Caring is attention made practical: noticing what someone needs and quietly providing it. Do not forget to tend your own garden as well.',
     ask: 'Who needs tending this week, including you, and what is one small act of care you can give?' }),
-  V('Cleanliness', 'justice', 'Clearing clutter of space, body and mind so clarity can enter.', { portrait: P('cleanliness'),
+  V('Cleanliness', 'temperance', 'Clearing clutter of space, body and mind so clarity can enter.', { portrait: P('cleanliness'),
     greet: 'Breathe, Cassidy. The air here has been washed by starlight. Clear water, clear space, clear mind. That is where good choices are born.',
     teach: 'Cleanliness is respect made visible: for your body, your home and the people who share them. A cleared surface invites a clear thought.',
     ask: 'What one space, habit or thought could you clear out this week to make room for clarity?' }),
@@ -1216,7 +1222,7 @@ export const VIRTUES = [
     greet: 'Ah, Cassidy! Every color in my robe was once an idea nobody had tried. Shall we try another?',
     teach: 'Creativity twists the threads of the ordinary into the extraordinary. Let your mind wander like a river finding new paths, then build what you find.',
     ask: 'What is one thing you could create, build or reimagine this week, just because you can?' }),
-  V('Detachment', 'humanity', 'Loving fully while holding outcomes lightly.', { portrait: P('detachment'),
+  V('Detachment', 'transcendence', 'Loving fully while holding outcomes lightly.', { portrait: P('detachment'),
     greet: 'Float with me, Cassidy. Up here, the things that clutch at you look smaller. Let us loosen their grip together.',
     teach: 'Detachment is not coldness. It is release: caring deeply while letting go of what you cannot control. Your heart stays open and your hands stay free.',
     ask: 'What outcome are you gripping too tightly? What would it feel like to hold it with open hands?' }),
@@ -1236,7 +1242,7 @@ export const VIRTUES = [
   V('Enthusiasm', 'courage', 'Wholehearted energy that sparks action and joy.', { portrait: G('enthusiasm'), ask: "What still makes you lean forward in your chair? When will you give it an hour?" }),
   V('Equanimity', 'wisdom', 'Steadiness of mind in calm and in storm.', { portrait: G('equanimity'), ask: "What rattled you lately that will not matter in a year? How would steady-you answer it?" }),
   V('Ethicality', 'wisdom', 'Choosing the right action even when it costs.', { portrait: G('ethicality'), ask: "Where is the right thing costing you something right now? Are you willing to pay it?" }),
-  V('Excellence', 'justice', 'Doing your best work as an offering, not for applause.', { portrait: G('excellence'), ask: "What piece of work deserves your best this week, even if no one will notice?" }),
+  V('Excellence', 'transcendence', 'Doing your best work as an offering, not for applause.', { portrait: G('excellence'), ask: "What piece of work deserves your best this week, even if no one will notice?" }),
   V('Fairness', 'justice', 'Giving everyone an even scale.', { portrait: G('fairness'), ask: "Who might be getting less than an even scale from you? What would fair look like?" }),
   V('Faith', 'transcendence', 'Trusting what cannot yet be seen.', { portrait: G('faith'), ask: "What are you trusting that you cannot yet see? What small act would honor that trust?" }),
   V('Flexibility', 'wisdom', 'Adapting gracefully when the path changes.', { portrait: G('flexibility'), ask: "Which plan are you holding so rigidly it has started to crack? What could bend?" }),
@@ -1247,9 +1253,9 @@ export const VIRTUES = [
   V('Friendliness', 'humanity', 'Warm openness that makes others feel welcome.', { portrait: G('friendliness'), ask: "Who could you greet first, warmly, this week, before they greet you?" }),
   V('Generosity', 'humanity', 'Giving freely of time, attention and resources.', { portrait: G('generosity'), ask: "What could you give away (time, attention, a thing) without expecting it back?" }),
   V('Gentleness', 'humanity', 'Strength that chooses a soft touch.', { portrait: G('gentleness'), ask: "Where are you pressing harder than the moment needs? What would a softer touch be?" }),
-  V('Graciousness', 'humanity', 'Poise and warmth in giving and receiving.', { portrait: G('graciousness'), ask: "What gift or compliment did you brush aside? How could you receive it fully?" }),
+  V('Graciousness', 'transcendence', 'Poise and warmth in giving and receiving.', { portrait: G('graciousness'), ask: "What gift or compliment did you brush aside? How could you receive it fully?" }),
   V('Gratitude', 'transcendence', 'Noticing gifts and giving thanks.', { portrait: G('gratitude'), ask: "Name three gifts from this week that you have not yet said thank you for." }),
-  V('Harmony', 'humanity', 'Bringing discordant notes into one song.', { portrait: G('harmony'), ask: "Which two parts of your life are out of tune? What one note could bring them together?" }),
+  V('Harmony', 'temperance', 'Bringing discordant notes into one song.', { portrait: G('harmony'), ask: "Which two parts of your life are out of tune? What one note could bring them together?" }),
   V('Helpfulness', 'humanity', 'Lending strength where it is needed.', { portrait: G('helpfulness'), ask: "Whose load could you lighten with an hour of your strength?" }),
   V('Honesty', 'courage', 'Telling the truth, especially when it is hard.', { portrait: G('honesty'), ask: "What truth have you been softening until it is no longer true? Say it plainly here." }),
   V('Honor', 'justice', 'Keeping your sacred vows and duties.', { portrait: G('honor'), ask: "Which vow, spoken or silent, has gone quiet? How will you keep it again?" }),
@@ -1268,8 +1274,8 @@ export const VIRTUES = [
   V('Optimism', 'courage', 'The dawn that follows every night.', { portrait: G('optimism'), ask: "What night are you in, and what is the first sign of its dawn?" }),
   V('Orderliness', 'wisdom', 'Structuring chaos into clarity.', { portrait: G('orderliness'), ask: "Which corner of chaos, in your space or schedule, will you bring into order?" }),
   V('Passion', 'courage', 'The fire that fuels zeal.', { portrait: G('passion'), ask: "What fire in you has been banked too long? How will you feed it?" }),
-  V('Patience', 'humanity', 'Enduring with calm, trusting timing.', { portrait: G('patience'), ask: "What are you rushing that needs more time to ripen?" }),
-  V('Peace', 'humanity', 'Stillness that calms storms.', { portrait: G('peace'), ask: "Where can you make one quiet minute of peace today, and for whom?" }),
+  V('Patience', 'temperance', 'Enduring with calm, trusting timing.', { portrait: G('patience'), ask: "What are you rushing that needs more time to ripen?" }),
+  V('Peace', 'transcendence', 'Stillness that calms storms.', { portrait: G('peace'), ask: "Where can you make one quiet minute of peace today, and for whom?" }),
   V('Perseverance', 'courage', 'Enduring through every trial.', { portrait: G('perseverance'), ask: "What hard thing are you close to finishing? What is the next mile?" }),
   V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.', { portrait: G('preparedness'), ask: "What challenge is coming that you can ready yourself for now?" }),
   V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.', { portrait: G('purposefulness'), ask: "Of everything on your list, which one task actually serves what matters most?" }),
@@ -1309,6 +1315,14 @@ export const VIRTUES = [
   V('Zest', 'courage', 'Living with vigor and eagerness.', { fit: 'best', portrait: G('zest'), ask: "What would you do today with twice the vigor and half the hesitation?" })
 ];
 
+/* One source of truth (v36): each realm's tag list is exactly the virtues housed in its temple, curated lead order
+   first. Every virtue appears once; the realm screens, the Hall and the counts all read the same assignment. */
+for (const r of REALMS) {
+  const mine = VIRTUES.filter((v) => v.realm === r.id).map((v) => v.name);
+  const lead = (r.virtues || []).filter((n) => mine.includes(n));
+  r.virtues = [...lead, ...mine.filter((n) => !lead.includes(n))];
+}
+
 export const virtueBySlug = (slug) => VIRTUES.find((v) => v.slug === slug) || null;
 export const advisorsFor = (realmId) => VIRTUES.filter((v) => v.realm === realmId && v.portrait);
 export const advisorTitle = (v) => `Advisor of ${v.name}`;
@@ -1341,7 +1355,7 @@ export function advisorDialogue(v) {
         ]
       },
       teach: {
-        text: v.teach || `${v.name}: ${v.essence} I am one of the ${realm.name} Realm’s advisors. ${realm.guardian.name} keeps the ${realm.temple}; the counsel is mine to give.`,
+        text: v.teach || `${v.name}: ${v.essence} I am one of the advisors housed in the ${realm.temple}, where ${realm.guardian.name} is the first advisor.`,
         choices: [
           { label: 'Ask me your question.', next: 'reflect' },
           { label: 'Thank you.', next: 'bless' }
