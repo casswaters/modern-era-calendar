@@ -243,6 +243,14 @@ body::after {
 }
 .sky-btn:hover { border-color: var(--gold); }
 .sky-btn[hidden] { display: none; }
+/* v42: no place set, a gentle prompt instead of weather numbers */
+.sky-set {
+  appearance: none; cursor: pointer; border: 0; background: none; padding: 2px 0; font: inherit;
+  font-size: .8rem; color: var(--text-muted); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--gold) 45%, transparent);
+  text-underline-offset: 3px; text-align: left;
+}
+.sky-set:hover { color: var(--gold-bright); }
+.sky-set[hidden], .sky-strip .sky-cond[hidden], .sky-strip .sky-temp[hidden] { display: none; }
 
 /* Today banner */
 .today-banner {
@@ -980,7 +988,9 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
   .scene-band .sc-sway.sc-s2 { animation-duration: 5.2s; animation-delay: -4s; }
   .scene-band .sc-tw { animation: sc-twinkle 4.5s ease-in-out infinite alternate; }
   .scene-band.sc-storm .sc-flash { animation: sc-flash 17s ease-out infinite; }
+  .scene-band .sc-orbit { animation: sc-orbit 80s ease-in-out infinite alternate; } /* v42 earth vista: the planet turns, slowly */
 }
+@keyframes sc-orbit { from { transform: translateX(-26px); } to { transform: translateX(26px); } }
 @keyframes sc-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes sc-sway { from { transform: skewX(-3deg); } to { transform: skewX(3deg); } }
 @keyframes sc-twinkle { from { opacity: .25; } to { opacity: .95; } }
@@ -992,6 +1002,11 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 /* ---------- v38: Captain's Log profile ---------- */
 .log-who { font-family: var(--serif); font-style: italic; letter-spacing: 0; text-transform: none; color: var(--pearl); }
 .log-who[hidden] { display: none; }
+.log-home-row { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.log-home-row input { flex: 1; min-width: 0; }
+.log-home-row .btn { flex-shrink: 0; min-height: 36px; }
+.log-home-status { grid-column: 1 / -1; margin: -2px 0 2px; font-size: .74rem; color: var(--text-muted); min-height: 1em; }
+.log-home-status:empty { display: none; }
 .log-settings-note { margin: 0 0 8px; font-size: .78rem; color: var(--text-muted); }
 .log-settings-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
 .log-settings-grid label { margin: 0; font-size: .8rem; color: var(--text); }
