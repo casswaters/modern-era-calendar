@@ -888,7 +888,7 @@ export const VIRTUES = [
   V('Perseverance', 'courage', 'Enduring through every trial.', { portrait: G('perseverance') }),
   V('Preparedness', 'wisdom', 'Readying yourself for challenges ahead.', { portrait: G('preparedness') }),
   V('Purposefulness', 'wisdom', 'Aligning actions with what matters most.', { portrait: G('purposefulness') }),
-  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best', portrait: G('quietudeness') }),
+  V('Quietudeness', 'temperance', 'A cultivated inner quiet.', { fit: 'best', portrait: P('quietudeness') }),
   V('Reliability', 'justice', 'Being someone others can count on.', { portrait: G('reliability') }),
   V('Resilience', 'courage', 'Rebounding from setbacks stronger than before.', { portrait: P('resilience'),
     greet: 'Pull up a stool by the forge, Cassidy. I have been hammered more times than I can count. Look at me. Still here, and stronger at the seams.',

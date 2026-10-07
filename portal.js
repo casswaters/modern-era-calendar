@@ -111,7 +111,7 @@ function closePanel() {
    simple realm panel below. */
 let aretoriaMod = null;
 function loadAretoria() {
-  if (!aretoriaMod) aretoriaMod = import('./aretoria.js?v=cl14').catch((err) => { aretoriaMod = null; throw err; });
+  if (!aretoriaMod) aretoriaMod = import('./aretoria.js?v=cl15').catch((err) => { aretoriaMod = null; throw err; });
   return aretoriaMod;
 }
 function enterAretoria(realm = null) {
