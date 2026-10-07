@@ -497,5 +497,6 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
   .ar-hall-lead { font-size: 1rem; }
   .ar-hall-count { font-size: .8rem; margin-bottom: 10px; }
   .ar-panel-inner { padding: 56px 12px 28px; }
-  .ar-tablet p { text-align: left; hyphens: manual; }
+  .ar-tablet > p { text-align: left; hyphens: manual; }
+  .ar-affirm p { text-align: center; }
 }
