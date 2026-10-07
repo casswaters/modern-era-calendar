@@ -1,7 +1,6 @@
-/* MEC service worker — network-first app shell, offline fallback (Captain's Log / Aretoria; captains-log-v36) */
-const CACHE = 'captains-log-v36';
-/* Aretoria portrait/shrine/guardian/realm images (assets/aretoria/) are deliberately NOT precached;
-   they are fetched only when the portal is entered, then kept by the runtime cache. */
+/* MEC service worker — network-first app shell, offline fallback (Captain's Log; captains-log-v38).
+   v38: Aretoria is no longer embedded (it lives at casswaters.github.io/aretoria); activate clears the old caches with its art. */
+const CACHE = 'captains-log-v38';
 const ASSETS = [
   './',
   './index.html',
@@ -10,12 +9,8 @@ const ASSETS = [
   './mec.js',
   './weather.js',
   './captains-log.js',
-  './portal.js',
+  './profile.js',
   './scene.js',
-  './aretoria.js',
-  './aretoria-data.js',
-  './aretoria-art.js',
-  './aretoria.css',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

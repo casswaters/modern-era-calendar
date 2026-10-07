@@ -19,13 +19,9 @@ import {
   is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
 } from './scene.js';
 import {
-  REALMS, GUIDE, HUB, VIRTUES, CREED, OPENING, CLOSING, REALM_IDS, PORTRAIT_DIR, SHRINE_IMAGE, SHRINE_IMAGE_MOBILE,
-  validateTree, validateAll, reflectionKey, ritualFor, tokenContext, fillTokens,
-  advisorsFor, advisorDialogue, advisorKey, slugify,
-  readMs, READ_BASE_MS, READ_PER_CHAR_MS, guardianRole, guardianLine, guardianPortraitPath,
-  irishnuPortraitPath, realmBackdropPath, HUB_ART, IRISHNU_PORTRAIT,
-  GP, GPm, GUARDIAN_DIR, RP, RPm, REALM_DIR, ART_MOBILE_MQ, mobileArtPath, pickArtPath, ARRIVAL, arrivalWindow
-} from './aretoria-data.js';
+  cleanName, cleanInitials, cleanLabel, cleanDate, deriveInitials, profileView, DEFAULTS,
+  NAME_KEY, NAME_ASKED_KEY, INITIALS_KEY, WORK_KEY, VENTURE_KEY, BDAY_KEY, PROFILE_KEYS
+} from './profile.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
 let passed = 0;
@@ -639,214 +635,7 @@ console.log('\n=== ambient weather scene ===\n');
 
 
 {
-  console.log('\n--- Aretoria: realms, advisors, dialogue integrity ---');
-  assert('seven realms incl. Shadow', REALMS.length === 7 && REALM_IDS.includes('shadow'));
-  assert('realm ids match legacy portal ids', eq([...REALM_IDS].sort(), ['courage', 'humanity', 'justice', 'shadow', 'temperance', 'transcendence', 'wisdom']));
-  assert('every realm has a guardian with name + source', REALMS.every((r) => r.guardian && r.guardian.name && ['notes', 'neutral'].includes(r.guardian.source)));
-  assert('realm colours are hex', REALMS.every((r) => /^#[0-9a-f]{6}$/.test(r.color)));
-  const allErr = validateAll();
-  assert('all dialogue trees valid (choices → real nodes, all reachable)', allErr.length === 0, allErr.slice(0, 5).join('; '));
-  for (const r of REALMS) {
-    const n = Object.keys(r.dialogue.nodes).length;
-    assert(`${r.id}: 3–6 dialogue nodes`, n >= 3 && n <= 6, String(n));
-    assert(`${r.id}: has a saving reflection node`, Object.values(r.dialogue.nodes).some((x) => x.input && x.choices.some((c) => c.save)));
-  }
-  assert('Irishnu tree valid', validateTree(GUIDE.dialogue).length === 0);
-  assert('validator catches a dangling choice', validateTree({ start: 'a', nodes: { a: { text: 'x', choices: [{ label: 'y', next: 'nope' }] } } }).length > 0);
-  assert('validator catches an unreachable node', validateTree({ start: 'a', nodes: { a: { text: 'x', choices: [{ label: 'y', next: '@close' }] }, b: { text: 'z', choices: [{ label: 'q', next: '@hub' }] } } }).length > 0);
-  assert('legacy reflection key format', reflectionKey('2026-10-05', 'wisdom') === 'mec-realm:2026-10-05:wisdom');
-  assert('ritual: Monday → daily (Wisdom)', ritualFor(new Date(2026, 9, 5)).realm === 'wisdom');
-  assert('ritual: Sunday → self-audit (Justice)', ritualFor(new Date(2026, 9, 4)).id === 'sunday-audit');
-  assert('ritual: 1st & 3rd Saturday → relationship', ritualFor(new Date(2026, 9, 3)).id === 'relationship' && ritualFor(new Date(2026, 9, 17)).id === 'relationship');
-  assert('ritual: 2nd Saturday → daily', ritualFor(new Date(2026, 9, 10)).id === 'daily');
-  assert('ritual: last day of month → monthly review', ritualFor(new Date(2026, 9, 31)).id === 'monthly');
-  const ctx = tokenContext(new Date(2026, 9, 4));
-  const texts = [GUIDE, ...REALMS].flatMap((x) => Object.values(x.dialogue.nodes).flatMap((n) => [n.text, ...n.choices.map((c) => c.label + ' ' + c.next)]));
-  assert('no unresolved {tokens} in dialogue', texts.every((t) => !/\{\w+\}/.test(fillTokens(t, ctx))));
-}
-
-{
-  console.log('\n--- Aretoria: Hall of Virtues + Creed ---');
-  assert('81 virtues', VIRTUES.length === 81, String(VIRTUES.length));
-  assert('virtue slugs unique, lowercase letters only', new Set(VIRTUES.map((v) => v.slug)).size === VIRTUES.length && VIRTUES.every((v) => /^[a-z]+$/.test(v.slug) && v.slug === slugify(v.name)));
-  assert('every virtue maps to a realm', VIRTUES.every((v) => REALM_IDS.includes(v.realm) && v.essence));
-  const withArt = VIRTUES.filter((v) => v.portrait);
-  assert('portrait paths point into assets/aretoria/portraits', withArt.every((v) => v.portrait === `${PORTRAIT_DIR}${v.slug}.jpg`));
-  assert('every portrait file exists', withArt.every((v) => existsSync(new URL(v.portrait, import.meta.url))), withArt.filter((v) => !existsSync(new URL(v.portrait, import.meta.url))).map((v) => v.slug).join(','));
-  assert('shrine image exists', existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
-  assert('all 81 virtues have a portrait (24 own + 57 generated)', withArt.length === 81 && VIRTUES.filter((v) => v.wide).length === 57 && VIRTUES.filter((v) => !v.wide).length === 24);
-  assert("Cassidy's own portraits stay tall (not flagged wide)", ['acceptance', 'resolve', 'creativity', 'reverence', 'quietudeness', 'tolerance'].every((s) => !VIRTUES.find((v) => v.slug === s).wide));
-  assert('generated portraits are web-sized (<150 KB)', VIRTUES.filter((v) => v.wide).every((v) => statSync(new URL(v.portrait, import.meta.url)).size < 150000));
-  assert('every realm but Shadow offers an advisor', REALMS.filter((r) => r.id !== 'shadow').every((r) => advisorsFor(r.id).length > 0));
-  assert('advisor dialogues valid', withArt.every((v) => validateTree(advisorDialogue(v)).length === 0));
-  assert('advisor key extends legacy key', advisorKey('2026-10-05', withArt[0]) === `mec-realm:2026-10-05:${withArt[0].realm}:${withArt[0].slug}`);
-  assert('creed closing affirmation', eq(CREED.affirmation, ['This is the nature of reality.', 'This is who we are.', 'I am part of this.']));
-  assert('creed has five body paragraphs', CREED.paragraphs.length === 5 && CREED.title === 'The Divine Evolution Creed');
-  assert('opening + closing lines', OPENING.startsWith('Within me blooms Aretoria') && CLOSING.startsWith('Thus, I stand'));
-  const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
-  assert('SW is captains-log-v36 and precaches Aretoria code', /captains-log-v36/.test(sw) && !/mec-v27/.test(sw) && ['aretoria.js', 'aretoria-data.js', 'aretoria-art.js', 'aretoria.css'].every((f) => sw.includes(`./${f}`)));
-  assert('SW does not precache portraits', !/assets\/aretoria\/[^']*\.jpg/.test(sw.replace(/\/\*[\s\S]*?\*\//g, '')));
-}
-
-{
-  console.log('\n--- Aretoria v25: narration timing, Irishnu, Guardians, wording ---');
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  // 1. narration lines stay readable
-  assert('readMs: at least 4 s even for an empty line', readMs('') >= 4000 && READ_BASE_MS >= 4000);
-  assert('readMs: ≈4 s + 60 ms per character', readMs('x'.repeat(100)) === READ_BASE_MS + 100 * READ_PER_CHAR_MS && READ_PER_CHAR_MS >= 60);
-  assert('readMs grows with length', readMs('a short line') < readMs(OPENING));
-  assert('opening line holds ≥ 4 s + 60 ms/char (≈18 s)', readMs(OPENING) >= 4000 + 60 * OPENING.length);
-  assert('closing line holds ≥ 4 s + 60 ms/char', readMs(CLOSING) >= 4000 + 60 * CLOSING.length);
-  const aj = noComments(src('./aretoria.js'));
-  assert('intro + outro timers use readMs (no fixed 2.6–3.9 s fades)', /readMs\(OPENING\)/.test(aj) && /readMs\(CLOSING\)/.test(aj) && !/setTimeout\(finishIntro, 3900\)/.test(aj) && !/setTimeout\(finishOutro, reduced\(\) \? 2200 : 2600\)/.test(aj));
-  assert('continue hint text present (tap / click / Enter)', /Tap to continue/.test(aj) && /press Enter to continue/.test(aj) && /ar-narr-hint/.test(aj));
-  assert('Enter and Space advance narration', /e\.key === 'Enter'/.test(aj) && /e\.key === ' '/.test(aj) && /advanceIntro\(\)/.test(aj) && /leaveOutro\(\)/.test(aj));
-  assert('Esc / ✕ on narration leave at once', /exitNow\(\)/.test(aj) && /ar-narr-x/.test(aj) && /immediate: true/.test(aj));
-  assert('reduced motion still honoured in narration', /if \(reduced\(\)\) \{\s*intro\.classList\.add\('still'\)/.test(aj));
-  const css = src('./aretoria.css');
-  assert('CSS: hint styled + outro no longer fades out on its own', /\.ar-narr-hint\.show/.test(css) && !/78% \{ opacity: 1; \} 100% \{ opacity: 0; \}/.test(css));
-  // 2. Irishnu: the Guide (his wit stays unannounced)
-  assert('Irishnu is titled the Guide', GUIDE.name === 'Irishnu' && GUIDE.title === 'the Guide');
-  const guideText = JSON.stringify(GUIDE);
-  assert('Irishnu is never labelled a jester/fool/clown in visible text', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
-  assert('Irishnu keeps the lore: axis, one whole, Shadow, real-circumstances question', /one whole/.test(guideText) && /Shadow/.test(guideText) && /real circumstances/.test(guideText) && /golden thread/.test(guideText) && !/Eirena/.test(guideText));
-  assert('Irishnu dialogue rewritten (v24 greeting gone)', !/I keep the doors and walk beside you/.test(guideText));
-  const art = src('./aretoria-art.js');
-  assert('Irishnu figure keeps hood + staff, no costume', /irishnu: \{[^}]*head: 'hood'[^}]*emblem: 'staff'/.test(art) && !/jester|bells|motley|harlequin/i.test(noComments(art)));
-  // 3. Guardians
-  assert('every realm host is a Guardian with a warrior type', REALMS.every((r) => r.guardian.warrior && guardianRole(r).startsWith('Guardian of')));
-  const types = Object.fromEntries(REALMS.map((r) => [r.id, r.guardian.warrior]));
-  assert('warrior types fit the realms', types.courage === 'storm-forged champion' && types.justice === 'paladin of the balance' && types.humanity === 'warrior-healer' && types.temperance === 'disciplined monk-warrior' && types.wisdom === 'battle-sage' && types.transcendence === 'celestial seraph-knight' && types.shadow === 'veiled sentinel', JSON.stringify(types));
-  assert('every Guardian introduces itself as Guardian in its greeting', REALMS.every((r) => /Guardian of/.test(r.dialogue.nodes.greet.text)));
-  assert('guardianLine reads naturally', guardianLine(REALMS.find((r) => r.id === 'courage')) === 'Valorix the Stormheart, Guardian of Courage, a storm-forged champion');
-  assert('GP builds assets/aretoria/guardians/<slug>.jpg', GP('valorix') === 'assets/aretoria/guardians/valorix.jpg' && GUARDIAN_DIR === 'assets/aretoria/guardians/');
-  assert('guardianPortraitPath: null → drawn figure, string → path', guardianPortraitPath({ guardianPortrait: null }) === null && guardianPortraitPath({ guardianPortrait: GP('sophia') }) === GP('sophia'));
-  const dataSrc = src('./aretoria-data.js');
-  assert('GP() is declared before REALMS (safe to use inside realm entries)', dataSrc.indexOf('export const GP =') > -1 && dataSrc.indexOf('export const GP =') < dataSrc.indexOf('export const REALMS ='));
-  assert('guardian portrait is lazy with drawn-figure fallback', /ar-host-photo/.test(aj) && /loading="lazy"/.test(aj) && /badPortraits\.add/.test(aj));
-  const sw = src('./sw.js');
-  assert('SW does not precache guardian portraits', !/guardians\//.test(noComments(sw)));
-  // 3b/4. wording
-  const visible = [JSON.stringify(REALMS), guideText, JSON.stringify(VIRTUES), ...VIRTUES.map((v) => JSON.stringify(advisorDialogue(v)))].join(' ');
-  assert('no "keeper" in Aretoria text', !/keeper/i.test(visible) && !/keeper/i.test(noComments(src('./aretoria.js'))) && !/keeper/i.test(src('./portal.js')));
-  assert('no Version 2 / chakra realms in user-facing text', !/chakra|version 2/i.test(visible + noComments(src('./aretoria.js')) + src('./portal.js') + src('./index.html')));
-  assert('Version 1 only: six virtue realms + Shadow', eq(REALMS.filter((r) => r.id !== 'shadow').map((r) => r.id).sort(), ['courage', 'humanity', 'justice', 'temperance', 'transcendence', 'wisdom']));
-  // cache-busting
-  const html = src('./index.html');
-  const allSrc = html + ['./app.js', './captains-log.js', './portal.js', './aretoria.js'].map(src).join('');
-  assert('all asset queries are ?v=cl19 (no leftover ?v=27)', /\?v=cl19/.test(html) && !/\?v=27\b/.test(allSrc));
-  assert('aretoria.css loads with ?v=cl36 (data/art imports cl36)', /const VERSION = 'cl36';/.test(src('./aretoria.js')) && /aretoria-data\.js\?v=cl36'/.test(src('./aretoria.js')));
-}
-
-{
-  console.log('\n--- Aretoria v26: painted guardians, Irishnu, realm backdrops ---');
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  const GUARDIAN_SLUG = { courage: 'valorix', justice: 'justar', humanity: 'amara', temperance: 'moder', wisdom: 'sophia', transcendence: 'auria', shadow: 'shadow' };
-  assert('every realm has a painted guardianPortrait via GP(slug)', REALMS.every((r) => r.guardianPortrait === GP(GUARDIAN_SLUG[r.id])));
-  assert('all 7 guardian portraits exist on disk', REALMS.every((r) => existsSync(new URL(r.guardianPortrait, import.meta.url))));
-  assert('guardian portraits are web-sized (<220 KB)', REALMS.every((r) => statSync(new URL(r.guardianPortrait, import.meta.url)).size < 220000));
-  assert('Irishnu portrait is set and exists', IRISHNU_PORTRAIT === GP('irishnu') && GUIDE.portrait === IRISHNU_PORTRAIT && existsSync(new URL(IRISHNU_PORTRAIT, import.meta.url)));
-  assert('irishnuPortraitPath returns the Guide portrait', irishnuPortraitPath() === IRISHNU_PORTRAIT);
-  assert('Irishnu portrait is web-sized (<220 KB)', statSync(new URL(IRISHNU_PORTRAIT, import.meta.url)).size < 220000);
-  assert('every realm has a painted realmBackdrop via RP(id)', REALMS.every((r) => r.realmBackdrop === RP(r.id)));
-  assert('RP builds assets/aretoria/realms/<id>.jpg', RP('courage') === 'assets/aretoria/realms/courage.jpg' && REALM_DIR === 'assets/aretoria/realms/');
-  assert('all 7 realm backdrops exist on disk', REALMS.every((r) => existsSync(new URL(r.realmBackdrop, import.meta.url))));
-  assert('realm backdrops are web-sized (<250 KB)', REALMS.every((r) => statSync(new URL(r.realmBackdrop, import.meta.url)).size < 250000));
-  assert('realmBackdropPath: null → CSS scene, string → path', realmBackdropPath({ realmBackdrop: null }) === null && realmBackdropPath(REALMS[0]) === REALMS[0].realmBackdrop);
-  const aj = noComments(src('./aretoria.js'));
-  assert('hub uses Irishnu portrait with drawn-figure fallback', /irishnuPhoto|irishnuPortraitPath/.test(aj) && /ar-guide/.test(aj) && /badPortraits/.test(aj));
-  assert('realm views use paintedScene when backdrop present', /paintedScene/.test(aj) && /realmBackdropPath/.test(aj) && /ar-l-realm/.test(aj));
-  assert('guardian + guide portraits stay lazy-loaded', /loading="lazy"/.test(aj));
-  const css = src('./aretoria.css');
-  assert('CSS: face-friendly guardian crop + realm veil', /object-position:\s*50%\s*28%/.test(css) && /ar-l-realmveil/.test(css) && /ar-guide\.ar-host-photo/.test(css));
-  const sw = src('./sw.js');
-  assert('SW is captains-log-v36 and does not precache guardians or realms', /captains-log-v36/.test(sw) && !/guardians\//.test(noComments(sw)) && !/realms\//.test(noComments(sw)));
-  assert('entry shrine path unchanged', SHRINE_IMAGE === 'assets/aretoria/shrine.jpg' && existsSync(new URL(SHRINE_IMAGE, import.meta.url)));
-  const guideText = JSON.stringify(GUIDE);
-  assert('still no jester/fool/motley wording for Irishnu', !/jester|clown|fool|motley|harlequin|trickster/i.test(guideText));
-  assert('About mentions painted guardians / realm scenes', /painted/.test(src('./index.html')));
-  assert('warrior types still shown in dialogue titles', /guardianRole\(r\).*warrior|warrior/.test(aj) && REALMS.every((r) => r.guardian.warrior));
-}
-
-
-{
-  console.log('\n--- Aretoria v27: Axial hub painted backdrop (entry still shrine) ---');
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  assert('HUB.realmBackdrop is RP(axial)', HUB.realmBackdrop === RP('axial') && RP('axial') === 'assets/aretoria/realms/axial.jpg');
-  assert('axial backdrop exists on disk', existsSync(new URL(HUB.realmBackdrop, import.meta.url)));
-  assert('axial backdrop is web-sized (<200 KB)', statSync(new URL(HUB.realmBackdrop, import.meta.url)).size < 200000);
-  assert('realmBackdropPath(HUB) returns axial.jpg', realmBackdropPath(HUB) === RP('axial'));
-  const aj = noComments(src('./aretoria.js'));
-  assert('hub view uses paintedScene via HUB backdrop (not SHRINE_IMAGE for axial scene)', /realmBackdropPath\(HUB\)/.test(aj) && /paintedScene/.test(aj));
-  assert('entry cinematic uses resolveArt(SHRINE_IMAGE)', /resolveArt\(SHRINE_IMAGE\)/.test(aj) && /url\('\$\{shrine\}'\)/.test(aj));
-  assert('hub shrine fallback uses resolveArt shrine var', /SCENES\.axial\(shrine\)/.test(aj) && /resolveArt\(SHRINE_IMAGE\)/.test(aj));
-  // Stronger: hub prefers painted; shrine only as fallback when painted missing
-  assert('axial hub prefers painted backdrop; shrine only as no-paint fallback', /hub \? realmBackdropPath\(HUB\)/.test(aj) && /SCENES\.axial\(shrine\)/.test(aj));
-  const sw = src('./sw.js');
-  assert('SW captains-log-v36 does not precache axial.jpg / realms/', /captains-log-v36/.test(sw) && !/realms\//.test(noComments(sw)) && !/axial\.jpg/.test(noComments(sw)));
-  assert('About mentions shrine fly-through / Axial painted backdrop', /shrine fly-through|floating-island|Axial hub/.test(src('./index.html')));
-}
-
-
-{
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  console.log('\n--- No realm colour coding (shared ivory/gold palette) ---');
-  const ajNC = noComments(src('./aretoria.js'));
-  const cssNC = src('./aretoria.css');
-  assert('aretoria.js never reads r.color (no per-realm colour coding)', !/\br\.color\b/.test(ajNC) && /SHARED_ACCENT/.test(ajNC));
-  assert('gates/filters/cards carry no inline --c realm colour', !/style="--c:/.test(ajNC));
-  assert('CSS pins --c to one shared gold', /\.ar-gate, \.ar-filter, \.ar-vcard \{ --c: #f1d58e; \}/.test(cssNC));
-  assert('hub orb ring + hub particles are gold, not rainbow', !/rgba\(158,240,200/.test(cssNC) && !/'#9ef0c8', '#7fb8ff'/.test(ajNC));
-  assert('Shadow gate is deep bronze/marble, not violet', !/#b9a6e8/.test(cssNC));
-}
-
-{
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  console.log('\n--- Axial hub v13: desktop ellipse arc on the bridges, phone grid above the painting ---');
-  const ajA = noComments(src('./aretoria.js'));
-  const ids = ['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence', 'shadow'];
-  const D = HUB_ART.desk.gates;
-  assert('HUB_ART.desk has an arch point for all 7 gates', ids.every((id) => Array.isArray(D[id]) && D[id].length === 2));
-  assert('HUB_ART art sizes match the shipped JPEGs (1280×720 / 576×1248)', HUB_ART.desk.w === 1280 && HUB_ART.desk.h === 720 && HUB_ART.mob.w === 576 && HUB_ART.mob.h === 1248);
-  assert('desktop gates run left→right Courage…Transcendence', ids.slice(0, 6).every((id, i, a) => i === 0 || D[id][0] > D[a[i - 1]][0]));
-  const pairs = [['courage', 'transcendence'], ['justice', 'wisdom'], ['humanity', 'temperance']];
-  // v3 repaint: the art is not mirror-symmetric, so each gate sits on its own temple's bridge (hand-placed anchors)
-  assert('desktop arc sweeps: outer pair lowest, inner pair highest', D.courage[1] > D.justice[1] && D.justice[1] > D.humanity[1]);
-  assert('desktop gates sit on the bridges between plaza and temples (x 220–1060, y 280–400)', ['courage','justice','humanity','temperance','wisdom','transcendence'].every((id) => D[id][0] >= 220 && D[id][0] <= 1060 && D[id][1] >= 280 && D[id][1] <= 400));
-  assert('Shadow centred on the front bridge, orb on the rune', D.shadow[0] === 640 && D.shadow[1] > HUB_ART.desk.rune[1] + 100 && HUB_ART.desk.rune[0] === 640);
-  assert('mobile hub is a grid with a painting band rect', HUB_ART.mob.layout === 'grid' && Array.isArray(HUB_ART.mob.band) && HUB_ART.mob.band.length === 4 && HUB_ART.mob.band[3] > HUB_ART.mob.rune[1] && HUB_ART.mob.band[1] < HUB_ART.mob.rune[1]);
-  assert('phone grid order is the six realms left→right; Shadow the centred 7th tile', /const HUB_GRID_ORDER = \['courage', 'justice', 'humanity', 'temperance', 'wisdom', 'transcendence'\]/.test(src('./aretoria.js')) && /id === 'shadow' \? 2 : Math\.floor\(k \/ 3\)/.test(ajA) && /id === 'shadow' \? 1 : k % 3/.test(ajA));
-  assert('grid sits between the header and the painting band top', /\.ar-top'\)/.test(ajA) && /toScreen\(\[0, art\.band\[1\]\]\)/.test(ajA) && /classList\.toggle\('ar-hubgrid', mobile\)/.test(ajA));
-  assert('layoutHub maps desktop gates by realm name, Shadow on x = cx, orb on the rune', /art\.gates\[id\]/.test(ajA) && /id === 'shadow'\) x = w \/ 2/.test(ajA) && /toScreen\(art\.rune\)/.test(ajA));
-  const cssG = noComments(src('./aretoria.css'));
-  assert('phone grid tiles: ≥ 44px tap target, no bob, guardian names hidden ≤ 380px', /\.ar-hubgrid \.ar-gate \{ width: min\(31vw, 116px\); animation: none;/.test(cssG) && /@media \(max-width: 380px\), \(max-width: 699px\) and \(max-height: 720px\) \{[\s\S]*?\.ar-hubgrid \.ar-gate-sub \{ display: none; \}/.test(cssG));
-  assert('no gold centre thread element in the hub', !/ar-thread|gold-thread|center-thread/.test(ajA + src('./aretoria.css')));
-  const mobAx = new URL('./assets/aretoria/realms/mobile/axial.jpg', import.meta.url);
-  assert('mobile axial backdrop exists and is < 200 KB', existsSync(mobAx) && statSync(mobAx).size < 200000);
-}
-
-{
-  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  console.log('\n--- Hall of Virtues: uniform cards (v14) ---');
-  const cssH = noComments(src('./aretoria.css')); const jsH = noComments(src('./aretoria.js'));
-  const rule = (sel) => { const m = cssH.match(new RegExp('(?:^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{([^}]*)\\}')); return m ? m[1] : ''; };
-  assert('grid rows are uniform (grid-auto-rows: 1fr)', /grid-auto-rows: 1fr/.test(rule('.ar-vgrid')));
-  assert('art frame is a fixed 3:4 box that clips (aspect-ratio, overflow hidden, flex: none)', /aspect-ratio: 3 \/ 4/.test(rule('.ar-vart')) && /overflow: hidden/.test(rule('.ar-vart')) && /flex: none/.test(rule('.ar-vart')));
-  assert('portrait is absolutely placed + object-fit: cover (its own aspect cannot grow the frame)', /position: absolute/.test(rule('.ar-vart img')) && /object-fit: cover/.test(rule('.ar-vart img')) && /height: calc\(100% - 2 \* var\(--vp\)\)/.test(rule('.ar-vart img')));
-  assert('names are one fixed-height line (nowrap + ellipsis), realm line nowrap', /white-space: nowrap/.test(rule('.ar-vname')) && /text-overflow: ellipsis/.test(rule('.ar-vname')) && /height: 1\.3em/.test(rule('.ar-vname')) && /white-space: nowrap/.test(rule('.ar-vrealm')));
-  assert('essence is an overlay inside the art frame (never grows the card)', /position: absolute/.test(rule('.ar-vess')) && /<span class="ar-vart\$\{[^}]*\}">\$\{art\}<span class="ar-vess">/.test(jsH));
-  assert('long names are scaled to fit (fitHallNames on render, open and resize)', /function fitHallNames\(\)/.test(jsH) && (jsH.match(/fitHallNames\(\);/g) || []).length >= 2 && /layoutHub\(\); fitHallNames\(\);/.test(jsH));
-  assert('no hyphenated wrapping of names on phones', !/\.ar-vname \{[^}]*hyphens/.test(cssH));
-}
-
-{
-  console.log('\n--- Captain\'s Log v1 identity (Aretoria stays embedded) ---');
+  console.log('\n--- Captain\'s Log identity ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
   const html = src('./index.html');
   const man = src('./manifest.webmanifest');
@@ -854,66 +643,56 @@ console.log('\n=== ambient weather scene ===\n');
   assert('apple-mobile-web-app-title is Captain\'s Log', /apple-mobile-web-app-title" content="Captain.s Log"/.test(html));
   assert('header brand is Captain\'s Log (CL mark)', /brand-mark[^>]*>CL<\/div>/.test(html) && /<h1>Captain.s Log<\/h1>/.test(html));
   assert('About is About Captain\'s Log', /About Captain.s Log/.test(html));
-  assert('does not claim Apple Notes sync', !/sync(?:s|ed)? to Apple Notes/i.test(html) || /Nothing here syncs to Apple Notes/.test(html));
+  assert('does not claim Apple Notes sync', !/sync(?:s|ed)? to Apple Notes/i.test(html) || /not synced\s+to Apple Notes/.test(html));
   assert('MEC still present as a feature', /Modern Era Calendar/.test(html) && /month-grid/.test(html));
-  assert('Aretoria portal still enterable on homepage', /id="portal-enter"/.test(html) && /Enter the Realms/.test(html) && /aretoria\.js/.test(src('./portal.js')));
-  assert('standalone Aretoria link present', /casswaters\.github\.io\/aretoria\//.test(html) && /portal-standalone/.test(html));
   assert('manifest name Captain\'s Log', /"name": "Captain.s Log"/.test(man));
-  assert('localStorage Captain\'s Log keys stay mec-log:', /mec-log:/.test(src('./captains-log.js')) && /KEY_PREFIX = 'mec-log:'/.test(src('./captains-log.js')));
-  assert('Aretoria reflection keys stay mec-realm:', reflectionKey('2026-10-05', 'wisdom') === 'mec-realm:2026-10-05:wisdom');
+  assert('localStorage Captain\'s Log keys stay mec-log:', /KEY_PREFIX = 'mec-log:'/.test(src('./captains-log.js')));
 }
 
-
 {
-  console.log('\n--- Aretoria v28: responsive mobile portrait art ---');
+  console.log('\n--- v38: Aretoria is a link to its own site (no embedded copy) ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const noComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  const GUARDIAN_SLUG = { courage: 'valorix', justice: 'justar', humanity: 'amara', temperance: 'moder', wisdom: 'sophia', transcendence: 'auria', shadow: 'shadow' };
-  assert('ART_MOBILE_MQ matches CSS mobile breakpoint', ART_MOBILE_MQ === '(max-width: 699px)');
-  assert('mobileArtPath / pickArtPath scheme', mobileArtPath(RP('courage')) === RPm('courage') && pickArtPath(GP('valorix'), true) === GPm('valorix') && pickArtPath(GP('valorix'), false) === GP('valorix'));
-  assert('shrine mobile path', mobileArtPath(SHRINE_IMAGE) === SHRINE_IMAGE_MOBILE && existsSync(new URL(SHRINE_IMAGE_MOBILE, import.meta.url)));
-  assert('all realm + axial mobile backdrops exist', ['axial', ...REALMS.map((r) => r.id)].every((id) => existsSync(new URL(RPm(id), import.meta.url))));
-  assert('all guardian + irishnu mobile portraits exist', [...Object.values(GUARDIAN_SLUG), 'irishnu'].every((s) => existsSync(new URL(GPm(s), import.meta.url))));
-  const aj = noComments(src('./aretoria.js'));
-  assert('aretoria.js has resolveArt + artMQ listener', /resolveArt/.test(aj) && /ART_MOBILE_MQ/.test(aj) && /refreshArtIfBreakpointChanged/.test(aj));
-  assert('SW captains-log-v36; VERSION cl36', /captains-log-v36/.test(src('./sw.js')) && /const VERSION = 'cl36';/.test(src('./aretoria.js')));
-  assert('virtue thumbs stay shared (gap: no mobile virtue portraits this pass)', VIRTUES.filter((v) => v.portrait).every((v) => !String(v.portrait).includes('/mobile/')));
+  const html = src('./index.html'), sw = src('./sw.js');
+  const AR = 'https://casswaters.github.io/aretoria/';
+  assert('embedded Aretoria removed: no data, art module, CSS, portal script or art assets', ['./aretoria-data.js', './aretoria-art.js', './aretoria.css', './portal.js', './assets/aretoria'].every((f) => !existsSync(new URL(f, import.meta.url))));
+  assert('aretoria.js is only a redirect stub for stale tabs (tiny, sends to the standalone site)', src('./aretoria.js').length < 700 && /export function openAretoria\(\) \{ location\.assign\(STANDALONE\); \}/.test(src('./aretoria.js')) && src('./aretoria.js').includes(AR));
+  assert('Aretoria card is one clean link to the standalone site, same tab', new RegExp('<a class="portal-card portal-link" id="portal-card" href="' + AR.replace(/[./]/g, '\\$&') + '">').test(html) && !/target="_blank"[^>]*portal|portal-link[^>]*target=/.test(html) && /Enter Aretoria/.test(html));
+  assert('no in-app portal: no Enter the Realms button, realm dots/legend, realm panel or portal.js', !/id="portal-enter"|Enter the Realms|portal-ring|realm-legend|portal-realms|portal\.js/.test(html));
+  assert('old in-app routes redirect to the standalone site (hash + query) before anything renders', /<meta charset="utf-8" \/>\s*<script>/.test(html) && /aretoria\|realms\?\|portal\|axial\|hall\|creed/.test(html) && /location\.replace\('https:\/\/casswaters\.github\.io\/aretoria\/'\)/.test(html));
+  const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
+  assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
+  assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
+  assert('SW captains-log-v38 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v38';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
+  assert('scripts and styles on cl38', /app\.js\?v=cl38/.test(html) && /captains-log\.js\?v=cl38/.test(html) && /scene\.js\?v=cl38/.test(html) && /styles\.css\?v=cl38/.test(html));
+  assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
 {
-  console.log('\n--- Aretoria v34 (mirror): Axial arrival + Irishnu card bottom-right ---');
-  const src = (fp) => readFileSync(new URL(fp, import.meta.url), 'utf8'); const aj = src('./aretoria.js'), css = src('./aretoria.css');
-  const f = (u) => new URL(u, import.meta.url);
-  assert('arrival art, Irishnu layer and wisp overlays are mirrored', [ARRIVAL.image, ARRIVAL.irishnu.src, ARRIVAL.wisps.desk, ARRIVAL.wisps.phone].every((u) => existsSync(f(u))) && statSync(f(ARRIVAL.image)).size < 320000);
-  const d = arrivalWindow(1024, 576), p = arrivalWindow(576, 1024);
-  assert('arrival windows: desktop = approved v10-b590 crop; phone pans x0 130 → Irishnu at 60%', !d.pan && Math.abs(d.x0 - 115.56) < 0.1 && ARRIVAL.h === 590 && p.pan && p.x0 === 130 && Math.abs((ARRIVAL.irishnu.feet[0] - p.x1) / p.w - 0.6) < 1e-9);
-  assert('arrival plays once per session, greets with the guide dialogue, pulls back, reduced motion cross-fades', /sessionStorage\.getItem\(ARRIVAL\.sessionKey\)/.test(aj) && /openDialogue\(\{ kind: 'guide', arrival: true \}\)/.test(aj) && /function endArrival\(animate\)/.test(aj) && ARRIVAL.fadeMs === 300 && ARRIVAL.pullMs >= 1600 && ARRIVAL.pullMs <= 2000);
-  assert('Irishnu card bottom-right (desktop + phones), safe-area aware', /\.ar-guide\.ar-host-photo \{ right: max\(1\.5vw, 32px\); left: auto;/.test(css) && /aspect-ratio: 9 \/ 16; right: 2vw; left: auto;/.test(css) && /env\(safe-area-inset-bottom\)/.test(css));
-}
-
-{
-  console.log('\n--- Aretoria v35 (mirror): iOS hub fix + Irishnu lore pass ---');
-  const src = (fp) => readFileSync(new URL(fp, import.meta.url), 'utf8');
-  const noC = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  const aj = noC(src('./aretoria.js')), css = src('./aretoria.css'), N = GUIDE.dialogue.nodes, all = Object.values(N).map((n) => n.text).join(' ');
-  assert('SW captains-log-v36; portal imports aretoria.js?v=cl36', /captains-log-v36/.test(src('./sw.js')) && /aretoria\.js\?v=cl36'/.test(src('./portal.js')));
-  assert('finishArrival resets the stage and refreshes the hub painting (no animation-event dependency)', /function finishArrival\(\) \{[\s\S]*?resetArrivalStage\(\);[\s\S]*?refreshHubArt\(\);/.test(aj) && /world\.style\.transform = ''/.test(aj) && /replaceWith\(l\.cloneNode\(true\)\)/.test(aj) && !/animationend|transitionend/.test(aj));
-  assert('pull-back: 2D painting layers, no world filter, timer + promise + watchdog', /flat \? `translate\(/.test(aj) && /\.ar-pulling \.ar-layer \{ will-change: auto; \}/.test(css) && /\.ar-arriving \.ar-world, \.ar-pulling \.ar-world \{ filter: none; transition: none; \}/.test(css) && /Promise\.all\(A\.anims\.map\(\(a\) => a\.finished\)\)/.test(aj) && /T \+ 1500/.test(aj));
-  assert('guards: world never left scaled outside the pull-back; interrupted intro restores the hub', /\.ar:not\(\.ar-pulling\) \.ar-world \{ transform: none !important; \}/.test(css) && /addEventListener\('pagehide'/.test(aj) && /addEventListener\('pageshow'/.test(aj) && /if \(S\.arrival && id !== 'axial'\) finishArrival\(\);/.test(aj));
-  assert('Irishnu: arrival line at the portal, armor not robe, self you send ahead, 81 virtues, Guardians as advisors, Shadow across its bridge', GUIDE.dialogue.arrivalStart === 'arrive' && /portal/.test(N.arrive.text) && !/\brobes?\b/i.test(all) && /armor/.test(N.who.text) && /the self you send ahead/.test(N.who.text) && /eighty-one virtues are shared/.test(N.realms.text) && REALMS.every((r) => N.realms.text.includes(r.guardian.name)) && /first advisor/.test(N.realms.text) && /Across its own bridge/.test(N.shadow.text) && !/Below the axis/.test(all));
-  assert('Irishnu rules hold: he/him, never a jester, keeps one whole / golden thread / real circumstances; both entry points valid', !/\b(she|her|herself)\b/i.test(JSON.stringify(GUIDE)) && !/jester|clown|fool|motley|harlequin|trickster/i.test(JSON.stringify(GUIDE)) && /one whole/.test(all) && /golden thread/.test(all) && /real circumstances/.test(all) && validateTree(GUIDE.dialogue).length === 0);
-}
-
-{
-  console.log('\n--- Aretoria v36 (mirror): no Eirena, impersonal golden thread, six great temples 14/14/14/13/13/13 ---');
-  const src = (fp) => readFileSync(new URL(fp, import.meta.url), 'utf8');
-  const all = JSON.stringify({ GUIDE, REALMS, HUB }) + src('./aretoria-data.js');
-  const count = {}; VIRTUES.forEach((v) => { count[v.realm] = (count[v.realm] || 0) + 1; });
-  assert('SW captains-log-v36; VERSION cl36; portal imports aretoria.js?v=cl36', /captains-log-v36/.test(src('./sw.js')) && /const VERSION = 'cl36';/.test(src('./aretoria.js')) && /aretoria\.js\?v=cl36'/.test(src('./portal.js')));
-  assert('Eirena removed everywhere; nobody holds or weaves the golden thread', !/Eirena|Eternal Weaver/.test(all) && !/(holds?|weaves?|weave)[^.]{0,30}golden thread|watch [A-Z]\w+ weave/.test(all) && /golden thread runs through every bridge and portal/.test(GUIDE.dialogue.nodes.greet.text));
-  assert('81 virtues once each, none on the axis; Humanity/Justice/Temperance 14, Courage/Wisdom/Transcendence 13', VIRTUES.length === 81 && new Set(VIRTUES.map((v) => v.slug)).size === 81 && !('virtues' in HUB) && count.humanity === 14 && count.justice === 14 && count.temperance === 14 && count.courage === 13 && count.wisdom === 13 && count.transcendence === 13);
-  assert('realm tag lists match the assignment', REALMS.every((r) => JSON.stringify([...r.virtues].sort()) === JSON.stringify(VIRTUES.filter((v) => v.realm === r.id).map((v) => v.name).sort())));
-  assert('Irishnu six-temples answer (Guardians first advisors, 81 shared, Shadow, Axial hall)', /^Six great temples, Cassidy, each holding one great virtue/.test(GUIDE.dialogue.nodes.realms.text) && /shared among those six temples/.test(GUIDE.dialogue.nodes.realms.text) && /first advisor: Sophia, Valorix, Amara, Justar, Moder and Auria/.test(GUIDE.dialogue.nodes.realms.text));
+  console.log('\n--- v38: Captain\'s Log profile (name, initials, enterprise names, birthday), local only ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const OWNER = String.fromCharCode(67, 97, 115, 115, 105, 100, 121);
+  const served = ['./index.html', './app.js', './captains-log.js', './profile.js', './scene.js', './weather.js', './mec.js', './styles.css', './sw.js', './manifest.webmanifest', './aretoria.js', './aretoria/index.html', './mec.test.js'];
+  const PERSONAL = new RegExp([OWNER, ['C', 'W'].join('') + ' Enterprises', '\\b' + ['An', 'am'].join('') + '\\b'].join('|'), 'i'); // built at runtime so this file stays clean
+  const hits = served.filter((f) => PERSONAL.test(src(f)));
+  assert('no hard-coded personal name, initials or enterprise names in served files', hits.length === 0, hits.join(', '));
+  const cl = src('./captains-log.js');
+  assert('career heads come from the profile; saved field ids unchanged', /\{ id: 'cw_head', type: 'head', label: \(p\) => p\.enterprise \}/.test(cl) && /\{ id: 'anam_head', type: 'head', label: \(p\) => p\.venture \}/.test(cl) && /id: 'cw_checkin'/.test(cl) && /id: 'anam_pipeline'/.test(cl));
+  const v0 = profileView({});
+  assert('neutral fallbacks: Main work / Side venture, no name, no initials, no birthday', v0.enterprise === 'Main work' && v0.venture === 'Side venture' && v0.name === '' && v0.initials === '' && v0.birthday === '' && DEFAULTS.enterprise === 'Main work');
+  assert('initials derive from the name and feed the enterprise default ("AKL Enterprises")', deriveInitials('Ada King-Lovelace') === 'AKL' && profileView({ name: 'Ada King-Lovelace' }).enterprise === 'AKL Enterprises' && profileView({ name: 'Ada', initials: 'al' }).enterprise === 'AL Enterprises');
+  assert('typed values win over defaults', (() => { const v = profileView({ name: 'Ada', initials: 'AL', enterprise: 'Lovelace Labs', venture: 'Engines', birthday: '1815-12-10' }); return v.enterprise === 'Lovelace Labs' && v.venture === 'Engines' && v.birthday === '1815-12-10' && v.initials === 'AL'; })());
+  assert('cleaning: names like Aretoria (unicode letters, spaces, - \', 24 max); initials letters ≤ 4 upper; labels ≤ 40 without markup', cleanName("  Seán O’Brien ") === "Seán O’Brien" && cleanName('<b>x</b>') === 'bxb' && Array.from(cleanName('y'.repeat(50))).length === 24 && cleanInitials('a.b-c d e') === 'ABCD' && cleanLabel('<script>Acme</script>{x}') === 'scriptAcme/scriptx' && cleanLabel('z'.repeat(80)).length === 40 && cleanDate('2026-13-99') === '2026-13-99' && cleanDate('nope') === '');
+  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 5);
+  const pj = src('./profile.js');
+  assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
+  assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
+  assert('profile renders as text (kicker via textContent; heads escaped or textContent)', /who\.textContent = P\.name \?/.test(cl) && /el\.textContent = labelOf\(f\)/.test(cl) && /esc\(labelOf\(f\)\)/.test(cl));
+  const html = src('./index.html');
+  assert('Profile panel: name, initials, enterprise, venture, birthday + clear; Birthday button renamed Profile', ['log-name', 'log-initials', 'log-enterprise', 'log-venture', 'log-birthday', 'log-profile-clear'].every((id) => html.includes(`id="${id}"`)) && />Profile<\/button>/.test(html) && !/log-birthday-clear/.test(html));
+  assert('clear profile keeps log entries', /clearProfile\(\)/.test(cl) && !/removeItem\(KEY_PREFIX[^)]*\)[^;]*;\s*\n\s*Object\.values\(FIELDS\)/.test(cl) && /function clearProfile\(\) \{ try \{ PROFILE_KEYS\.forEach/.test(pj));
+  assert('export header carries the name when set', /Captain’s Log\$\{P\.name \? ` · \$\{P\.name\}` : ''\}/.test(cl));
+  assert('life day reads the profile birthday', /const b = P\.birthday;/.test(cl));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

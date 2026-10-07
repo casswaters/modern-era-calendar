@@ -2,43 +2,38 @@
 
 Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded from GitHub Pages and never ships to the live site.
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
-Captain's Log carries Aretoria; its Aretoria items mirror casswaters/aretoria's ROADMAP.md, and every Aretoria change ships to both sites.
+Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-07, 3:40 PM MT
+**Last updated:** 2026-10-07, 4:00 PM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
-- Aretoria changes ship to standalone Aretoria and Captain's Log together, with matching SW bumps.
+- Aretoria is linked, not embedded: no Aretoria code, data or art in this repo (old #aretoria / ?realm= / /aretoria/ links redirect to the standalone site).
+- No hard-coded personal values in served files: name, initials, enterprise names and birthday come from Profile (localStorage, neutral defaults).
 - Captain's Log prompts follow Cassidy's daily note template.
 - Centiday is "the rest day".
 
 ## Now
-- Confirm the Aretoria hub painting fix (SW captains-log-v35) on a real iPhone.
-- Settle the open Aretoria wording and lore decisions below.
+- Settle the open decisions below.
 
 ## Next
-- Aretoria Version 1 scope: six virtue realms plus Shadow, complete and consistent.
-- Aretoria: redraw the drawn fallback Irishnu in armor (still hooded/robed); rough draft to Cassidy first.
-- Aretoria: apply the landing "Seven Realms" wording once decided.
+- Make the remaining personal template content editable (see open decisions): supplements schedule, wake/bed times, standing cues.
 
 ## Later
-- Aretoria: optional color quests inside realms, only if Cassidy approves.
+- 3D animated companion (cross-ref: Aretoria ROADMAP, Later): the visitor's reflection guide (Irishnu for Cassidy) as a 3D animated character who hangs around the user's Captain's Log in various moods and character phases. Ties to Aretoria's reflection-guide feature (custom fantasy name + costume).
 - Calendar: extend the Jewish holiday and Umm al-Qura Eid tables past 2037.
 
 ## Ideas
 - Wake/bed tracker trends over a week or month.
-- Link a Captain's Log entry to the Aretoria virtue reflected on that day.
+- Link a Captain's Log entry to the Aretoria virtue reflected on that day (both sites share the casswaters.github.io origin, so the shared name and realm reflections are already visible to both).
 
 ## Open decisions (waiting on Cassidy)
-- Aretoria: Sophia's line "since before the axis had a name": keep, reword or cut? (Kept for now.)
-- Aretoria: landing "The Seven Realms": six realms plus Shadow, or six plus a shared realm?
-- Aretoria: drawn fallback Irishnu still hooded/robed: approve a redraw in armor?
-- Aretoria: the v35 hub painting fix: confirmed on your iPhone?
-- Aretoria: optional color quests inside realms later: yes or no?
-- Aretoria: Version 1 = six virtue realms plus Shadow: confirm.
-- Captain's Log: keep carrying a full copy of Aretoria, or link to the standalone site only? (Two copies to keep in sync.)
+- Personal template content still hard-coded (flagged in v38, unchanged): supplements (OptimalAmino, Electrolytes, Creatine, AG1, Omega 3, D3 + K2, Psyllium at 6:20am / 9:30am / 9pm), Daily Tracker labels "6am ☀️" / "10pm 💤", the standing cues and the two beliefs in the header. Move into Profile/editable template, or keep as your template?
+- Weather fallback place is St. George, UT (used before location is shared): keep, or switch to a neutral "no location" default?
+- Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-07 16:00 — v38: Aretoria no longer embedded (card links to casswaters.github.io/aretoria, same tab; old in-app Aretoria links redirect there; code, data, art and tests removed). Captain's Log Profile: name (shared with Aretoria), initials, enterprise names and birthday in this browser only, with neutral defaults ("Main work" / "Side venture"); no hard-coded personal values.
 - 2026-10-07 15:26 — v36: Aretoria lore pass (Eirena removed, six great temples share the 81 virtues 14/14/14/13/13/13).
 - 2026-10-07 14:58 — v35: Aretoria iOS hub painting fix after the arrival pull-back; Irishnu lore pass.
 - 2026-10-07 13:23 — v34: Aretoria Axial arrival intro; Irishnu card bottom-right.

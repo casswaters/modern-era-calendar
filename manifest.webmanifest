@@ -1,7 +1,7 @@
 {
   "name": "Captain’s Log",
   "short_name": "Captain’s Log",
-  "description": "Daily journal with the Modern Era Calendar, Aretoria, and local sky weather.",
+  "description": "Daily journal with the Modern Era Calendar, local sky weather, and a doorway to Aretoria.",
   "start_url": "/modern-era-calendar/",
   "scope": "/modern-era-calendar/",
   "display": "standalone",
