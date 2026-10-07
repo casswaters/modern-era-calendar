@@ -17,7 +17,7 @@ import {
   wttr_url, parse_wttr, place_from_wttr
 } from './weather.js';
 import {
-  is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette
+  is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette, landscapeSvg
 } from './scene.js';
 import {
   cleanName, cleanInitials, cleanLabel, cleanDate, deriveInitials, profileView, DEFAULTS,
@@ -626,9 +626,25 @@ console.log('\n=== ambient weather scene ===\n');
   const gen = (m, h = 12) => pick_scene({ weather: null, date: new Date(2026, m, 12, h) });
   assert('v42 no location → earth vista, nothing local implied', [0, 3, 6, 9].every((m) => { const v = gen(m); return v.terrain === 'vista' && !v.located && !v.hasPlace && v.precip === 'none' && v.particles === 'none' && v.tempF === null && !v.heat; }));
   assert('earth vista ignores any weather reading without a place', pick_scene({ weather: { tempF: 99, code: 95 }, date: new Date(2026, 9, 12, 12) }).terrain === 'vista' && !pick_scene({ weather: { tempF: 99, code: 95 }, date: new Date(2026, 9, 12, 12) }).lightning);
-  const vd = pick_scene({ weather: null, override: parse_scene_override('day') }), vk = pick_scene({ weather: null, override: parse_scene_override('dusk') }), vn = pick_scene({ weather: null, override: parse_scene_override('night') });
-  assert('earth vista follows the time of day', vd.time === 'day' && vk.time === 'dusk' && vn.time === 'night' && vd.label === 'Earth vista · daylight' && vn.label === 'Earth vista · night' && /^Earth vista · (golden hour|twilight)$/.test(vk.label), [vd.label, vk.label, vn.label].join(' | '));
-  assert('vista palettes are valid hex', ['day', 'dusk', 'night'].every((t) => { const p = palette({ terrain: 'vista', time: t }); return [p.top, p.sky, p.hor, p.ocean, p.limb].every((c) => /^#[0-9a-f]{6}$/.test(c)); }));
+  // v44: the no-location vista is time-neutral. Same scene and same SVG whatever the clock or time zone.
+  const zoned = (iso, offsetMin) => { const d = new Date(iso); d.getTimezoneOffset = () => offsetMin; return d; };
+  const clocks = [zoned('2026-10-07T12:00:00Z', 360), zoned('2026-10-07T23:55:00Z', 360), zoned('2026-01-15T03:10:00Z', -540), zoned('2026-06-21T18:30:00Z', 0), zoned('2026-12-21T09:00:00Z', 300), new Date(2031, 2, 3, 6, 45)];
+  const vs = clocks.map((date) => pick_scene({ weather: null, lat: null, lon: null, date }));
+  const svgs = vs.map((v) => landscapeSvg(700, v, palette(v), false));
+  const tzWas = process.env.TZ; process.env.TZ = 'Asia/Tokyo';
+  const vTokyo = pick_scene({ weather: null, date: new Date() }); const svgTokyo = landscapeSvg(700, vTokyo, palette(vTokyo), false);
+  process.env.TZ = 'America/Denver';
+  const vDen = pick_scene({ weather: null, date: new Date() }); const svgDen = landscapeSvg(700, vDen, palette(vDen), false);
+  if (tzWas === undefined) delete process.env.TZ; else process.env.TZ = tzWas;
+  assert('no-location scene is identical regardless of clock or time zone (scene object and SVG)', vs.every((v) => JSON.stringify(v) === JSON.stringify(vs[0])) && svgs.every((x) => x === svgs[0]) && JSON.stringify(vTokyo) === JSON.stringify(vs[0]) && JSON.stringify(vDen) === JSON.stringify(vs[0]) && svgTokyo === svgs[0] && svgDen === svgs[0]);
+  const v0 = vs[0];
+  assert('no-location vista carries no time, season or sun: label "Earth vista", time neutral', v0.label === 'Earth vista' && v0.time === 'neutral' && v0.season === null && v0.key === 'vista' && v0.sun.elevation === 0 && v0.sun.hourAngle === 0 && !/golden|twilight|day|night|dusk|dawn|morning|evening|noon/i.test(v0.label));
+  assert('time overrides do not add a time to the no-location vista', ['day', 'dusk', 'night'].every((t) => JSON.stringify(pick_scene({ weather: null, override: parse_scene_override(t) })) === JSON.stringify(v0)));
+  assert('vista SVG has no sun, moon or city lights', !/vs-glow|#fffaf0|#ffe2b0|#f2ecd8|vs-term/.test(svgs[0]) && /sc-orbit/.test(svgs[0]));
+  assert('vista palette is valid hex', (() => { const p = palette(v0); return [p.top, p.sky, p.hor, p.ocean, p.limb].every((c) => /^#[0-9a-f]{6}$/.test(c)); })());
+  const den = pick_scene({ weather: null, lat: 39.74, lon: -104.98, date: new Date(Date.UTC(2026, 9, 8, 4, 0)) });
+  const denDay = pick_scene({ weather: null, lat: 39.74, lon: -104.98, date: new Date(Date.UTC(2026, 9, 7, 19, 0)) });
+  assert('once a place is set, real time of day returns (Denver night vs day)', den.terrain === 'meadow' && den.time === 'night' && denDay.time === 'day' && /night/.test(den.label), den.label + ' | ' + denDay.label);
   assert('override "vista" previews the earth vista even with a place', pick_scene({ weather: { tempF: 70, code: 0 }, lat: 40, lon: -105, override: parse_scene_override('vista') }).terrain === 'vista');
   assert('override parse', JSON.stringify(parse_scene_override('desert-rain-night')) === JSON.stringify({ terrain: 'desert', precip: 'rain', time: 'night' }));
   const ov = pick_scene({ weather: sg, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)), override: parse_scene_override('snow') });
@@ -689,9 +705,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v43 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v43';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v44 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v44';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl43', /app\.js\?v=cl43/.test(html) && /captains-log\.js\?v=cl43/.test(html) && /scene\.js\?v=cl43/.test(html) && /styles\.css\?v=cl43/.test(html));
+  assert('scripts and styles on cl44', /app\.js\?v=cl44/.test(html) && /captains-log\.js\?v=cl44/.test(html) && /scene\.js\?v=cl44/.test(html) && /styles\.css\?v=cl44/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
