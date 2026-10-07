@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-07, 4:23 PM MT
+**Last updated:** 2026-10-07, 4:54 PM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -17,7 +17,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Settle the open decisions below.
 
 ## Next
-- Decide on the remaining personal template content (see open decisions): standing cues, header beliefs, weather fallback place.
+- Decide on the remaining personal template content (see open decisions): standing cues and header beliefs.
 
 ## Later
 - 3D animated companion (cross-ref: Aretoria ROADMAP, Later): the visitor's reflection guide (Irishnu for Cassidy) as a 3D animated character who hangs around the user's Captain's Log in various moods and character phases. Ties to Aretoria's reflection-guide feature (custom fantasy name + costume).
@@ -29,10 +29,11 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 
 ## Open decisions (waiting on Cassidy)
 - Personal template content still in code (flagged; kept as defaults): the standing cues under the gratitude questions ("S.C.O.R.E.", typed out in v40 as Sincerity, Consistency, Originality, Reflection, Expression with the line "A way to anchor in gratitude instead of breezing through it." and still a default cue; "Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.", "Navigate consciously. Don’t over promise.", "Stay grounded in the miracle. Compound efforts. Create. Build.") and the two header beliefs. Keep as the shared template, or make them editable? (Supplements and wake/bed targets moved to Profile in v39.)
-- Weather fallback place is St. George, UT (used before location is shared): keep, or switch to a neutral "no location" default?
+- Resolved 2026-10-07: the St. George, UT weather default is gone (v42). Weather follows this device when shared, else the optional Profile home location, else nothing: a neutral earth vista with a "Set a location for local weather" hint and no weather numbers.
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-07 16:54: v42: no built-in weather place. Profile gains an optional Home location (typed city, looked up with Open-Meteo place search, or "Use my location"). With no location set or shared: a calm earth vista (Earth from orbit at the current time of day: daylight, golden hour or twilight over the limb, night with city lights), no weather numbers, and a "Set a location for local weather" link that opens Profile. Old cached default readings are dropped. Every em dash and tilde in served copy replaced (About text, Renaissance Days list, market notes, scene caption, permission message; empty placeholders are a middle dot); a test scans all served copy.
 - 2026-10-07 16:23: v41: no em dashes or tildes in Captain's Log text. Copy text puts each cue and note on its own line under the question; the header uses " · " before the date; field labels use parentheses (e.g. "Social (Family)", "Check in (Schedule · Emails · Deals)"); the empty 1 to 10 option shows "·". Test guards it.
 - 2026-10-07 16:20: v40: S.C.O.R.E. under "What am I grateful for?" is typed out (Sincerity, Consistency, Originality, Reflection, Expression) with one plain line: "A way to anchor in gratitude instead of breezing through it." Still a default template cue; also included in Copy text.
 - 2026-10-07 16:12 — v39: Profile also holds wake/bed targets and a daily checklist (up to 6 lines; first three keep the old supplement ids so saved ticks stay); neutral defaults "Wake ☀️" / "Bed 💤" and Morning/Midday/Evening supplements; no personal supplement list or times in code.

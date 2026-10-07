@@ -1,5 +1,5 @@
 /**
- * Captain’s Log — UI (MEC calendar + journal + Aretoria)
+ * Captain’s Log: UI (MEC calendar + journal + Aretoria)
  */
 import {
   DAY_NAMES, MONTH_NAMES, REN,
@@ -10,7 +10,7 @@ import {
   gregorian_day_of_year, ordinal_to_gregorian,
   holidays_on, holiday_map, market_note, is_rest_day
 } from './mec.js?v=cl19';
-import { initSky } from './weather.js?v=cl19';
+import { initSky } from './weather.js?v=cl42';
 
 const HOLIDAY_ICONS = {
   1: '🌐',
@@ -101,7 +101,7 @@ function renderMarketNotes(ghols, { compact = false } = {}) {
   const items = notes.map(n =>
     compact
       ? `<div class="market-note-item">${escapeHtml(n.note)}</div>`
-      : `<div class="market-note-item"><strong>${escapeHtml(n.name)}</strong> — ${escapeHtml(n.note)}</div>`
+      : `<div class="market-note-item"><strong>${escapeHtml(n.name)}</strong>: ${escapeHtml(n.note)}</div>`
   ).join('');
   return `<div class="market-notes">${items}</div>`;
 }

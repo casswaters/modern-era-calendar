@@ -13,7 +13,8 @@ export const BDAY_KEY = 'mec-log-birthday';
 export const WAKE_KEY = 'mec-log-wake';               // v39: daily tracker targets
 export const BED_KEY = 'mec-log-bed';
 export const SUPPS_KEY = 'mec-log-supplements';       // v39: checklist lines, newline-separated
-export const PROFILE_KEYS = [NAME_KEY, INITIALS_KEY, WORK_KEY, VENTURE_KEY, BDAY_KEY, WAKE_KEY, BED_KEY, SUPPS_KEY];
+export const HOME_KEY = 'mec-log-home';               // v42: home location JSON { q, name, lat, lon } (weather.js reads it)
+export const PROFILE_KEYS = [NAME_KEY, INITIALS_KEY, WORK_KEY, VENTURE_KEY, BDAY_KEY, WAKE_KEY, BED_KEY, SUPPS_KEY, HOME_KEY];
 export const NAME_MAX = 24, INITIALS_MAX = 4, LABEL_MAX = 40, TIME_MAX = 12, SUPP_MAX = 80, SUPPS_MAX = 6;
 export const DEFAULTS = {
   enterprise: 'Main work', venture: 'Side venture', wake: 'Wake', bed: 'Bed',
@@ -67,7 +68,7 @@ export function profileView(raw = {}) {
 const get = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
 export function readProfile() {
   return { name: get(NAME_KEY), initials: get(INITIALS_KEY), enterprise: get(WORK_KEY), venture: get(VENTURE_KEY), birthday: get(BDAY_KEY),
-    wake: get(WAKE_KEY), bed: get(BED_KEY), supplements: get(SUPPS_KEY) };
+    wake: get(WAKE_KEY), bed: get(BED_KEY), supplements: get(SUPPS_KEY), home: get(HOME_KEY) };
 }
 /** Stores one cleaned field (empty removes it). Returns the cleaned value. */
 export function saveField(field, raw) {

@@ -8,7 +8,8 @@ import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
 } from './mec.js?v=cl19';
-import { readProfile, profileView, saveField, clearProfile, NAME_MAX, INITIALS_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl39';
+import { readProfile, profileView, saveField, clearProfile, NAME_MAX, INITIALS_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl42';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl42';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -354,16 +355,80 @@ for (const [k, id] of Object.entries(FIELDS)) {
   el.addEventListener('change', () => { el.value = saveField(k, el.value); renderProfile(); });
 }
 $('log-profile-clear').addEventListener('click', () => {
-  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
+  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday, home location, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
   clearProfile();
   Object.values(FIELDS).forEach((id) => { $(id).value = ''; });
-  renderProfile();
+  homeEl.value = '';
+  window.dispatchEvent(new Event('mec:home'));
+  renderProfile(); renderHome();
+});
+
+/* ---------- Home location (v42): optional; local weather follows it when this device's location isn't shared ---------- */
+const homeEl = $('log-home'), homeStatus = $('log-home-status'), homeLocate = $('log-home-locate');
+homeEl.maxLength = 80;
+let homeBusy = false;
+function homeNote() {
+  const h = parse_home(readProfile().home);
+  const sky = globalThis.__mecSky;
+  if (sky && sky.source === 'device') return `Weather follows this device${sky.place ? ` (${sky.place})` : ''}.${h ? ` Home: ${h.name}.` : ''}`;
+  return h ? `Local weather for ${h.name}.` : 'Not set. Type a city, or use your location.';
+}
+function renderHome(msg) {
+  const h = parse_home(readProfile().home);
+  if (document.activeElement !== homeEl) homeEl.value = h ? h.name : '';
+  homeStatus.textContent = msg || homeNote();
+}
+let homeSeq = 0;
+async function saveHome() {
+  const q = homeEl.value.replace(/\s+/g, ' ').trim();
+  const cur = parse_home(readProfile().home);
+  if (cur && q === cur.name) { renderHome(); return; }
+  if (!q) {
+    try { localStorage.removeItem(HOME_KEY); } catch {}
+    window.dispatchEvent(new Event('mec:home'));
+    renderHome(); return;
+  }
+  const seq = ++homeSeq; homeBusy = true;
+  homeStatus.textContent = 'Looking up…';
+  try {
+    const hit = await geocode_place(q);
+    if (seq !== homeSeq) return;
+    if (!hit) { homeStatus.textContent = `Couldn’t find “${q}”. Try a nearby city, or add the state or country.`; return; }
+    try { localStorage.setItem(HOME_KEY, JSON.stringify(hit)); } catch {}
+    homeEl.value = hit.name;
+    homeBusy = false;
+    window.dispatchEvent(new Event('mec:home'));
+    renderHome();
+  } catch {
+    if (seq === homeSeq) homeStatus.textContent = 'Couldn’t reach the place search. Check your connection and try again.';
+  } finally { if (seq === homeSeq) homeBusy = false; }
+}
+homeEl.addEventListener('change', saveHome);
+homeEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); homeEl.blur(); } });
+if (!('geolocation' in navigator)) homeLocate.hidden = true;
+homeLocate.addEventListener('click', () => {
+  homeStatus.textContent = 'Asking this browser for your location…';
+  window.dispatchEvent(new Event('mec:locate'));
+});
+window.addEventListener('mec:locate-result', (e) => {
+  homeStatus.textContent = e.detail && e.detail.denied
+    ? 'Location is blocked for this site. Allow it in your browser settings, or type a city.'
+    : 'Couldn’t get your location. Try again, or type a city.';
+});
+window.addEventListener('mec:sky', () => { if (!homeBusy) renderHome(); }); // a locate failure message (sent after this) wins
+// The weather strip's "Set a location for local weather" opens Profile at Home location.
+$('sky-set')?.addEventListener('click', () => {
+  settings.hidden = false;
+  settingsBtn.setAttribute('aria-expanded', 'true');
+  homeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  setTimeout(() => homeEl.focus({ preventScroll: true }), 350);
 });
 // another tab (or Aretoria) changed the shared name
-window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday|wake|bed|supplements))$/.test(e.key)) renderProfile(); });
+window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday|wake|bed|supplements|home))$/.test(e.key)) { renderProfile(); renderHome(); } });
 
 window.addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 
 show(current);
 renderProfile();
+renderHome();

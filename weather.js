@@ -1,16 +1,19 @@
 /**
- * MEC — Local sky (location + weather) helpers.
+ * MEC: Local sky (location + weather) helpers.
  * Weather: Open-Meteo (free, no API key, CORS-enabled).
  * Fallback weather: wttr.in JSON (free, no key, CORS) if Open-Meteo is down or rate-limited.
  * Place names: BigDataCloud client reverse geocode (free, no key), Nominatim, then wttr.in nearest area.
+ * Home location (v42): typed in Profile, looked up with Open-Meteo geocoding (free, no key, CORS).
  * Pure helpers are exported for tests; the DOM wiring lives in initSky().
+ *
+ * v42: there is no built-in default place. Order: this device's location (when shared), then the
+ * Profile home location, then none. With none, no weather is fetched or shown: the scene paints a
+ * neutral earth vista and the strip asks for a location. Weather is never invented.
  */
 
-export const FALLBACK_PLACE = {
-  name: 'St. George, UT',
-  lat: 37.0965,
-  lon: -113.5684
-};
+export const HOME_KEY = 'mec-log-home';   // JSON { q, name, lat, lon } from Profile
+export const NO_PLACE = 'No location set';
+export const SET_HINT = 'Set a location for local weather';
 
 const STORE_KEY = 'mec-sky-v1';
 const OPTIN_KEY = 'mec-geo-optin';
@@ -189,6 +192,74 @@ export function place_from_nominatim(j) {
   });
 }
 
+/* ---------------- home location (v42) ---------------- */
+
+export function geocode_url(name, count = 10) {
+  const p = new URLSearchParams({ name: String(name || '').trim(), count: String(count), language: 'en', format: 'json' });
+  return `https://geocoding-api.open-meteo.com/v1/search?${p.toString()}`;
+}
+
+const norm = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * Best Open-Meteo geocoding result for a typed query such as "Denver", "Portland, Maine",
+ * "Portland, OR" or "York, UK". Qualifiers after the first comma must match the region,
+ * state abbreviation, country or country code. Populated places beat parks and peaks.
+ * Returns { name, lat, lon } or null.
+ */
+export function pick_geocode(json, query) {
+  const list = (json && Array.isArray(json.results) ? json.results : []).filter((r) => typeof r.latitude === 'number' && typeof r.longitude === 'number');
+  if (!list.length) return null;
+  const quals = String(query || '').split(',').slice(1).map(norm).filter(Boolean);
+  const abbr = (r) => (String(r.country_code || '').toUpperCase() === 'US' ? US_STATES[r.admin1] || '' : '');
+  const matches = (r) => quals.every((q) => [r.admin1, r.admin2, r.country, r.country_code, abbr(r), r.country_code === 'GB' ? 'uk' : '', r.country_code === 'US' ? 'usa' : ''].map(norm).some((v) => v && (v === q || (q.length > 3 && v.startsWith(q)))));
+  const pool = quals.length ? list.filter(matches) : list;
+  if (!pool.length) return null;
+  const score = (r) => (/^PPL/.test(r.feature_code || '') ? 2e9 : 0) + (r.population || 0);
+  const best = pool.slice().sort((a, b) => score(b) - score(a))[0];
+  const name = format_place({ city: best.name, region: best.admin1, country: best.country, countryCode: best.country_code }) || best.name;
+  return { name, lat: Math.round(best.latitude * 1e4) / 1e4, lon: Math.round(best.longitude * 1e4) / 1e4 };
+}
+
+/** Look up a typed place. Resolves { q, name, lat, lon } or null (not found). Throws on network errors. */
+export async function geocode_place(query) {
+  const q = String(query || '').replace(/[\u0000-\u001f<>{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  if (!q) return null;
+  const first = q.split(',')[0].trim();
+  const hit = pick_geocode(await fetchJson(geocode_url(first || q)), q);
+  return hit ? { q, ...hit } : null;
+}
+
+/** Validates a stored home location (JSON string or object). */
+export function parse_home(raw) {
+  let h = raw;
+  if (typeof raw === 'string') { try { h = JSON.parse(raw); } catch { return null; } }
+  if (!h || typeof h !== 'object') return null;
+  const lat = Number(h.lat), lon = Number(h.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  const name = String(h.name || '').replace(/[\u0000-\u001f<>{}]/g, '').trim().slice(0, 80);
+  return { q: String(h.q || name).slice(0, 80), name: name || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`, lat, lon };
+}
+
+export function read_home() {
+  try { return parse_home(localStorage.getItem(HOME_KEY)); } catch { return null; }
+}
+
+/**
+ * Starting sky state from the cached state and the home location (pure, for tests).
+ * A shared device location is kept; anything else follows the home location, or none.
+ * Pre-v42 caches of the old built-in default ("fallback") are dropped.
+ */
+export function sky_state_for(cached, home) {
+  const c = cached && typeof cached === 'object' ? cached : null;
+  if (c && c.source === 'device' && Number.isFinite(c.lat) && Number.isFinite(c.lon)) return c;
+  if (home) {
+    const same = c && c.source === 'home' && Math.abs(c.lat - home.lat) < 0.01 && Math.abs(c.lon - home.lon) < 0.01;
+    return { place: home.name, lat: home.lat, lon: home.lon, source: 'home', weather: same ? c.weather || null : null, fetchedAt: same ? c.fetchedAt || 0 : 0 };
+  }
+  return { place: '', lat: null, lon: null, source: 'none', weather: null, fetchedAt: 0 };
+}
+
 async function fetchJson(url, timeoutMs = 8000) {
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const t = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
@@ -231,15 +302,15 @@ export async function fetch_weather(lat, lon) {
 /* ---------------- DOM wiring ---------------- */
 
 /**
- * Share the current sky state (place + coords + latest reading) with other modules — the ambient
+ * Share the current sky state (place + coords + latest reading) with other modules. The ambient
  * scene (scene.js) listens for this instead of fetching weather a second time. The last state is
  * also parked on globalThis so a listener that loads later can pick it up immediately.
  */
 function emitSky(state) {
   const detail = {
-    place: state.place || FALLBACK_PLACE.name,
-    lat: state.lat, lon: state.lon,
-    source: state.source || 'fallback',
+    place: state.source === 'none' ? '' : state.place || '',
+    lat: state.source === 'none' ? null : state.lat, lon: state.source === 'none' ? null : state.lon,
+    source: state.source || 'none',
     weather: state.weather || null,
     fetchedAt: state.fetchedAt || 0,
     sunrise: (state.weather && state.weather.sunrise) || null,
@@ -291,11 +362,16 @@ export function initSky() {
     cond: document.getElementById('sky-cond'),
     hilo: document.getElementById('sky-hilo'),
     temp: document.getElementById('sky-temp'),
-    btn: document.getElementById('sky-locate')
+    btn: document.getElementById('sky-locate'),
+    set: document.getElementById('sky-set')
   };
   if (!el.place) return;
 
-  let state = load() || { place: FALLBACK_PLACE.name, lat: FALLBACK_PLACE.lat, lon: FALLBACK_PLACE.lon, source: 'fallback' };
+  let state = sky_state_for(load(), read_home());
+  save(state);
+  const noPlace = () => state.source === 'none';
+  /** Back to the home location (or none) when the device location is not in use. */
+  function fromHome() { state = sky_state_for(state.source === 'device' ? null : state, read_home()); save(state); }
 
   function setPlace(name, note) {
     el.place.innerHTML = '';
@@ -307,8 +383,21 @@ export function initSky() {
   }
 
   function paint(note = '') {
-    setPlace(state.place || FALLBACK_PLACE.name, note);
+    if (el.set) el.set.hidden = !noPlace();
+    if (noPlace()) { // no place: no numbers, just a gentle prompt
+      setPlace(NO_PLACE, note || SET_HINT);
+      el.icon.textContent = '✦';
+      el.temp.textContent = ''; el.temp.hidden = true;
+      el.cond.textContent = '';
+      el.cond.hidden = true;
+      el.hilo.textContent = '';
+      emitSky(state);
+      return;
+    }
+    el.cond.hidden = false;
+    setPlace(state.place || NO_PLACE, note);
     const w = state.weather;
+    el.temp.hidden = !w;
     if (w) {
       el.icon.textContent = w.icon;
       el.temp.textContent = `${w.tempF}°F`;
@@ -319,7 +408,7 @@ export function initSky() {
       el.hilo.textContent = bits.join(' · ');
     } else {
       el.icon.textContent = '✦';
-      el.temp.textContent = '—';
+      el.temp.textContent = '';
       el.cond.textContent = note || 'Weather unavailable';
       el.hilo.textContent = '';
     }
@@ -327,6 +416,7 @@ export function initSky() {
   }
 
   async function refreshWeather(force = false) {
+    if (noPlace()) { paint(); return; } // nothing to look up
     const fresh = state.weather && state.fetchedAt && (Date.now() - state.fetchedAt < MAX_AGE_MS);
     if (fresh && !force) { paint(); return; }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -344,7 +434,7 @@ export function initSky() {
   }
 
   async function useDevice({ fromTap = false } = {}) {
-    if (fromTap) { el.cond.textContent = 'Locating…'; }
+    if (fromTap) { el.cond.hidden = false; el.cond.textContent = 'Locating…'; if (el.set) el.set.hidden = true; }
     try {
       const pos = await getPosition();
       try { localStorage.setItem(OPTIN_KEY, '1'); } catch { /* ignore */ }
@@ -358,26 +448,31 @@ export function initSky() {
       save(state);
       await refreshWeather(changed);
     } catch (err) {
-      // Denied, timed out or unsupported → St. George fallback (or last known place)
+      // Denied, timed out or unsupported: the home location from Profile, else no place (no weather shown)
       const denied = err && err.code === 1;
       if (denied) {
         try { localStorage.removeItem(OPTIN_KEY); } catch { /* ignore */ }
         el.btn.hidden = true;
-        if (state.source === 'device') {
-          state = { ...state, place: FALLBACK_PLACE.name, lat: FALLBACK_PLACE.lat, lon: FALLBACK_PLACE.lon, source: 'fallback', weather: null, fetchedAt: 0 };
-          save(state);
-        }
+        if (state.source === 'device') fromHome();
       } else {
         el.btn.hidden = false;
       }
       await refreshWeather(false);
-      if (denied) el.place.title = 'Location permission denied — showing St. George, UT. Enable location for this site in browser settings to follow you.';
+      if (fromTap) window.dispatchEvent(new CustomEvent('mec:locate-result', { detail: { ok: false, denied } }));
+      if (denied) el.place.title = noPlace()
+        ? 'Location permission denied. Enable location for this site in your browser settings, or set a home location in Profile.'
+        : `Location permission denied. Showing your home location, ${state.place}.`;
     }
   }
 
   el.btn?.addEventListener('click', () => useDevice({ fromTap: true }));
+  // Profile asks to use this device's location, or saved / cleared the home location.
+  window.addEventListener('mec:locate', () => useDevice({ fromTap: true }));
+  const homeChanged = () => { if (state.source !== 'device') { fromHome(); refreshWeather(true); } };
+  window.addEventListener('mec:home', homeChanged);
+  window.addEventListener('storage', (e) => { if (e.key === HOME_KEY || e.key === null) homeChanged(); });
 
-  // First paint from cache/fallback immediately, then refresh.
+  // First paint from cache (or the no-place prompt) immediately, then refresh.
   paint();
   (async () => {
     const perm = await permissionState();
@@ -385,9 +480,7 @@ export function initSky() {
     if (perm === 'granted' || (optedIn && perm !== 'denied')) {
       await useDevice();
     } else {
-      if (perm === 'denied' && state.source === 'device') {
-        state = { ...state, place: FALLBACK_PLACE.name, lat: FALLBACK_PLACE.lat, lon: FALLBACK_PLACE.lon, source: 'fallback', weather: null, fetchedAt: 0 };
-      }
+      if (perm === 'denied' && state.source === 'device') fromHome();
       el.btn.hidden = perm === 'denied' || !('geolocation' in navigator);
       await refreshWeather(false);
     }

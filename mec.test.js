@@ -11,7 +11,8 @@ import {
   islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
 } from './mec.js';
 import {
-  FALLBACK_PLACE, weather_label, open_meteo_url, parse_open_meteo,
+  HOME_KEY, NO_PLACE, SET_HINT, geocode_url, pick_geocode, parse_home, sky_state_for,
+  weather_label, open_meteo_url, parse_open_meteo,
   format_place, place_from_bigdatacloud, place_from_nominatim,
   wttr_url, parse_wttr, place_from_wttr
 } from './weather.js';
@@ -521,8 +522,33 @@ console.log('\n=== holiday origins ===\n');
 
 console.log('\n=== local sky (weather helpers) ===\n');
 {
-  assert('fallback is St. George, UT', FALLBACK_PLACE.name === 'St. George, UT');
-  assert('fallback coords near St. George', Math.abs(FALLBACK_PLACE.lat - 37.1) < 0.1 && Math.abs(FALLBACK_PLACE.lon + 113.57) < 0.1);
+  {
+    const wsrc = readFileSync(new URL('./weather.js', import.meta.url), 'utf8');
+    assert('v42: no built-in weather place in served code (no St. George name or coordinates)', !/George|37\.0965|113\.5684|FALLBACK_PLACE/.test(wsrc + readFileSync(new URL('./index.html', import.meta.url), 'utf8') + readFileSync(new URL('./scene.js', import.meta.url), 'utf8')));
+    const none = sky_state_for(null, null);
+    assert('no device location, no home: source none, no coords, no weather', none.source === 'none' && none.lat === null && none.lon === null && none.weather === null);
+    const oldDefault = { place: 'Old default', lat: 37.0965, lon: -113.5684, source: 'fallback', weather: { tempF: 80 }, fetchedAt: 1 };
+    assert('pre-v42 cache of the old built-in default is dropped (no stale weather shown)', sky_state_for(oldDefault, null).source === 'none' && sky_state_for(oldDefault, null).weather === null);
+    const home = parse_home(JSON.stringify({ q: 'Denver', name: 'Denver, CO', lat: 39.7392, lon: -104.9847 }));
+    const hs = sky_state_for(oldDefault, home);
+    assert('home location from Profile is used when the device location is not shared', hs.source === 'home' && hs.place === 'Denver, CO' && hs.lat === 39.7392 && hs.weather === null);
+    assert('a cached reading for the same home place is kept', sky_state_for({ source: 'home', lat: 39.7392, lon: -104.9847, weather: { tempF: 61 }, fetchedAt: 5 }, home).weather.tempF === 61);
+    const dev = { place: 'Here', lat: 40, lon: -105, source: 'device', weather: { tempF: 55 } };
+    assert('a shared device location wins over the home location', sky_state_for(dev, home) === dev);
+    assert('parse_home rejects junk and out-of-range coordinates', parse_home('nope') === null && parse_home({ lat: 120, lon: 0 }) === null && parse_home(null) === null);
+    assert('home key lives with the profile keys', HOME_KEY === 'mec-log-home');
+    assert('no-place copy', NO_PLACE === 'No location set' && SET_HINT === 'Set a location for local weather');
+    assert('geocode URL: Open-Meteo place search, no key', geocode_url('Denver') === 'https://geocoding-api.open-meteo.com/v1/search?name=Denver&count=10&language=en&format=json');
+    const gj = { results: [
+      { name: 'Portland', latitude: 45.52345, longitude: -122.67621, feature_code: 'PPLA2', country_code: 'US', country: 'United States', admin1: 'Oregon', population: 652503 },
+      { name: 'Portland', latitude: 43.66147, longitude: -70.25533, feature_code: 'PPLA2', country_code: 'US', country: 'United States', admin1: 'Maine', population: 66881 },
+      { name: 'Portland Park', latitude: 45.5, longitude: -122.6, feature_code: 'PRK', country_code: 'US', country: 'United States', admin1: 'Oregon', population: 0 }
+    ] };
+    assert('geocode: biggest populated place by default', pick_geocode(gj, 'Portland').name === 'Portland, OR');
+    assert('geocode: state name qualifier', pick_geocode(gj, 'Portland, Maine').name === 'Portland, ME' && pick_geocode(gj, 'Portland, Maine').lat === 43.6615);
+    assert('geocode: state abbreviation qualifier', pick_geocode(gj, 'portland, me').name === 'Portland, ME');
+    assert('geocode: unmatched qualifier or no results → null (never a guess)', pick_geocode(gj, 'Portland, Texas') === null && pick_geocode({}, 'x') === null && pick_geocode({ results: [] }, 'x') === null);
+  }
   const url = open_meteo_url(37.0965, -113.5684);
   assert('Open-Meteo URL uses Fahrenheit', url.includes('temperature_unit=fahrenheit'), url);
   assert('Open-Meteo URL has lat/lon', url.includes('latitude=37.0965') && url.includes('longitude=-113.5684'), url);
@@ -597,12 +623,13 @@ console.log('\n=== ambient weather scene ===\n');
   assert('non-desert location → meadow fall, leaves', nyc.terrain === 'meadow' && nyc.particles === 'leaves', nyc.key);
   const sgNoWx = pick_scene({ weather: null, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)) });
   assert('St. George before first reading → desert fall, season-only', sgNoWx.terrain === 'desert' && !sgNoWx.located && sgNoWx.season === 'fall' && sgNoWx.precip === 'none', sgNoWx.key);
-  const gen = (m) => pick_scene({ weather: null, date: new Date(2026, m, 12, 12) });
-  assert('no location → generic meadow', gen(9).terrain === 'meadow' && !gen(9).located);
-  assert('no location: spring blossoms', gen(3).season === 'spring' && gen(3).particles === 'petals');
-  assert('no location: summer green bright', gen(6).season === 'summer' && gen(6).sky === 'clear');
-  assert('no location: fall amber leaves', gen(9).season === 'fall' && gen(9).particles === 'leaves');
-  assert('no location: winter soft snow', gen(0).season === 'winter' && gen(0).precip === 'snow');
+  const gen = (m, h = 12) => pick_scene({ weather: null, date: new Date(2026, m, 12, h) });
+  assert('v42 no location → earth vista, nothing local implied', [0, 3, 6, 9].every((m) => { const v = gen(m); return v.terrain === 'vista' && !v.located && !v.hasPlace && v.precip === 'none' && v.particles === 'none' && v.tempF === null && !v.heat; }));
+  assert('earth vista ignores any weather reading without a place', pick_scene({ weather: { tempF: 99, code: 95 }, date: new Date(2026, 9, 12, 12) }).terrain === 'vista' && !pick_scene({ weather: { tempF: 99, code: 95 }, date: new Date(2026, 9, 12, 12) }).lightning);
+  const vd = pick_scene({ weather: null, override: parse_scene_override('day') }), vk = pick_scene({ weather: null, override: parse_scene_override('dusk') }), vn = pick_scene({ weather: null, override: parse_scene_override('night') });
+  assert('earth vista follows the time of day', vd.time === 'day' && vk.time === 'dusk' && vn.time === 'night' && vd.label === 'Earth vista · daylight' && vn.label === 'Earth vista · night' && /^Earth vista · (golden hour|twilight)$/.test(vk.label), [vd.label, vk.label, vn.label].join(' | '));
+  assert('vista palettes are valid hex', ['day', 'dusk', 'night'].every((t) => { const p = palette({ terrain: 'vista', time: t }); return [p.top, p.sky, p.hor, p.ocean, p.limb].every((c) => /^#[0-9a-f]{6}$/.test(c)); }));
+  assert('override "vista" previews the earth vista even with a place', pick_scene({ weather: { tempF: 70, code: 0 }, lat: 40, lon: -105, override: parse_scene_override('vista') }).terrain === 'vista');
   assert('override parse', JSON.stringify(parse_scene_override('desert-rain-night')) === JSON.stringify({ terrain: 'desert', precip: 'rain', time: 'night' }));
   const ov = pick_scene({ weather: sg, lat: 37.0965, lon: -113.5684, date: new Date(Date.UTC(2026, 9, 5, 19, 0)), override: parse_scene_override('snow') });
   assert('override snow applies', ov.precip === 'snow' && ov.particles === 'snow' && ov.sky === 'overcast');
@@ -662,9 +689,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v41 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v41';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v42 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v42';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl41', /app\.js\?v=cl41/.test(html) && /captains-log\.js\?v=cl41/.test(html) && /scene\.js\?v=cl41/.test(html) && /styles\.css\?v=cl41/.test(html));
+  assert('scripts and styles on cl42', /app\.js\?v=cl42/.test(html) && /captains-log\.js\?v=cl42/.test(html) && /scene\.js\?v=cl42/.test(html) && /styles\.css\?v=cl42/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
@@ -683,7 +710,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('initials derive from the name and feed the enterprise default ("AKL Enterprises")', deriveInitials('Ada King-Lovelace') === 'AKL' && profileView({ name: 'Ada King-Lovelace' }).enterprise === 'AKL Enterprises' && profileView({ name: 'Ada', initials: 'al' }).enterprise === 'AL Enterprises');
   assert('typed values win over defaults', (() => { const v = profileView({ name: 'Ada', initials: 'AL', enterprise: 'Lovelace Labs', venture: 'Engines', birthday: '1815-12-10' }); return v.enterprise === 'Lovelace Labs' && v.venture === 'Engines' && v.birthday === '1815-12-10' && v.initials === 'AL'; })());
   assert('cleaning: names like Aretoria (unicode letters, spaces, - \', 24 max); initials letters ≤ 4 upper; labels ≤ 40 without markup', cleanName("  Seán O’Brien ") === "Seán O’Brien" && cleanName('<b>x</b>') === 'bxb' && Array.from(cleanName('y'.repeat(50))).length === 24 && cleanInitials('a.b-c d e') === 'ABCD' && cleanLabel('<script>Acme</script>{x}') === 'scriptAcme/scriptx' && cleanLabel('z'.repeat(80)).length === 40 && cleanDate('2026-13-99') === '2026-13-99' && cleanDate('nope') === '');
-  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 8);
+  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 9 && PROFILE_KEYS.includes('mec-log-home'));
   const pj = src('./profile.js');
   assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
   assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
@@ -740,6 +767,53 @@ console.log('\n=== ambient weather scene ===\n');
     if (/[—~]/.test(out)) dateBad = out;
   }
   assert('date lines in Copy text (Gregorian + MEC, 2026 to 2027) have no em dash or tilde', !dateBad, dateBad);
+}
+
+{
+  console.log('\n--- v42: no em dash or tilde anywhere in served copy (HTML text and attributes, JS strings, manifest, CSS content) ---');
+  const { readdirSync } = await import('node:fs');
+  const root = new URL('./', import.meta.url);
+  const walk = (rel) => readdirSync(new URL(rel || './', root), { withFileTypes: true }).flatMap((e) => {
+    const p = (rel || '') + e.name;
+    if (e.isDirectory()) return ['.git', '.github', 'node_modules'].includes(e.name) ? [] : walk(p + '/');
+    return [p];
+  });
+  // Served = what Publish Pages ships: everything except .github, ROADMAP.md and test files.
+  const files = walk('').filter((f) => /\.(html|js|mjs|json|webmanifest|css)$/.test(f) && !/\.test\.m?js$/.test(f) && f !== 'ROADMAP.md' && f !== 'package.json');
+  const jsStrings = (src) => { // skips comments; collects '...', "...", `...` bodies
+    const out = []; let i = 0; const n = src.length;
+    while (i < n) {
+      const c = src[i], c2 = src[i + 1];
+      if (c === '/' && c2 === '/') { while (i < n && src[i] !== '\n') i++; continue; }
+      if (c === '/' && c2 === '*') { const e = src.indexOf('*/', i + 2); i = e < 0 ? n : e + 2; continue; }
+      if (c === '"' || c === "'" || c === '`') {
+        const q = c; i++; let buf = '';
+        while (i < n && src[i] !== q) { if (src[i] === '\\') { buf += src[i + 1]; i += 2; continue; } if (q !== '`' && src[i] === '\n') break; buf += src[i]; i++; }
+        i++; out.push(buf); continue;
+      }
+      i++;
+    }
+    return out;
+  };
+  const bad = [];
+  for (const f of files) {
+    const src = readFileSync(new URL(f, root), 'utf8'); let items = [];
+    if (/\.m?js$/.test(f)) items = jsStrings(src);
+    else if (f.endsWith('.html')) {
+      const noC = src.replace(/<!--[\s\S]*?-->/g, ' ');
+      noC.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, (m, body) => { items.push(...jsStrings(body)); return m; });
+      const stripped = noC.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ');
+      for (const m of stripped.matchAll(/>([^<]+)</g)) items.push(m[1]);
+      for (const m of stripped.matchAll(/(content|title|alt|aria-label|placeholder)="([^"]*)"/g)) items.push(m[2]);
+    } else if (/\.(json|webmanifest)$/.test(f)) for (const m of src.matchAll(/"((?:\\.|[^"\\])*)"/g)) items.push(m[1]);
+    else if (f.endsWith('.css')) for (const m of src.matchAll(/content:\s*(["'])(.*?)\1/g)) items.push(m[2]);
+    for (const t of items) if (/[\u2014~]/.test(t)) bad.push(`${f}: ${t.replace(/\s+/g, ' ').trim().slice(0, 70)}`);
+  }
+  assert(`served copy has no em dash or tilde (${files.length} files scanned)`, bad.length === 0 && files.includes('index.html') && files.includes('weather.js'), bad.join(' | '));
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  assert('lookup range reads "about 2024 to 2037"', html.includes('<strong>Lookups (about 2024 to 2037):</strong>'));
+  assert('empty placeholders are a middle dot, sky temperature starts hidden (no number)', /id="today-mec">·</.test(html) && /id="g-result">·</.test(html) && /<span class="sky-temp" id="sky-temp" hidden><\/span>/.test(html));
+  assert('Profile has an optional Home location with "Use my location"; weather strip has the set-location hint', html.includes('id="log-home"') && html.includes('id="log-home-locate"') && /id="sky-set"[^>]*hidden[^>]*>Set a location for local weather</.test(html));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

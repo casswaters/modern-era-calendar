@@ -11,7 +11,7 @@
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0d1a" />
-  <meta name="description" content="Captain’s Log — a daily journal with the Modern Era Calendar, local sky weather, and a doorway to Aretoria." />
+  <meta name="description" content="Captain’s Log: a daily journal with the Modern Era Calendar, local sky weather, and a doorway to Aretoria." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Captain’s Log" />
@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=cl41" />
+  <link rel="stylesheet" href="styles.css?v=cl42" />
 </head>
 <body>
   <div class="app">
@@ -35,7 +35,7 @@
         <div class="brand-mark" aria-hidden="true">CL</div>
         <div>
           <h1>Captain’s Log</h1>
-          <div class="sub">Year <span id="header-year">—</span> · Modern Era Calendar &amp; more</div>
+          <div class="sub">Year <span id="header-year">·</span> · Modern Era Calendar &amp; more</div>
         </div>
       </div>
       <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
@@ -52,26 +52,27 @@
       <div class="sky-strip" id="sky-strip" role="status" aria-live="polite">
         <span class="sky-icon" id="sky-icon" aria-hidden="true">✦</span>
         <div class="sky-main">
-          <span class="sky-place" id="sky-place"><span class="pin" aria-hidden="true">◈</span>St. George, UT</span>
+          <span class="sky-place" id="sky-place"><span class="pin" aria-hidden="true">◈</span>Local sky</span>
           <span class="sky-cond" id="sky-cond">Reading the sky…</span>
           <span class="sky-hilo" id="sky-hilo"></span>
+          <button class="sky-set" id="sky-set" type="button" hidden title="Open Profile to set a home location">Set a location for local weather</button>
         </div>
         <button class="sky-btn" id="sky-locate" type="button" hidden title="Use my current location for weather">📍 Use my location</button>
-        <span class="sky-temp" id="sky-temp">—</span>
+        <span class="sky-temp" id="sky-temp" hidden></span>
       </div>
 
       <div class="today-banner" id="today-banner">
         <div class="label">Today <span class="realm-dots" aria-hidden="true" title="Realms"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
-        <div class="mec" id="today-mec">—</div>
+        <div class="mec" id="today-mec">·</div>
         <div class="countdown" id="next-ren"></div>
-        <div class="greg" id="today-greg">—</div>
+        <div class="greg" id="today-greg">·</div>
       </div>
 
       <div class="month-nav">
         <button class="icon-btn" id="prev-month" type="button" aria-label="Previous month">‹</button>
         <div class="title">
-          <span id="month-title">—</span>
-          <span class="year" id="month-year">—</span>
+          <span id="month-title">·</span>
+          <span class="year" id="month-year">·</span>
         </div>
         <button class="icon-btn" id="next-month" type="button" aria-label="Next month">›</button>
       </div>
@@ -83,7 +84,7 @@
 
       <div class="cycle-legend" aria-hidden="true">
         <span>Pri</span><span>Tue</span><span>Wed</span><span>Qua</span><span>Fun</span>
-        <span>Vid</span><span>Sun</span><span>Oct</span><span>Nov</span><span title="Centiday — rest day">Cen</span>
+        <span>Vid</span><span>Sun</span><span>Oct</span><span>Nov</span><span title="Centiday, the rest day">Cen</span>
       </div>
 
       <div class="month-grid" id="month-grid" role="grid" aria-label="MEC month"></div>
@@ -100,8 +101,8 @@
             <div class="log-datebar">
               <button class="icon-btn sm" id="log-prev" type="button" aria-label="Previous day">‹</button>
               <div class="log-date">
-                <div class="log-weekday" id="log-weekday">—</div>
-                <div class="log-meta" id="log-meta">—</div>
+                <div class="log-weekday" id="log-weekday">·</div>
+                <div class="log-meta" id="log-meta">·</div>
               </div>
               <button class="icon-btn sm" id="log-next" type="button" aria-label="Next day">›</button>
             </div>
@@ -123,6 +124,12 @@
                 <input type="text" id="log-venture" />
                 <label for="log-birthday">Birthday <span class="log-hint">life-day count</span></label>
                 <input type="date" id="log-birthday" />
+                <label for="log-home">Home location <span class="log-hint">for local weather</span></label>
+                <div class="log-home-row">
+                  <input type="text" id="log-home" placeholder="City, e.g. Denver" autocomplete="address-level2" enterkeyhint="done" spellcheck="false" />
+                  <button class="btn xs" id="log-home-locate" type="button" title="Let this browser share your location for weather">Use my location</button>
+                </div>
+                <p class="log-home-status" id="log-home-status" role="status" aria-live="polite"></p>
                 <label for="log-wake">Wake target</label>
                 <input type="text" id="log-wake" />
                 <label for="log-bed">Bed target</label>
@@ -181,7 +188,7 @@
             </div>
           </div>
           <button class="btn primary" id="g-to-mec" type="button">Convert</button>
-          <div class="result-box" id="g-result">—</div>
+          <div class="result-box" id="g-result">·</div>
         </div>
 
         <div class="card">
@@ -201,7 +208,7 @@
             </div>
           </div>
           <button class="btn primary" id="m-to-g" type="button">Convert</button>
-          <div class="result-box" id="m-result">—</div>
+          <div class="result-box" id="m-result">·</div>
         </div>
       </div>
     </section>
@@ -215,7 +222,7 @@
             <strong>Captain’s Log</strong> is a personal daily companion: a journal for the day,
             the <strong>Modern Era Calendar</strong> as a dating tool, local sky weather, and a doorway to
             <a href="https://casswaters.github.io/aretoria/" style="color:var(--gold)">Aretoria</a>, which lives at its own site.
-            Nothing here syncs to Apple Notes or another device — entries stay in this browser;
+            Nothing here syncs to Apple Notes or another device. Entries stay in this browser;
             use “Copy text” to paste elsewhere.
           </p>
           <p>
@@ -228,7 +235,7 @@
           <p style="margin-top:10px">
             For app display, Gregorian year Y maps to MEC Year (Y − 1776).
             January 1 of each Gregorian year aligns with January 1, Primaday of that MEC year.
-            Day-to-day conversion uses the Section 5 slot algorithm — never a fixed lag.
+            Day-to-day conversion uses the Section 5 slot algorithm, never a fixed lag.
           </p>
         </div>
         <div class="card">
@@ -237,7 +244,7 @@
             <li><strong>12 months</strong> of exactly 30 regular days each</li>
             <li><strong>3 cycles</strong> of 10 days per month (Cycle 1: 1–10, Cycle 2: 11–20, Cycle 3: 21–30)</li>
             <li><strong>Day names:</strong> Primaday, Tuesday, Wednesday, Quartiday, Funfday, Viday, Sunday, Octiday, Noviday, Centiday (rest day)</li>
-            <li><strong>Centiday</strong> is the rest day — the 10th day of every cycle (days 10, 20, and 30 of each month)</li>
+            <li><strong>Centiday</strong> is the rest day: the 10th day of every cycle (days 10, 20, and 30 of each month)</li>
             <li><strong>Common year:</strong> 360 + 5 Renaissance Days = 365</li>
             <li><strong>Leap year:</strong> + Hermes Trismegistus Day after October = 366</li>
           </ul>
@@ -245,12 +252,12 @@
         <div class="card">
           <h2>Renaissance Days</h2>
           <ul>
-            <li>Local Area Network Day — after January</li>
-            <li>Global Society Day — after March</li>
-            <li>Nature Harmony Day — after May</li>
-            <li>Tesla Day — after July</li>
-            <li>Theology Day — after August</li>
-            <li>Hermes Trismegistus Day — after October (leap years only)</li>
+            <li>Local Area Network Day (after January)</li>
+            <li>Global Society Day (after March)</li>
+            <li>Nature Harmony Day (after May)</li>
+            <li>Tesla Day (after July)</li>
+            <li>Theology Day (after August)</li>
+            <li>Hermes Trismegistus Day (after October, leap years only)</li>
           </ul>
         </div>
         <div class="card">
@@ -267,7 +274,7 @@
           </p>
           <p>
             When a Gregorian holiday is selected (day detail, converter, or Today),
-            MEC shows a short <strong>bank status</strong> — open or closed, and which
+            MEC shows a short <strong>bank status</strong>: open or closed, and which
             areas are affected (e.g. “Banks closed in the US and UK”). Early-close days
             note that as well.
           </p>
@@ -277,7 +284,7 @@
             <li><strong>Christian (from Easter):</strong> Ash Wednesday, Easter, Ascension, Pentecost</li>
             <li><strong>Jewish (Hebrew calendar):</strong> Purim, Erev Passover, Passover (1st and 7th days), Shavuot, Tisha B’Av, Erev Rosh Hashanah, Rosh Hashanah (Days 1–2), Erev Yom Kippur, Yom Kippur, Sukkot, Shemini Atzeret / Simchat Torah, Hanukkah (US and Israeli banks open)</li>
             <li><strong>Islamic (Umm al-Qura table, 2024–2037):</strong> Eid al-Fitr, Eid al-Adha</li>
-            <li><strong>Lookups (~2024–2035/37):</strong> Chinese New Year, Diwali</li>
+            <li><strong>Lookups (about 2024 to 2037):</strong> Chinese New Year, Diwali</li>
           </ul>
         </div>
         <div class="card">
@@ -285,17 +292,20 @@
           <p>
             The strip above Today shows the place, current conditions and temperature (°F) from
             <a href="https://open-meteo.com/" target="_blank" rel="noopener" style="color:var(--gold)">Open-Meteo</a>
-            (free, no key). It defaults to St. George, UT. Tap “Use my location” to let your browser share
-            your position; the weather then follows you. Your coordinates stay in this browser and are only sent to the weather and place-name lookups.
-            If you deny permission or are offline, the last reading (or St. George) is shown instead.
+            (free, no key). There is no built-in place: tap “Use my location” to let your browser share
+            your position (the weather then follows you), or set a <strong>Home location</strong> in Profile.
+            Your coordinates stay in this browser and are only sent to the weather and place-name lookups; a typed
+            home location is looked up with Open-Meteo’s place search. With no location set or shared, no weather is
+            shown. If you deny permission, your home location is used; offline, the last reading is shown.
           </p>
           <p>
-            The soft landscape band at the top of the Calendar view is painted from that same reading — no
-            extra lookups. Red-rock desert country (like St. George) gets mesas, golden grass, dust and heat
+            The soft landscape band at the top of the Calendar view is painted from that same reading, with no
+            extra lookups. Red-rock desert country gets mesas, golden grass, dust and heat
             shimmer; elsewhere a meadow with seasonal trees. Clouds, rain, snow, fog and storms follow the
-            current conditions, and the sun, golden hour and night follow the sun’s actual position. With no
-            weather reading it falls back to a gentle seasonal scene. If your device asks for reduced motion,
-            the scene is a still picture.
+            current conditions, and the sun, golden hour and night follow the sun’s actual position. Before the
+            first reading it shows a gentle seasonal scene for your place. With no location at all it shows an
+            <strong>earth vista</strong>: Earth seen from orbit at the current time of day. If your device asks for
+            reduced motion, the scene is a still picture.
           </p>
         </div>
         <div class="card">
@@ -307,7 +317,7 @@
             to Apple Notes or any other device; use “Copy text” to paste an entry elsewhere.
           </p>
           <p>
-            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names, birthday, wake and bed
+            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names, birthday, home location, wake and bed
             targets and a daily checklist (supplements or anything else), all
             optional and kept only in this browser; blank fields use neutral defaults. Your name is shared with
             Aretoria on this device.
@@ -336,8 +346,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=cl41"></script>
-  <script type="module" src="captains-log.js?v=cl41"></script>
-  <script type="module" src="scene.js?v=cl41"></script>
+  <script type="module" src="app.js?v=cl42"></script>
+  <script type="module" src="captains-log.js?v=cl42"></script>
+  <script type="module" src="scene.js?v=cl42"></script>
 </body>
 </html>

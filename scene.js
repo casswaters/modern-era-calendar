@@ -1,5 +1,5 @@
 /**
- * MEC — Ambient weather scene (v20).
+ * MEC: Ambient weather scene (v20; earth vista v42).
  *
  * A soft, looping landscape band above the three columns. It does NOT fetch weather itself:
  * weather.js (initSky) publishes its state on `window` as a `mec:sky` event (and parks the last
@@ -8,8 +8,9 @@
  *  - With a location reading: terrain from coordinates (desert vs meadow), season from month +
  *    hemisphere, sky / precipitation from the WMO (Open-Meteo) or wttr.in code refined by cloud
  *    cover, wind from mph, warmth from °F, and day / golden hour / night from solar elevation.
- *  - Without a reading: a generic seasonal meadow (spring blossom, summer green, fall amber,
- *    winter snow) with day/night from solar time.
+ *  - With a place but no reading yet: a season-only landscape for that place (no weather invented).
+ *  - Without any place (v42): a calm earth vista, Earth seen from orbit at the current time of
+ *    day (sunlit, sunrise or sunset over the limb, or night with city lights). No weather is shown.
  *  - prefers-reduced-motion: a single still frame (no CSS loops, no canvas loop, no SVG animation).
  *
  * Pure helpers are exported for tests (node mec.test.js); DOM wiring lives in initScene().
@@ -20,7 +21,7 @@
 
 /** Rough bounding boxes of arid / red-rock country (lat min, lat max, lon min, lon max). */
 export const DESERT_BOXES = [
-  [31, 39, -118.5, -106],   // US Southwest: Mojave, Sonoran, Colorado Plateau (St. George, Vegas, Phoenix, Moab)
+  [31, 39, -118.5, -106],   // US Southwest: Mojave, Sonoran, Colorado Plateau (Las Vegas, Phoenix, Moab)
   [26, 31, -115.5, -104],   // northern Mexico: Sonoran / Chihuahuan
   [15, 32, -17, 60],        // Sahara + Arabian Peninsula
   [-32, -19, 117, 145],     // Australian interior
@@ -58,7 +59,7 @@ export function solar_position(date, lat, lon) {
   return { elevation: el, hourAngle: ha };
 }
 
-/** "h:mm AM" from a local ISO string ("2026-10-05T07:16", no offset) — no timezone reconversion. */
+/** "h:mm AM" from a local ISO string ("2026-10-05T07:16", no offset), no timezone reconversion. */
 export function format_local_iso_time(iso) {
   const m = typeof iso === 'string' && /T(\d{1,2}):(\d{2})/.exec(iso);
   if (!m) return null;
@@ -150,7 +151,7 @@ export function classify_weather(w) {
 }
 
 const OVERRIDE_TOKENS = {
-  terrain: ['desert', 'meadow'],
+  terrain: ['desert', 'meadow', 'vista'],
   season: ['spring', 'summer', 'fall', 'winter'],
   sky: ['clear', 'partly', 'overcast', 'fog'],
   precip: ['drizzle', 'rain', 'snow', 'storm'],
@@ -178,10 +179,10 @@ const CAP = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Decide the scene. Inputs:
- *   weather  — reading from weather.js (or null when there is no location weather)
- *   lat, lon — coordinates of that reading (or null)
- *   date     — now
- *   override — parse_scene_override() result (QA / preview)
+ *   weather  : reading from weather.js (or null when there is no location weather)
+ *   lat, lon : coordinates of that reading (or null when no place is set or shared)
+ *   date     : now
+ *   override : parse_scene_override() result (QA / preview)
  */
 export function pick_scene({ weather = null, lat = null, lon = null, date = new Date(), override = null } = {}) {
   const o = override || {};
@@ -196,9 +197,20 @@ export function pick_scene({ weather = null, lat = null, lon = null, date = new 
 
   const season = o.season || season_for(date, sLat);
   // Terrain follows the place even before the first reading lands (no meadow→desert flash).
-  const terrain = o.terrain || (hasPlace && is_desert(lat, lon) ? 'desert' : 'meadow');
+  // No place at all (v42): the earth vista, never a made-up local landscape.
+  const terrain = o.terrain || (!hasPlace ? 'vista' : is_desert(lat, lon) ? 'desert' : 'meadow');
   // Solar elevation at the reading's coordinates (finer than is_day: gives golden hour / twilight).
   const time = o.time || time_of_day(sun.elevation);
+  if (terrain === 'vista') {
+    const timeWord = time === 'dusk' ? (sun.elevation >= 0 ? 'golden hour' : 'twilight') : time === 'night' ? 'night' : 'daylight';
+    return {
+      key: ['vista', time].join('-'),
+      located: false, hasPlace: false, terrain, season, sky: 'clear', precip: 'none', heavy: false, time,
+      warm: false, cold: false, heat: false, windMph: 0, tempF: null, particles: 'none', lightning: false,
+      sun: { elevation: sun.elevation, hourAngle: sun.hourAngle, morning: sun.hourAngle < 0 },
+      label: `Earth vista · ${timeWord}`
+    };
+  }
 
   let sky, precip, heavy = false;
   const wx = located ? classify_weather(weather) : null;
@@ -290,8 +302,16 @@ const TERRAIN = {
   }
 };
 
+/** Earth vista palettes: space, planet surface, limb glow (shared ivory/gold/indigo mood). */
+const VISTA = {
+  day: { top: '#03061a', sky: '#0b1640', hor: '#24508f', ocean: '#1d4c80', ocean2: '#2f6aa3', land: '#6f8a5e', land2: '#a8926a', cloud: '#f4efe4', limb: '#9fd0ff', city: '#f1d58e' },
+  dusk: { top: '#04051a', sky: '#151640', hor: '#5a3a5e', ocean: '#16284f', ocean2: '#27406e', land: '#4c5a4a', land2: '#7a6650', cloud: '#e9c2a6', limb: '#ffb27a', city: '#f1d58e' },
+  night: { top: '#020309', sky: '#070b22', hor: '#14284a', ocean: '#081227', ocean2: '#0d1a36', land: '#121c30', land2: '#18233a', cloud: '#2a3350', limb: '#6fd8c6', city: '#f1d58e' }
+};
+
 /** Full palette for a scene (sky gradient + terrain tones after atmosphere tinting). */
 export function palette(s) {
+  if (s.terrain === 'vista') return { ...(VISTA[s.time] || VISTA.day) };
   const sk = (SKIES[s.time] || SKIES.day)[s.sky] || SKIES.day.clear;
   let [top, midSky, hor] = sk;
   if (s.time === 'day' && (s.sky === 'clear' || s.sky === 'partly')) hor = mix(hor, HORIZON_BY_SEASON[s.season], 0.45);
@@ -370,6 +390,7 @@ function cloudShape(R, x, y, s, fill, op) {
 }
 
 function cloudsSvg(W, s, P, seed) {
+  if (s.terrain === 'vista') return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"></svg>`; // clouds live on the planet
   const R = rng(seed);
   const n = { clear: 2, partly: 6, overcast: 10, fog: 3 }[s.sky] || 3;
   const fill = s.time === 'night' ? '#3a3d5a' : s.time === 'dusk' ? '#e7b49a' : s.precip !== 'none' || s.sky === 'overcast' ? '#9aa0ad' : '#f5efe6';
@@ -402,7 +423,69 @@ function tuft(x, y, h, color, R) {
   return `<path d="${d}" stroke="${color}" stroke-width=".9" fill="none" stroke-linecap="round"/>`;
 }
 
+/** Earth seen from orbit: the planet's limb across the lower band, space above. */
+function vistaSvg(W, s, P) {
+  const R = rng(4242);
+  const night = s.time === 'night', dusk = s.time === 'dusk';
+  const ha = Math.max(-100, Math.min(100, s.sun.hourAngle));
+  const sunLeft = s.sun.morning; // morning light comes from the left (east), evening from the right
+  // Planet: a huge circle whose top edge (the limb) arcs across the band.
+  const rad = Math.max(W * 1.6, 900), cx = W / 2, top = 122, cy = top + rad;
+  let stars = '';
+  const nStars = Math.round(W / (night ? 9 : dusk ? 13 : 22));
+  for (let i = 0; i < nStars; i++) {
+    const x = R() * W, y = R() * 118, r = R() < 0.1 ? 1.1 : 0.45 + R() * 0.45;
+    stars += `<circle class="${R() < 0.3 ? 'sc-tw' : ''}" style="animation-delay:${f1(R() * 6)}s" cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="${R() < 0.2 ? '#f1d58e' : '#f3ecdc'}" opacity="${f1((night ? 0.45 : dusk ? 0.35 : 0.2) + R() * 0.45)}"/>`;
+  }
+  // Land masses and cloud streaks drawn as soft blobs, clipped to the planet.
+  let land = '', clouds = '', lights = '';
+  for (let i = 0; i < Math.max(3, Math.round(W / 260)); i++) {
+    const x = R() * W, y = top + 10 + R() * 60, rx = 40 + R() * 110, ry = 8 + R() * 16;
+    land += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${R() < 0.6 ? P.land : P.land2}" opacity="${night ? 0.9 : 0.75}"/>`;
+    land += `<ellipse cx="${f1(x + rx * 0.5)}" cy="${f1(y - ry * 0.4)}" rx="${f1(rx * 0.45)}" ry="${f1(ry * 0.7)}" fill="${P.land}" opacity="${night ? 0.9 : 0.6}"/>`;
+    if (night) for (let k = 0; k < 14 + Math.round(R() * 18); k++) {
+      const lx = x + (R() - 0.5) * rx * 1.6, ly = y + (R() - 0.5) * ry * 1.4;
+      lights += `<circle cx="${f1(lx)}" cy="${f1(ly)}" r="${f1(0.6 + R() * 0.9)}" fill="${P.city}" opacity="${f1(0.5 + R() * 0.45)}"/>`;
+    }
+  }
+  for (let i = 0; i < Math.round(W / 120); i++) {
+    const x = R() * W, y = top + 6 + R() * 70, rx = 30 + R() * 90, ry = 2 + R() * 4;
+    clouds += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${P.cloud}" opacity="${f1((night ? 0.18 : 0.45) + R() * 0.25)}"/>`;
+  }
+  // Sun: overhead in daylight, sitting on the limb at golden hour / twilight, the moon at night.
+  const sunX = dusk ? (sunLeft ? W * 0.16 : W * 0.84) : W * (0.5 + (ha / 100) * 0.38);
+  const sunY = dusk ? top - 1 + Math.max(-6, Math.min(4, -s.sun.elevation)) : 44;
+  const body = night
+    ? `<circle cx="${f1(W * 0.78)}" cy="40" r="26" fill="url(#vs-glow)"/><circle cx="${f1(W * 0.78)}" cy="40" r="6.5" fill="#f2ecd8" opacity=".9"/><circle cx="${f1(W * 0.78 + 2.8)}" cy="38.6" r="5.8" fill="${P.top}" opacity=".9"/>`
+    : `<circle cx="${f1(sunX)}" cy="${f1(sunY)}" r="${dusk ? 70 : 46}" fill="url(#vs-glow)"/><circle cx="${f1(sunX)}" cy="${f1(sunY)}" r="${dusk ? 6 : 5}" fill="${dusk ? '#ffe2b0' : '#fffaf0'}"/>`;
+  const shadeFrom = sunLeft ? 0 : 1; // terminator: the side away from the sun is in shadow at dusk
+  return `<svg class="sc-land sc-vista" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="vs-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.top}"/><stop offset=".6" stop-color="${P.sky}"/><stop offset="1" stop-color="${P.hor}"/></linearGradient>
+    <radialGradient id="vs-glow"><stop offset="0" stop-color="${night ? '#f2ecd8' : dusk ? '#ffcf8a' : '#fff4d6'}" stop-opacity="${night ? 0.3 : 0.75}"/><stop offset="1" stop-color="${night ? '#f2ecd8' : '#ffcf8a'}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="vs-term" x1="${shadeFrom}" y1="0" x2="${1 - shadeFrom}" y2="0"><stop offset="0" stop-color="#020617" stop-opacity="0"/><stop offset=".45" stop-color="#020617" stop-opacity="0"/><stop offset=".62" stop-color="#ff9a5a" stop-opacity=".18"/><stop offset=".72" stop-color="#030817" stop-opacity=".72"/><stop offset="1" stop-color="#030817" stop-opacity=".86"/></linearGradient>
+    <linearGradient id="vs-limb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${P.limb}" stop-opacity="${dusk && sunLeft ? 1 : 0.55}"/><stop offset=".5" stop-color="${P.limb}" stop-opacity="${dusk ? 0.45 : 0.85}"/><stop offset="1" stop-color="${P.limb}" stop-opacity="${dusk && !sunLeft ? 1 : 0.55}"/></linearGradient>
+    <filter id="vs-blur" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <filter id="vs-soft" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <clipPath id="vs-planet"><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad)}"/></clipPath>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#vs-space)"/>
+  ${stars}
+  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 7)}" fill="none" stroke="url(#vs-limb)" stroke-width="14" opacity="${night ? 0.18 : 0.28}" filter="url(#vs-blur)"/>
+  <g clip-path="url(#vs-planet)">
+    <rect x="0" y="${top - 2}" width="${W}" height="${H - top + 2}" fill="${P.ocean}"/>
+    <rect x="0" y="${top - 2}" width="${W}" height="30" fill="${P.ocean2}" opacity=".7" filter="url(#vs-blur)"/>
+    <g class="sc-orbit"><g filter="url(#vs-soft)">${land}</g>${lights}<g filter="url(#vs-blur)">${clouds}</g></g>
+    ${dusk ? `<rect x="0" y="${top - 2}" width="${W}" height="${H - top + 2}" fill="url(#vs-term)"/>` : ''}
+    <rect x="0" y="${top - 2}" width="${W}" height="10" fill="${P.limb}" opacity="${night ? 0.06 : 0.14}" filter="url(#vs-blur)"/>
+  </g>
+  <circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rad + 0.6)}" fill="none" stroke="url(#vs-limb)" stroke-width="${night ? 1 : 1.6}" opacity="${night ? 0.55 : 0.9}"/>
+  ${body}
+</svg>`;
+}
+
 function landscapeSvg(W, s, P, reduced) {
+  if (s.terrain === 'vista') return vistaSvg(W, s, P);
   const R = rng(20261005 + (s.terrain === 'desert' ? 7 : 0));
   const night = s.time === 'night';
   // Sun / moon position: hour angle → x across the band, elevation → height.
@@ -664,7 +747,7 @@ export function initScene() {
     band.style.setProperty('--sc-cloud-dur', `${Math.round(240 / (1 + (scene.windMph || 0) / 8))}s`);
     const where = sky && scene.hasPlace ? (sky.place || '').split(',')[0] : '';
     const st = scene.hasPlace ? sun_caption_times(sky) : null;
-    caption.textContent = scene.label + (where ? ` — ${where}` : '');
+    caption.textContent = scene.label + (where ? ` · ${where}` : '');
     if (st) { // its own no-wrap span so the times drop to a second line together on narrow screens
       const sun = document.createElement('span');
       sun.className = 'sc-sun';
@@ -672,7 +755,7 @@ export function initScene() {
       caption.append(' ', sun);
     }
     band.setAttribute('aria-label', `Ambient scene: ${scene.label}${where ? `, ${sky.place}` : ''}${st ? `. Sunrise ${st.rise}, sunset ${st.set}` : ''}`);
-    band.title = scene.located ? `Ambient scene from ${sky.place} weather` : scene.hasPlace ? `Ambient seasonal scene for ${sky.place} (no weather reading yet)` : 'Ambient seasonal scene (no location)';
+    band.title = scene.located ? `Ambient scene from ${sky.place} weather` : scene.hasPlace ? `Ambient seasonal scene for ${sky.place} (no weather reading yet)` : 'Earth vista (no location set, so no local weather)';
 
     const { w, h } = sizeCanvas();
     particles = scene.particles === 'none' ? [] : makeParticles(scene.particles, w, h, scene, rng(77));
@@ -711,7 +794,7 @@ export function initScene() {
   }
   // Re-check every 5 minutes so golden hour / night arrive on time.
   setInterval(() => render(), 5 * 60 * 1000);
-  // The calendar panel may be hidden at load (another tab) — render when it becomes visible.
+  // The calendar panel may be hidden at load (another tab); render when it becomes visible.
   if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(band);
   render(true);
 }
