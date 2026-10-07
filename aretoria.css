@@ -507,3 +507,10 @@ html.ar-lock, html.ar-lock body { overflow: hidden; }
 
 /* iOS Safari: keep the page behind the stage the same night colour, so no band ever shows below a full-screen view */
 html:has(.ar:not([hidden])), html:has(.ar:not([hidden])) body { background: #05040e; }
+/* phones: every control is at least a 44px tap target (Apple HIG) without changing its look */
+@media (max-width: 699px) {
+  .ar .ar-x, .ar .ar-narr-x, .ar .ar-panel-close { width: 44px; height: 44px; min-width: 44px; }
+  .ar .ar-back { min-height: 44px; }
+  .ar .ar-dlg-close { width: 44px; height: 44px; top: 6px; right: 6px; }
+  .ar .ar-pill, .ar .ar-filter, .ar .ar-choice { min-height: 44px; }
+}
