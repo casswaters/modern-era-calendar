@@ -15,17 +15,20 @@
  * entry cinematic still flies through the shrine photo (SHRINE_IMAGE).
  * v28: responsive art — matchMedia(ART_MOBILE_MQ) picks .../mobile/ portrait JPEGs for
  * realm backdrops, guardian portraits, Irishnu, and the entry shrine; desktop otherwise.
+ * v34: Axial arrival — on the first hub entry per session the shrine flare fades into a close view of the
+ * plaza (ARRIVAL), Irishnu greets the traveller there, then the camera pulls back to the hub and he shrinks
+ * into his card (now bottom-right). Reduced motion: a 300 ms cross-fade, no pan or zoom.
  */
 import {
   REALMS, GUIDE, HUB, CREED, OPENING, CLOSING, VIRTUES, SHRINE_IMAGE,
   reflectionKey, isoDate, tokenContext, fillTokens, readMs,
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART, IRISHNU_AVATAR,
-  mobileArtPath, pickArtPath, ART_MOBILE_MQ
-} from './aretoria-data.js?v=cl19';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl19';
+  mobileArtPath, pickArtPath, ART_MOBILE_MQ, ARRIVAL, arrivalWindow
+} from './aretoria-data.js?v=cl34';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl34';
 
-const VERSION = 'cl19';
+const VERSION = 'cl34';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -52,7 +55,7 @@ let S = {
   dlg: null, typing: null, raf: 0, fx: null,
   px: 0, py: 0, tx: 0, ty: 0, introTimer: [], outroTimer: null, lastT: 0,
   badPortraits: new Set(),
-  artMobile: false
+  artMobile: false, arrival: null
 };
 const coarse = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 const continueText = () => (coarse() ? 'Tap to continue' : 'Click or press Enter to continue');
@@ -107,6 +110,10 @@ function build() {
     <div class="ar-hubui" hidden></div>
     <div class="ar-realmui" hidden></div>
     <div class="ar-stage" hidden></div>
+    <div class="ar-arrive" hidden aria-hidden="true">
+      <div class="ar-arrive-cam"><div class="ar-arrive-img"></div><img class="ar-arrive-irs" alt="" decoding="async"></div>
+      <div class="ar-arrive-wisps"></div>
+    </div>
     <header class="ar-top">
       <button type="button" class="ar-btn ar-back" hidden aria-label="Back to the Axial hub">‹ <span>Axial hub</span></button>
       <div class="ar-title"><div class="ar-title-main"></div><div class="ar-title-sub"></div></div>
@@ -154,6 +161,7 @@ function build() {
     if (e.target.closest('.ar-narr-x')) { e.stopPropagation(); return exitNow(); }
     advanceIntro();
   });
+  $('.ar-arrive').addEventListener('click', () => skipArrival());
   $('.ar-outro').addEventListener('click', (e) => {
     if (e.target.closest('.ar-narr-x')) { e.stopPropagation(); return finishOutro(); }
     leaveOutro();
@@ -178,7 +186,7 @@ function build() {
     S.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
   });
   if (window.ResizeObserver) new ResizeObserver(() => { if (S.open) placeStage(); }).observe($('.ar-dlg'));
-  window.addEventListener('resize', () => { if (S.open) { placeStage(); layoutHub(); fitHallNames(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); } });
+  window.addEventListener('resize', () => { if (S.open) { placeStage(); layoutHub(); fitHallNames(); S.fx && S.fx.resize(); refreshArtIfBreakpointChanged(); if (S.arrival && S.arrival.phase === 'frame') placeArrival(true); } });
   const onArtMq = () => { refreshArtIfBreakpointChanged(); };
   if (artMQ.addEventListener) artMQ.addEventListener('change', onArtMq);
   else if (artMQ.addListener) artMQ.addListener(onArtMq);
@@ -191,6 +199,8 @@ function build() {
   });
 
   root.addEventListener('click', (e) => {
+    // a fresh tap during the pull-back jumps to the hub (not the very click that started it, still bubbling up)
+    if (S.arrival && S.arrival.phase === 'pull') { if (performance.now() - S.arrival.pullAt > 250) { e.stopPropagation(); return finishArrival(); } return; }
     const gate = e.target.closest('.ar-gate');
     if (gate) return travel(gate.dataset.realm, gate);
     const act = e.target.closest('[data-act]');
@@ -224,6 +234,7 @@ function onKey(e) {
     if (isAdvanceKey(e) && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.ar-narr-x'))) { e.preventDefault(); leaveOutro(); }
     return;
   }
+  if (S.arrival && S.arrival.phase === 'pull' && (isAdvanceKey(e) || e.key === 'Escape') && performance.now() - S.arrival.pullAt > 250) { e.preventDefault(); return finishArrival(); }
   if (narrating('.ar-intro')) {
     if (e.key === 'Escape') { e.preventDefault(); return exitNow(); }
     if (isAdvanceKey(e) && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.ar-narr-x'))) { e.preventDefault(); advanceIntro(); }
@@ -725,7 +736,7 @@ function openDialogue(opts) {
   const el = sp.el && root.querySelector(sp.el);
   if (el) el.classList.add('speaking');
   if (sp.virtue) showStage({ src: sp.virtue.portrait, label: advisorTitle(sp.virtue), wide: !!sp.virtue.wide });
-  else if (sp.stage) showStage(sp.stage);
+  else if (sp.stage && !opts.arrival) showStage(sp.stage);
   hint('');
   renderNode(S.dlg.node);
 }
@@ -780,6 +791,7 @@ function closeDialogue(silent) {
   S.dlg = null;
   if (wasOpen) restoreFocus();
   if (wasOpen && !silent) hint(S.view === 'axial' ? 'Tap a gate to travel · tap Irishnu to talk' : 'Tap the Guardian or an advisor to speak');
+  if (wasOpen && S.arrival && S.arrival.phase === 'frame') endArrival(!silent);
 }
 
 function renderNode(id) {
@@ -1010,8 +1022,130 @@ function finishIntro() {
   if (document.activeElement === intro || !root.contains(document.activeElement)) $('.ar-x').focus({ preventScroll: true });
   const t = S.introTarget; S.introTarget = null;
   if (t && realmById(t)) { showView(t); return; }
+  if (arrivalDue()) { startArrival(); return; }
   let met = false; try { met = !!localStorage.getItem(MET_KEY); } catch { /* ignore */ }
   if (!met) setTimeout(() => { if (S.open && S.view === 'axial') openDialogue({ kind: 'guide' }); }, reduced() ? 60 : 500);
+}
+
+/* ---------- Axial arrival (first hub entry per session) ----------
+   The shrine flare fades into ARRIVAL (a close view over the portal); Irishnu greets the traveller there; closing
+   the greeting (or tapping the scene) pulls the camera back to the hub over ARRIVAL.pullMs while he shrinks into
+   his card. Portrait screens pan from the garden arch to Irishnu first. Reduced motion: no pan or zoom, a 300 ms
+   cross-fade. Plays once per session (sessionStorage), never for deep links into a realm. */
+const ARRIVE_UNIT = (window.CSS && CSS.supports && CSS.supports('height', '100dvh')) ? 'dvh' : 'vh';
+function arrivalDue() {
+  try { return !sessionStorage.getItem(ARRIVAL.sessionKey); } catch { return false; }
+}
+function preloadArrival() {
+  [ARRIVAL.image, ARRIVAL.irishnu.src].forEach((u) => { const i = new Image(); i.decoding = 'async'; i.src = u; });
+}
+/** Size the camera in viewport-height units (dvh) so it tracks Safari's toolbar; x0/x1 come from the real aspect. */
+function arrivalCam(x) {
+  const W = S.arrival.win, u = ARRIVE_UNIT, k = 100 / W.h;
+  return `translate3d(${(-x * k).toFixed(3)}${u}, ${(-W.y0 * k).toFixed(3)}${u}, 0)`;
+}
+function placeArrival(atEnd) {
+  const A = S.arrival; if (!A) return;
+  const el = $('.ar-arrive'), cam = $('.ar-arrive-cam');
+  A.win = arrivalWindow(root.clientWidth || window.innerWidth, root.clientHeight || window.innerHeight);
+  const k = 100 / A.win.h, u = ARRIVE_UNIT;
+  cam.style.width = `${(ARRIVAL.w * k).toFixed(3)}${u}`;
+  cam.style.height = `${(ARRIVAL.h * k).toFixed(3)}${u}`;
+  el.classList.toggle('pan', A.win.pan);
+  if (A.anim) { A.anim.cancel(); A.anim = null; }
+  cam.style.transform = arrivalCam(atEnd ? A.win.x1 : A.win.x0);
+}
+function startArrival() {
+  try { sessionStorage.setItem(ARRIVAL.sessionKey, '1'); } catch { /* ignore */ }
+  const el = $('.ar-arrive');
+  const [bx0, by0, bx1] = ARRIVAL.irishnu.box;
+  $('.ar-arrive-img').style.backgroundImage = `url('${ARRIVAL.image}')`;
+  const irs = $('.ar-arrive-irs');
+  irs.src = ARRIVAL.irishnu.src;
+  irs.style.cssText = `left:${(bx0 / ARRIVAL.w * 100).toFixed(3)}%;top:${(by0 / ARRIVAL.h * 100).toFixed(3)}%;width:${((bx1 - bx0) / ARRIVAL.w * 100).toFixed(3)}%`;
+  S.arrival = { phase: 'frame', timers: [], anim: null, win: null };
+  root.classList.add('ar-arriving');
+  el.className = 'ar-arrive'; el.hidden = false;
+  const still = reduced();
+  placeArrival(still);
+  const greet = () => {
+    if (!S.arrival || S.arrival.phase !== 'frame' || S.dlg) return;
+    try { localStorage.setItem(MET_KEY, '1'); } catch { /* ignore */ } // the greeting has been given
+    openDialogue({ kind: 'guide', arrival: true });
+  };
+  const W = S.arrival.win;
+  if (W.pan && !still && W.x1 !== W.x0 && $('.ar-arrive-cam').animate) {
+    const P = ARRIVAL.phone;
+    S.arrival.anim = $('.ar-arrive-cam').animate([{ transform: arrivalCam(W.x0) }, { transform: arrivalCam(W.x1) }],
+      { duration: P.panMs, delay: P.holdMs, easing: P.ease, fill: 'forwards' });
+    S.arrival.anim.finished.then(() => { if (S.arrival && S.arrival.anim) { $('.ar-arrive-cam').style.transform = arrivalCam(W.x1); } greet(); }).catch(() => {});
+  } else S.arrival.timers.push(setTimeout(greet, still ? 60 : 650));
+}
+/** A tap on the scene: during the pan / greeting, move on to the pull-back. */
+function skipArrival() {
+  const A = S.arrival; if (!A) return;
+  if (A.phase === 'pull') { if (performance.now() - A.pullAt > 250) finishArrival(); return; }
+  if (S.dlg) closeDialogue(); else endArrival(true);
+}
+/** Leave the arrival view: animated pull-back, a reduced-motion cross-fade, or (instant) straight to the hub. */
+function endArrival(animate) {
+  const A = S.arrival; if (!A) return;
+  if (A.phase === 'pull') return finishArrival();
+  A.timers.forEach(clearTimeout); A.timers = [];
+  if (A.anim) { A.anim.cancel(); A.anim = null; }
+  if (!animate || !root.animate) return finishArrival();
+  A.phase = 'pull'; A.pullAt = performance.now();
+  const el = $('.ar-arrive');
+  if (reduced()) {
+    root.classList.remove('ar-arriving'); layoutHub();
+    A.anims = [el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ARRIVAL.fadeMs, easing: 'linear', fill: 'forwards' })];
+    A.timers.push(setTimeout(finishArrival, ARRIVAL.fadeMs + 20));
+    return;
+  }
+  // hub underneath, laid out but invisible; then one tween: the plaza view shrinks away and fades while the hub
+  // world eases from a close zoom on the rune portal to its normal framing, and the UI fades in over the last 40%
+  const T = ARRIVAL.pullMs, ease = 'cubic-bezier(0.45, 0, 0.25, 1)';
+  const irsEl = $('.ar-arrive-irs'), from = irsEl.getBoundingClientRect();
+  root.classList.remove('ar-arriving'); root.classList.add('ar-pulling'); layoutHub();
+  const card = $('.ar-guide'), to = card ? card.getBoundingClientRect() : null;
+  const portal = $('.ar-rportal'), pr = portal ? portal.getBoundingClientRect() : null;
+  const ox = pr ? pr.left + pr.width / 2 : root.clientWidth / 2, oy = pr ? pr.top + pr.height / 2 : root.clientHeight * 0.6;
+  const world = $('.ar-world'), ui = [$('.ar-hubui'), $('.ar-title'), $('.ar-hint')].filter(Boolean);
+  world.style.transformOrigin = `${ox}px ${oy}px`;
+  const fx = from.left + from.width / 2, fy = from.top + from.height;
+  el.style.transformOrigin = `${fx}px ${fy}px`;
+  A.anims = [
+    el.animate([{ transform: 'scale(1)', opacity: 1, easing: 'ease-in' }, { transform: 'scale(.8)', opacity: 0.55, offset: 0.3 }, { transform: 'scale(.66)', opacity: 0, offset: 0.55 }, { transform: 'scale(.66)', opacity: 0 }], { duration: T, fill: 'forwards' }),
+    world.animate([{ transform: 'scale(1.9)' }, { transform: 'scale(1)' }], { duration: T, easing: ease, fill: 'forwards' }),
+    ...ui.map((u) => u.animate([{ opacity: 0 }, { opacity: 0, offset: 0.55 }, { opacity: 1 }], { duration: T, easing: 'linear', fill: 'forwards' }))
+  ];
+  // Irishnu flies from the plaza into his card, shrinking, and hands over to the card at the end
+  if (to && from.width) {
+    const fly = irsEl.cloneNode(); fly.className = 'ar-arrive-fly'; fly.removeAttribute('style');
+    fly.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px`;
+    root.appendChild(fly); irsEl.style.visibility = 'hidden'; A.fly = fly;
+    const sc = Math.max(0.08, (to.height * 0.78) / from.height);
+    const dx = (to.left + to.width / 2) - (from.left + from.width / 2), dy = (to.top + to.height * 0.52) - (from.top + from.height / 2);
+    // he reaches the card by 65% of the tween, then hands over to it as the hub UI fades in
+    const end = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${sc.toFixed(3)})`;
+    A.anims.push(fly.animate([{ transform: 'translate(0px, 0px) scale(1)', opacity: 1, easing: ease }, { transform: end, opacity: 1, offset: 0.65 }, { transform: end, opacity: 0 }], { duration: T, fill: 'forwards' }));
+  }
+  A.timers.push(setTimeout(finishArrival, T + 30));
+}
+function finishArrival() {
+  const A = S.arrival; if (!A) return;
+  S.arrival = null;
+  A.timers.forEach(clearTimeout);
+  if (A.anim) A.anim.cancel();
+  (A.anims || []).forEach((a) => a.cancel());
+  if (A.fly) A.fly.remove();
+  if (!root) return;
+  const el = $('.ar-arrive'); el.hidden = true; el.className = 'ar-arrive';
+  $('.ar-arrive-irs').style.visibility = '';
+  $('.ar-world').style.transformOrigin = '';
+  root.classList.remove('ar-arriving', 'ar-pulling');
+  if (S.dlg && S.dlg.opts && S.dlg.opts.arrival) closeDialogue(true);
+  if (S.open && S.view === 'axial') { layoutHub(); if (!S.dlg) hint('Tap a gate to travel · tap Irishnu to talk'); }
 }
 
 /** Esc / ✕ during the opening line: leave Aretoria straight away (no closing line). */
@@ -1035,6 +1169,7 @@ export async function openAretoria(opts = {}) {
   if (!S.fx) S.fx = new FX($('.ar-fx')); else S.fx.resize();
   showView('axial');
   startLoop();
+  if (!opts.realm && arrivalDue()) preloadArrival();
   startIntro(opts.realm);
   $('.ar-intro').focus({ preventScroll: true });
 }
@@ -1043,7 +1178,7 @@ export function close(o = {}) {
   if (!S.open) return;
   const out = $('.ar-outro');
   if (!out.hidden) return finishOutro();
-  closeDialogue(true); closePanels();
+  closeDialogue(true); closePanels(); finishArrival();
   S.introTimer.forEach(clearTimeout); S.introTimer = [];
   $('.ar-intro').hidden = true;
   S.closeOpts = o;

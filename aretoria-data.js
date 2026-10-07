@@ -967,6 +967,32 @@ export const HUB_ART = {
 };
 /* HUB_ART:END */
 
+/* Axial arrival (first hub entry per session): the approved close greeting painting, cropped so the frame's
+   bottom edge sits at source y 590 (the swirl centre, y 652, is never shown: we hover above it). Irishnu is a
+   separate layer placed in art px (feet just past the portal's far gold rim, 150 px tall: true perspective with
+   the hip-height balustrade and a 5.5 ft eye line), so he can shrink into his hub card on the pull-back.
+   Desktop: a static window centred on the portal (approved v10-b590). Portrait screens: a slow pan from the
+   garden arch (x0 130) to Irishnu at 60% across, 0.6 s hold then 4.5 s sine ease-in-out. */
+export const ARRIVAL = {
+  image: 'assets/aretoria/arrival/arrival.jpg', w: 1280, h: 590,
+  irishnu: { src: 'assets/aretoria/arrival/irishnu.webp', box: [671, 412, 799, 584], feet: [735, 566] },
+  wisps: { desk: 'assets/aretoria/arrival/wisps-desk.webp', phone: 'assets/aretoria/arrival/wisps-phone.webp' },
+  desk: { cx: 640 },
+  phone: { x0: 130, irsAt: 0.6, holdMs: 600, panMs: 4500, ease: 'cubic-bezier(0.37, 0, 0.63, 1)' },
+  pullMs: 1800, fadeMs: 300, sessionKey: 'mec-aretoria:arrived'
+};
+/** The camera window (art px) for a viewport: full height down to y 590 (or less on very wide screens, keeping
+    the bottom edge at 590), width from the viewport aspect. Portrait viewports pan x0 → x1; landscape is still. */
+export function arrivalWindow(vw, vh) {
+  const A = ARRIVAL, a = vw / vh, pan = a < 1;
+  let h = A.h, w = h * a, y0 = 0;
+  if (w > A.w) { w = A.w; h = w / a; y0 = A.h - h; }
+  const cx = (x) => Math.min(Math.max(x, 0), A.w - w);
+  if (pan) return { pan, w, h, y0, x0: cx(A.phone.x0), x1: cx(A.irishnu.feet[0] - A.phone.irsAt * w) };
+  const x = cx(A.desk.cx - w / 2);
+  return { pan, w, h, y0, x0: x, x1: x };
+}
+
 /** "Guardian of Courage" … "Guardian of the Shadow Realm". */
 export function guardianRole(r) {
   return r.id === 'shadow' ? 'Guardian of the Shadow Realm' : `Guardian of ${r.name}`;
