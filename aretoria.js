@@ -25,10 +25,10 @@ import {
   advisorsFor, advisorDialogue, advisorTitle, advisorKey, virtueBySlug,
   guardianRole, guardianLine, guardianPortraitPath, irishnuPortraitPath, realmBackdropPath, HUB_ART, IRISHNU_AVATAR,
   mobileArtPath, pickArtPath, ART_MOBILE_MQ, ARRIVAL, arrivalWindow
-} from './aretoria-data.js?v=cl34';
-import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl34';
+} from './aretoria-data.js?v=cl35';
+import { SCENES, figureSvg, FIGURE_FOR, gateGlyph } from './aretoria-art.js?v=cl35';
 
-const VERSION = 'cl34';
+const VERSION = 'cl35';
 const MET_KEY = 'mec-aretoria:met-irishnu';
 const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 const reduced = () => reducedMQ.matches;
@@ -195,8 +195,11 @@ function build() {
   });
   document.addEventListener('visibilitychange', () => {
     if (!S.open) return;
-    if (document.hidden) cancelAnimationFrame(S.raf); else startLoop();
+    if (document.hidden) { cancelAnimationFrame(S.raf); if (S.arrival && S.arrival.phase === 'pull') finishArrival(); }
+    else { startLoop(); if (!S.arrival) refreshHubArt(); }
   });
+  window.addEventListener('pagehide', () => { if (S.open && S.arrival && S.arrival.phase === 'pull') finishArrival(); });
+  window.addEventListener('pageshow', (e) => { if (S.open && e.persisted) { finishArrival(); refreshHubArt(); } });
 
   root.addEventListener('click', (e) => {
     // a fresh tap during the pull-back jumps to the hub (not the very click that started it, still bubbling up)
@@ -497,6 +500,7 @@ function renderRealmUI(id) {
 }
 
 function showView(id) {
+  if (S.arrival && id !== 'axial') finishArrival();
   S.view = id;
   closeDialogue(true);
   renderWorld(id);
@@ -552,9 +556,11 @@ function travel(id, fromEl) {
 function applyParallax(force) {
   if (reduced() && !force) return;
   const k = reduced() ? 0 : 1;
+  // during the arrival pull-back the layers go 2D (no own GPU layer) so iOS Safari paints them into the zooming world
+  const flat = !!(S.arrival && S.arrival.phase === 'pull');
   root.querySelectorAll('.ar-layer').forEach((el) => {
-    const d = +el.dataset.depth;
-    el.style.transform = `translate3d(${(-S.px * d * 26 * k).toFixed(1)}px, ${(-S.py * d * 14 * k).toFixed(1)}px, 0) scale(1.06)`;
+    const d = +el.dataset.depth, x = (-S.px * d * 26 * k).toFixed(1), y = (-S.py * d * 14 * k).toFixed(1);
+    el.style.transform = flat ? `translate(${x}px, ${y}px) scale(1.06)` : `translate3d(${x}px, ${y}px, 0) scale(1.06)`;
   });
   const host = root.querySelectorAll('.ar-host, .ar-advisors');
   host.forEach((el) => { el.style.translate = `${(-S.px * 30 * k).toFixed(1)}px ${(-S.py * 10 * k).toFixed(1)}px`; });
@@ -719,7 +725,8 @@ function openDialogue(opts) {
   closeDialogue(true);
   rememberFocus();
   const sp = speakerFor(opts);
-  S.dlg = { ...sp, opts, ctx: tokenContext(new Date()), node: sp.tree.start };
+  const first = opts.arrival && sp.tree.arrivalStart && sp.tree.nodes[sp.tree.arrivalStart] ? sp.tree.arrivalStart : sp.tree.start;
+  S.dlg = { ...sp, opts, ctx: tokenContext(new Date()), node: first };
   const d = $('.ar-dlg');
   d.classList.toggle('ar-dlg-photo', !!sp.virtue);
   $('.ar-dlg-portrait').innerHTML = sp.portrait;
@@ -1097,7 +1104,7 @@ function endArrival(animate) {
   A.phase = 'pull'; A.pullAt = performance.now();
   const el = $('.ar-arrive');
   if (reduced()) {
-    root.classList.remove('ar-arriving'); layoutHub();
+    root.classList.remove('ar-arriving'); root.classList.add('ar-pulling'); layoutHub();
     A.anims = [el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ARRIVAL.fadeMs, easing: 'linear', fill: 'forwards' })];
     A.timers.push(setTimeout(finishArrival, ARRIVAL.fadeMs + 20));
     return;
@@ -1106,7 +1113,7 @@ function endArrival(animate) {
   // world eases from a close zoom on the rune portal to its normal framing, and the UI fades in over the last 40%
   const T = ARRIVAL.pullMs, ease = 'cubic-bezier(0.45, 0, 0.25, 1)';
   const irsEl = $('.ar-arrive-irs'), from = irsEl.getBoundingClientRect();
-  root.classList.remove('ar-arriving'); root.classList.add('ar-pulling'); layoutHub();
+  root.classList.remove('ar-arriving'); root.classList.add('ar-pulling'); layoutHub(); applyParallax(true);
   const card = $('.ar-guide'), to = card ? card.getBoundingClientRect() : null;
   const portal = $('.ar-rportal'), pr = portal ? portal.getBoundingClientRect() : null;
   const ox = pr ? pr.left + pr.width / 2 : root.clientWidth / 2, oy = pr ? pr.top + pr.height / 2 : root.clientHeight * 0.6;
@@ -1131,21 +1138,55 @@ function endArrival(animate) {
     A.anims.push(fly.animate([{ transform: 'translate(0px, 0px) scale(1)', opacity: 1, easing: ease }, { transform: end, opacity: 1, offset: 0.65 }, { transform: end, opacity: 0 }], { duration: T, fill: 'forwards' }));
   }
   A.timers.push(setTimeout(finishArrival, T + 30));
+  // belt and braces: the WAAPI promises (never the only trigger), and a late watchdog if timers were throttled
+  if (window.Promise && A.anims.every((a) => a.finished)) Promise.all(A.anims.map((a) => a.finished)).then(() => { if (S.arrival === A) finishArrival(); }, () => {});
+  A.timers.push(setTimeout(() => { if (S.arrival === A) finishArrival(); }, T + 1500));
 }
 function finishArrival() {
   const A = S.arrival; if (!A) return;
   S.arrival = null;
   A.timers.forEach(clearTimeout);
   if (A.anim) A.anim.cancel();
-  (A.anims || []).forEach((a) => a.cancel());
+  (A.anims || []).forEach((a) => { try { a.cancel(); } catch { /* ignore */ } });
   if (A.fly) A.fly.remove();
   if (!root) return;
-  const el = $('.ar-arrive'); el.hidden = true; el.className = 'ar-arrive';
-  $('.ar-arrive-irs').style.visibility = '';
-  $('.ar-world').style.transformOrigin = '';
-  root.classList.remove('ar-arriving', 'ar-pulling');
+  resetArrivalStage();
   if (S.dlg && S.dlg.opts && S.dlg.opts.arrival) closeDialogue(true);
-  if (S.open && S.view === 'axial') { layoutHub(); if (!S.dlg) hint('Tap a gate to travel · tap Irishnu to talk'); }
+  if (S.open && S.view === 'axial') { layoutHub(); refreshHubArt(); if (!S.dlg) hint('Tap a gate to travel · tap Irishnu to talk'); }
+}
+
+/** The final hub state, set explicitly (never left to animation/transition events): arrival layer hidden and its art
+    released, no transform / origin / opacity left on the world or the hub UI, arrival classes gone. */
+function resetArrivalStage() {
+  const anims = (e) => (e && e.getAnimations ? e.getAnimations() : []);
+  const el = $('.ar-arrive'); anims(el).forEach((a) => a.cancel());
+  el.hidden = true; el.className = 'ar-arrive'; el.style.transformOrigin = '';
+  const cam = $('.ar-arrive-cam'); anims(cam).forEach((a) => a.cancel()); cam.style.cssText = '';
+  $('.ar-arrive-img').style.backgroundImage = ''; // free the big arrival painting (iOS keeps a tight GPU budget)
+  const irs = $('.ar-arrive-irs'); irs.style.visibility = ''; irs.removeAttribute('src');
+  root.querySelectorAll('.ar-arrive-fly').forEach((f) => f.remove());
+  const world = $('.ar-world'); anims(world).forEach((a) => a.cancel());
+  world.style.transform = ''; world.style.transformOrigin = ''; world.style.opacity = '';
+  [$('.ar-hubui'), $('.ar-title'), $('.ar-hint')].forEach((u) => { if (u) { anims(u).forEach((a) => a.cancel()); u.style.opacity = ''; } });
+  root.classList.remove('ar-arriving', 'ar-pulling');
+}
+
+/** Repaint the hub painting: swap each parallax layer for a fresh copy (new GPU backing store) once the image is
+    decoded. iOS Safari could drop the painting's layer during the pull-back zoom and never repaint it (v34 bug:
+    gates and starfield only); this restores it whatever happened, and is harmless when nothing did. */
+function refreshHubArt() {
+  if (!root || !S.open || S.view !== 'axial' || S.arrival) return;
+  const swap = () => {
+    if (!S.open || S.view !== 'axial' || S.arrival) return;
+    root.querySelectorAll('.ar-layers > .ar-layer').forEach((l) => l.replaceWith(l.cloneNode(true)));
+    applyParallax(true);
+  };
+  swap();
+  const l = $('.ar-l-realm'), m = l && /url\(["']?([^"')]+)["']?\)/.exec(l.style.backgroundImage || '');
+  if (!m || !window.Image) return;
+  const im = new Image(); im.src = m[1];
+  const done = () => requestAnimationFrame(swap);
+  if (im.decode) im.decode().then(done, done); else im.onload = done;
 }
 
 /** Esc / ✕ during the opening line: leave Aretoria straight away (no closing line). */

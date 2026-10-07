@@ -590,6 +590,14 @@ html:has(.ar:not([hidden])), html:has(.ar:not([hidden])) body { background: #050
 .ar-arrive-fly { position: absolute; z-index: 21; pointer-events: none; transform-origin: 50% 50%; margin: 0; }
 .ar-arriving .ar-hubui, .ar-arriving .ar-title, .ar-arriving .ar-hint, .ar-arriving .ar-stage { opacity: 0; pointer-events: none; }
 .ar-pulling .ar-hubui { pointer-events: none; }
+/* v35 iOS fix: while the world zooms back, the painting is not its own GPU layer (iOS Safari could drop that layer
+   and never repaint it, leaving only gates on the starfield) and the world carries no filter; outside the pull-back
+   nothing can leave the world scaled (important beats any leftover fill-forwards animation) and the arrival layer
+   stays out of the way. */
+.ar-pulling .ar-layer { will-change: auto; }
+.ar-arriving .ar-world, .ar-pulling .ar-world { filter: none; transition: none; }
+.ar:not(.ar-pulling) .ar-world { transform: none !important; }
+.ar:not(.ar-arriving):not(.ar-pulling) .ar-arrive { display: none !important; }
 /* the greeting sits beside Irishnu (desktop: left half) or above him in the sky (phones), never over him */
 .ar-arriving .ar-dlg { width: min(46vw, 640px); left: calc(3vw + min(46vw, 640px) / 2); }
 @media (max-width: 699px) {

@@ -12,9 +12,13 @@
  * v27 adds the Axial hub painted backdrop (HUB.realmBackdrop = RP('axial')); entry still uses SHRINE_IMAGE.
  * v28: mobile portrait siblings under .../mobile/ (~576×1024); pickArtPath + ART_MOBILE_MQ for responsive art.
  *
- * (Authoring note, never shown to visitors: Irishnu is Cassidy himself, his old LARP name (he/him). He does
- * what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but the
- * sincere guidance always comes first and the humour is never announced or named.)
+ * (Authoring note: Irishnu is Cassidy's in-game self, his old LARP name (he/him), in ivory-and-sapphire armor,
+ * never a jester. In-world he calls himself the self Cassidy sends ahead; the LARP backstory stays off-screen.
+ * The visitor arrives through the central blue portal of the Axial Realm and Irishnu greets him there (v35
+ * 'arrive' node). He does what is needed and often wraps it in dry wit, a riddle or gentle misdirection, but
+ * the sincere guidance always comes first and the humour is never announced or named. v35 lore pass: robe →
+ * armor, portal arrival, all 81 virtues live in the six realms (five are also shared by the axis), Guardians
+ * are advisors alongside the virtues, Shadow lies across its own bridge.)
  *
  * Dialogue trees are scripted (no AI). A choice's `next` is a node id in the same tree
  * or one of: '@hub' (return to the Axial hub), '@close' (close the dialogue),
@@ -119,13 +123,24 @@ export const GUIDE = {
   id: 'irishnu',
   name: 'Irishnu',
   title: 'the Guide',
-  source: 'notes', // name/persona from notes; appearance is not described there
+  source: 'notes', // name/persona from notes; appearance per Cassidy: ivory-and-sapphire armor
+  look: 'ivory-and-sapphire armor',
   color: '#f1d58e',
   dialogue: {
     start: 'greet',
+    arrivalStart: 'arrive', // the first-visit greeting at the portal (Axial arrival); later taps on his card open 'greet'
     nodes: {
+      arrive: {
+        text: "Cassidy. Steady now; the portal sets everyone down a little dazzled. You are standing at the center of the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. Eirena the Eternal Weaver holds the golden thread. I hold the threshold, and, when it is needed, the traveler’s attention.",
+        choices: [
+          { label: 'What are the realms?', next: 'realms' },
+          { label: 'Where should I go today?', next: 'today' },
+          { label: 'Why is there a Shadow Realm?', next: 'shadow' },
+          { label: 'I know the way. Let me explore.', next: 'go' }
+        ]
+      },
       greet: {
-        text: 'Ah, Cassidy. Right on time, or time is right on you; from the center it is hard to tell which. Welcome to the Axial Realm, the one whole that holds every realm within it. Eirena the Eternal Weaver holds the golden thread. I hold the doors, and, when it is needed, the traveler’s attention.',
+        text: "Ah, Cassidy. Right on time, or time is right on you; from the center it is hard to tell which. This is the Axial Realm, the shared realm of existence: one whole, with every realm held inside it. Eirena the Eternal Weaver holds the golden thread. I hold the threshold, and, when it is needed, the traveler’s attention.",
         choices: [
           { label: 'What are the realms?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -134,7 +149,7 @@ export const GUIDE = {
         ]
       },
       realms: {
-        text: 'Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence. Call them six rooms in one house. Travelers like to call it a mansion; it still has only one front door, and you are standing in it. Eighty-one virtues live in those rooms, and the few that refuse to pick just one (Beauty, Graciousness, Integrity, Purposefulness, Wonder) stay here on the axis with me. Each realm has a temple and a Guardian, a warrior of its own kind. But the counsel comes from the virtues themselves: they are the advisors. The Guardians mostly keep the kettle warm and the doors honest.',
+        text: "Six realms of light, one for each great virtue: Wisdom, Courage, Humanity, Justice, Temperance and Transcendence, and the Shadow Realm across its own bridge. Call them rooms in one house; this shared realm is the hall that joins them, and the portal set you down in the middle of it. Eighty-one virtues live in the six rooms of light, every one with a home. Five of them (Beauty, Graciousness, Integrity, Purposefulness, Wonder) also belong to the axis, because they refuse to stay in one room. Each realm keeps a temple and a Guardian, a warrior of its own kind and the first advisor you meet there: Sophia, Valorix, Amara, Justar, Moder, Auria, and the Guardian of the Veil. The virtues wait beside them as advisors too.",
         choices: [
           { label: 'Where should I go today?', next: 'today' },
           { label: 'And the Shadow Realm?', next: 'shadow' },
@@ -143,7 +158,7 @@ export const GUIDE = {
         ]
       },
       who: {
-        text: 'Your guide. I point at doors, and now and then at the one walking through them; he is the door that matters most and opens least. Every realm out there is one face of the same whole, Cassidy, and so are you. I am simply the reminder, wearing a robe so you will take me seriously.',
+        text: "Your guide, and your reflection: the self you send ahead into Aretoria, in ivory and sapphire, so that someone at the center always remembers why you came. I point at doors, and now and then at the one walking through them; you are the door that matters most and opens least. Every realm out there is one face of the same whole, Cassidy, and so are you. I am simply the reminder, armored so you will take me seriously.",
         choices: [
           { label: 'Where should I go today?', next: 'today' },
           { label: 'Then remind me: let me explore.', next: 'go' }
@@ -158,7 +173,7 @@ export const GUIDE = {
         ]
       },
       shadow: {
-        text: 'Every lamp worth lighting throws a shadow. That is not the lamp failing; that is the lamp working. Aretoria walks the middle path: darkness is not evil to deny but a distortion, an imbalance on the way to becoming whole. Below the axis lies the Veil of Shadows, an obsidian labyrinth with a mirror pool and a dim flame of awareness. Go there when anger, envy or regret calls. No one is judged there. The mirror does not even remember faces.',
+        text: "Every lamp worth lighting throws a shadow. That is not the lamp failing; that is the lamp working. Aretoria walks the middle path: darkness is not evil to deny but a distortion, an imbalance on the way to becoming whole. Across its own bridge from the plaza lies the Veil of Shadows, an obsidian labyrinth with a mirror pool and a dim flame of awareness, watched by the Guardian of the Veil. Its far bridges reach Courage, Humanity and Temperance, so no one has to find the way out alone. Go there when anger, envy or regret calls. No one is judged there. The mirror does not even remember faces.",
         choices: [
           { label: 'What are the realms of light?', next: 'realms' },
           { label: 'Where should I go today?', next: 'today' },
@@ -166,7 +181,7 @@ export const GUIDE = {
         ]
       },
       go: {
-        text: 'Then choose a gate. Touch one and you will cross; I have yet to see one refuse. To come home, follow the golden thread back to the axis, the only road in Aretoria that grows shorter the farther you walk it. The Hall of Virtues and your Creed wait here too, and so do I. Leaving the center is the one thing I have never managed.',
+        text: "Then choose a gate. Touch one and you will cross; I have yet to see one refuse. To come home, follow the golden thread back to the axis, the only road in Aretoria that grows shorter the farther you walk it. The Hall of Virtues keeps all eighty-one, and your Creed waits beside it. As for me, look to the corner of your eye: I will be there, pretending not to wait. Someone has to be at the center when you get back.",
         choices: [
           { label: 'Walk the realms', next: '@close' },
           { label: 'Open the Hall of Virtues', next: '@hall' },
@@ -1068,8 +1083,10 @@ export function validateTree(tree, realmIds = REALM_IDS, ctx = { suggestId: 'wis
   if (!tree || !tree.nodes) return ['missing tree'];
   const ids = Object.keys(tree.nodes);
   if (!tree.nodes[tree.start]) errs.push(`start node "${tree.start}" missing`);
-  const seen = new Set([tree.start]);
-  const queue = [tree.start];
+  if (tree.arrivalStart && !tree.nodes[tree.arrivalStart]) errs.push(`arrival start node "${tree.arrivalStart}" missing`);
+  // a tree may have a second entry point (Irishnu's arrival greeting); both roots count for reachability
+  const seen = new Set([tree.start, ...(tree.arrivalStart ? [tree.arrivalStart] : [])]);
+  const queue = [...seen];
   while (queue.length) {
     const id = queue.shift();
     const n = tree.nodes[id];
