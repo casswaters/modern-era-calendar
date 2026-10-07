@@ -912,7 +912,7 @@ export const VIRTUES = [
   V('Temperance', 'temperance', 'Balance in all things.', { portrait: G('temperance') }),
   V('Tenacity', 'courage', 'Clinging fiercely to worthy goals.', { portrait: G('tenacity') }),
   V('Thankfulness', 'transcendence', 'A heart that keeps saying thank you.', { portrait: G('thankfulness') }),
-  V('Tolerance', 'humanity', 'A bridge across differences.', { portrait: G('tolerance') }),
+  V('Tolerance', 'humanity', 'A bridge across differences.', { portrait: P('tolerance') }),
   V('Trust', 'justice', 'Safeguarding bonds and giving faith.', { portrait: G('trust') }),
   V('Truthfulness', 'justice', 'Faithfulness to what is real.', { portrait: G('truthfulness') }),
   V('Understanding', 'wisdom', 'Deep comprehension of people and things.', { portrait: G('understanding') }),
