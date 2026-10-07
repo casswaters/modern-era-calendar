@@ -317,12 +317,30 @@ function renderHub() {
     `<span class="ar-gate-arch"><span class="ar-gate-portal">${gateGlyph(r.id)}</span></span>` +
     `<span class="ar-gate-name">${esc(r.name)}</span><span class="ar-gate-sub">${esc(r.guardian.name)}</span><i class="ar-gate-done" aria-hidden="true">✓</i></button>`).join('');
   $('.ar-hubui').innerHTML =
+    runePortalHtml() +
     `<button type="button" class="ar-orb" data-act="creed" aria-label="Read ${esc(CREED.title)}"><span></span></button>` +
     `<div class="ar-gates">${gates}</div>` +
     guideHostHtml() +
     `<div class="ar-hubbar"><button type="button" class="ar-pill" data-act="hall">✦ Hall of Virtues</button><button type="button" class="ar-pill" data-act="creed">❦ The Creed</button></div>`;
   layoutHub();
   wireIrishnuPortraitFallback();
+}
+
+/** The Axial rune portal: where the Aretorian shrine gate leads. Gold runic rings counter-rotate on the
+    plaza's rune circle (flattened to the floor), an ivory vortex glows beneath, faint motes rise; the Creed
+    orb sits at its heart. Decorative only (aria-hidden); still under prefers-reduced-motion. */
+function runePortalHtml() {
+  const R = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
+  const ring = (r, n, fs) => `<text font-size="${fs}" letter-spacing="${fs * 0.55}"><textPath href="#arp-c${r}" startOffset="0">${R.repeat(n)}</textPath></text>`;
+  const circ = (r) => `<path id="arp-c${r}" d="M ${-r} 0 a ${r} ${r} 0 1 1 ${2 * r} 0 a ${r} ${r} 0 1 1 ${-2 * r} 0" fill="none"/>`;
+  const motes = Array.from({ length: 9 }, (_, i) => `<i style="--mx:${(((i * 37) % 9) - 4) * 9}%;--md:${(i * 0.83).toFixed(2)}s;--ms:${(5 + (i % 4)).toFixed(1)}s"></i>`).join('');
+  return `<div class="ar-rportal" aria-hidden="true"><div class="ar-rportal-plane"><div class="ar-rportal-vortex"></div>` +
+    `<svg viewBox="-100 -100 200 200"><defs><radialGradient id="arp-g"><stop offset="0" stop-color="#fffaf0" stop-opacity=".95"/><stop offset=".35" stop-color="#fff1c1" stop-opacity=".55"/><stop offset=".7" stop-color="#e3bf6c" stop-opacity=".16"/><stop offset="1" stop-color="#e3bf6c" stop-opacity="0"/></radialGradient>${circ(84)}${circ(62)}</defs>` +
+    `<circle r="99" fill="url(#arp-g)"/>` +
+    `<g class="arp-r1"><circle r="95" class="arp-line"/><circle r="76" class="arp-line thin"/>${ring(84, 2, 8.5)}</g>` +
+    `<g class="arp-r2"><circle r="70" class="arp-line dash"/><circle r="55" class="arp-line thin"/>${ring(62, 1, 7)}</g>` +
+    `<g class="arp-r3"><circle r="44" class="arp-line ticks"/><path class="arp-line thin" d="M0 -44 L38 22 L-38 22 Z M0 44 L38 -22 L-38 -22 Z"/></g>` +
+    `</svg></div><div class="ar-rportal-motes">${motes}</div></div>`;
 }
 
 /** Hub Guide host: painted Irishnu when present, else the drawn Guide figure. */
@@ -409,7 +427,7 @@ function layoutHub() {
       let [x, y] = toScreen(art.gates[id] || art.gates.shadow);
       if (id === 'shadow') x = w / 2;        // Shadow always on the horizontal centre line
       x = Math.min(Math.max(x, half), w - half);
-      y = Math.min(Math.max(y + archDy, topSafe + g.offsetHeight / 2), h - botSafe - g.offsetHeight / 2 + (id === 'shadow' ? 40 : 0));
+      y = Math.min(Math.max(y + archDy, topSafe + g.offsetHeight / 2), h - botSafe - g.offsetHeight / 2 - (id === 'shadow' ? 6 : 0)); // Shadow's label stays above the hint line
       g.style.left = `${x}px`; g.style.top = `${y}px`;
       g.style.animationDelay = `${-i * 0.9}s`;
       // keep long names (e.g. TRANSCENDENCE) inside the viewport without moving the arch
@@ -420,6 +438,13 @@ function layoutHub() {
         if (dx) el.style.translate = `${dx.toFixed(1)}px 0`;
       });
     });
+  }
+  const portal = $('.ar-rportal');
+  if (portal) {
+    // rune circle diameter in art px (v3 hub: ~256 of 1280 desktop, ~123 of 576 phone), then cover scale + layer zoom
+    const runeW = (mobile ? 123 : 256) * s * K;
+    const [x, y] = toScreen(art.rune);
+    portal.style.left = `${x}px`; portal.style.top = `${y}px`; portal.style.setProperty('--rw', `${runeW.toFixed(1)}px`);
   }
   const orb = $('.ar-orb');
   if (orb) { const [x, y] = toScreen(art.rune); orb.style.left = `${x}px`; orb.style.top = `${y}px`; }
