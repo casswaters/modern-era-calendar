@@ -662,9 +662,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v39 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v39';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v40 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v40';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl39', /app\.js\?v=cl39/.test(html) && /captains-log\.js\?v=cl39/.test(html) && /scene\.js\?v=cl39/.test(html) && /styles\.css\?v=cl39/.test(html));
+  assert('scripts and styles on cl40', /app\.js\?v=cl40/.test(html) && /captains-log\.js\?v=cl40/.test(html) && /scene\.js\?v=cl40/.test(html) && /styles\.css\?v=cl40/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
@@ -709,6 +709,17 @@ console.log('\n=== ambient weather scene ===\n');
   assert('log renders tracker labels and checklist from the profile', /label: \(p\) => `\$\{p\.wake\} ☀️`/.test(cl) && /label: \(p\) => `\$\{p\.bed\} 💤`/.test(cl) && /\{ id: 'supps', type: 'supps' \}/.test(cl) && /P\.supplements\.map\(\(label, i\) => \(\{ id: SUPP_IDS\[i\], type: 'check', label \}\)\)/.test(cl));
   assert('a changed checklist rebuilds the form without losing the day\'s entry', /if \(shape && next !== shape\) \{ flush\(\); buildForm\(\); fillForm\(\); \}/.test(cl));
   assert('Profile panel has wake, bed and checklist fields', ['log-wake', 'log-bed', 'log-supplements'].every((id) => html.includes(`id="${id}"`)));
+}
+
+{
+  console.log('\n--- v40: S.C.O.R.E. typed out with one plain explanatory line ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), css = src('./styles.css');
+  const g1 = cl.split('\n').find((l) => /id: 'g1'/.test(l)) || '';
+  assert('g1 cue spells out S.C.O.R.E.', g1.includes("cue: 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.'"));
+  assert('g1 note explains it plainly', g1.includes("note: 'A way to anchor in gratitude instead of breezing through it.'"));
+  assert('new wording has no em dashes or tildes', !/[—~]/.test(g1));
+  assert('note renders escaped as its own hint line (and in the text export)', /f\.note \? `<p class="log-cue-hint log-cue-note">\$\{esc\(f\.note\)\}<\/p>`/.test(cl) && /\$\{f\.note \? ` \$\{f\.note\}` : ''\}/.test(cl) && /\.log-cue-note \{/.test(css));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

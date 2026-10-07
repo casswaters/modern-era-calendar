@@ -753,6 +753,7 @@ body::after {
 .log-cue-hint {
   margin: 4px 0 0; font-size: .78rem; color: var(--text-muted); line-height: 1.35;
 }
+.log-cue-note { margin-top: 2px; font-style: italic; }
 
 .log-body { padding: 4px 0; }
 .log-sec { border-bottom: 1px solid var(--border); }
