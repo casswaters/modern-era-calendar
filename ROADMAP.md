@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-07, 4:20 PM MT
+**Last updated:** 2026-10-07, 4:23 PM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -33,6 +33,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-07 16:23: v41: no em dashes or tildes in Captain's Log text. Copy text puts each cue and note on its own line under the question; the header uses " · " before the date; field labels use parentheses (e.g. "Social (Family)", "Check in (Schedule · Emails · Deals)"); the empty 1 to 10 option shows "·". Test guards it.
 - 2026-10-07 16:20: v40: S.C.O.R.E. under "What am I grateful for?" is typed out (Sincerity, Consistency, Originality, Reflection, Expression) with one plain line: "A way to anchor in gratitude instead of breezing through it." Still a default template cue; also included in Copy text.
 - 2026-10-07 16:12 — v39: Profile also holds wake/bed targets and a daily checklist (up to 6 lines; first three keep the old supplement ids so saved ticks stay); neutral defaults "Wake ☀️" / "Bed 💤" and Morning/Midday/Evening supplements; no personal supplement list or times in code.
 - 2026-10-07 16:00 — v38: Aretoria no longer embedded (card links to casswaters.github.io/aretoria, same tab; old in-app Aretoria links redirect there; code, data, art and tests removed). Captain's Log Profile: name (shared with Aretoria), initials, enterprise names and birthday in this browser only, with neutral defaults ("Main work" / "Side venture"); no hard-coded personal values.
