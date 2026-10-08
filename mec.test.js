@@ -905,5 +905,16 @@ console.log('\n=== ambient weather scene ===\n');
   assert('SW captains-log-v47 or later, scripts on cl47 or later', /const CACHE = 'captains-log-v4[7-9]';/.test(sw) && /captains-log\.js\?v=cl4[7-9]/.test(html));
 }
 
+{
+  console.log('\n--- v48: ornate Aretoria card (one ivory, gold, cosmic palette; CSS + inline SVG only) ---');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const html = src('./index.html'), css = src('./styles.css');
+  const block = css.slice(css.indexOf('v48: ornate Aretoria card'), css.indexOf('/* ---------- Desktop: three columns'));
+  assert('double-rule frame, four corner flourishes, crest and title rule in the card', /<span class="portal-frame" aria-hidden="true"><i class="pc tl"><\/i><i class="pc tr"><\/i><i class="pc bl"><\/i><i class="pc br"><\/i><\/span>/.test(html) && html.includes('<span class="portal-crest" aria-hidden="true"></span>') && html.includes('<div class="portal-rule" aria-hidden="true"><span>✦</span></div>') && /\.portal-card::after \{/.test(block));
+  assert('flourishes are gold masks (follow the theme gold), with intrinsic sizes so WebKit paints them', /background: var\(--gold\)/.test(block) && /-webkit-mask: url\("data:image\/svg\+xml/.test(block) && /width=%2756%27 height=%2756%27/.test(block));
+  assert('no external images and no per-realm hues (no blue or pink in the ornate block)', !/url\((?!"data:)/.test(block) && !/98,\s*181,\s*229|242,\s*184,\s*207/.test(block));
+  assert('equal-height desktop rules untouched', /\.tri-portal \.portal-card \{ flex: 1 1 auto;/.test(css));
+}
+
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);

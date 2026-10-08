@@ -930,6 +930,79 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 @keyframes swirl { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .65; } }
 
+/* ---------- v48: ornate Aretoria card (Aretoria's sacred marble, gold and cosmic look; one palette, CSS + inline SVG masks only) ---------- */
+.portal-card {
+  border-color: color-mix(in srgb, var(--gold) 46%, transparent);
+  box-shadow: var(--shadow), 0 0 40px rgba(241,213,142,.07), inset 0 0 60px rgba(241,213,142,.05);
+  background:
+    radial-gradient(70% 42% at 50% 34%, rgba(255,240,205,.10), transparent 70%),
+    repeating-linear-gradient(118deg, transparent 0 34px, rgba(233,228,242,.03) 34px 35px, transparent 35px 71px),
+    repeating-linear-gradient(32deg, transparent 0 57px, rgba(241,213,142,.025) 57px 58px, transparent 58px 110px),
+    radial-gradient(90% 60% at 50% 0%, rgba(185,166,232,.14), transparent 70%),
+    linear-gradient(180deg, #161933 0%, #0d0f22 100%);
+}
+[data-theme="light"] .portal-card {
+  background:
+    radial-gradient(70% 42% at 50% 34%, rgba(255,250,235,.9), transparent 70%),
+    repeating-linear-gradient(118deg, transparent 0 34px, rgba(120,100,60,.05) 34px 35px, transparent 35px 71px),
+    radial-gradient(90% 60% at 50% 0%, rgba(185,166,232,.18), transparent 70%),
+    linear-gradient(180deg, #fffaf0, #f1e8d6);
+}
+/* double-rule frame: outer rule (::before) and a fainter inner rule (::after) */
+.portal-card::before { inset: 8px; border-radius: 15px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+.portal-card::after {
+  content: ""; position: absolute; inset: 12px; border-radius: 12px; pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+  box-shadow: inset 0 0 28px rgba(241,213,142,.06);
+}
+.portal-frame { position: absolute; inset: 0; pointer-events: none; }
+.portal-frame .pc {
+  position: absolute; width: 56px; height: 56px; background: var(--gold); opacity: .9;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2756%27 height=%2756%27 viewBox=%270 0 56 56%27 fill=%27none%27 stroke=%27black%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M3 53V17C3 9 9 3 17 3h36%27 stroke-width=%271.4%27/%3E%3Cpath d=%27M8 53V21c0-7 6-13 13-13h32%27 stroke-width=%27.8%27 opacity=%27.7%27/%3E%3Cpath d=%27M13 30c0-9 4-15 11-17%27 stroke-width=%271%27/%3E%3Cpath d=%27M30 13c-9 0-15 4-17 11%27 stroke-width=%271%27/%3E%3Cpath d=%27M15 21c2-4 6-6 9-4 2 2 0 5-2 4%27 stroke-width=%271.1%27/%3E%3Cpath d=%27M21 15c-4 2-6 6-4 9 2 2 5 0 4-2%27 stroke-width=%271.1%27/%3E%3Ccircle cx=%2713.5%27 cy=%2713.5%27 r=%271.6%27 fill=%27black%27 stroke=%27none%27/%3E%3Cpath d=%27M3 36c3-1 5-3 5-6M36 3c-1 3-3 5-6 5%27 stroke-width=%27.9%27/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2756%27 height=%2756%27 viewBox=%270 0 56 56%27 fill=%27none%27 stroke=%27black%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M3 53V17C3 9 9 3 17 3h36%27 stroke-width=%271.4%27/%3E%3Cpath d=%27M8 53V21c0-7 6-13 13-13h32%27 stroke-width=%27.8%27 opacity=%27.7%27/%3E%3Cpath d=%27M13 30c0-9 4-15 11-17%27 stroke-width=%271%27/%3E%3Cpath d=%27M30 13c-9 0-15 4-17 11%27 stroke-width=%271%27/%3E%3Cpath d=%27M15 21c2-4 6-6 9-4 2 2 0 5-2 4%27 stroke-width=%271.1%27/%3E%3Cpath d=%27M21 15c-4 2-6 6-4 9 2 2 5 0 4-2%27 stroke-width=%271.1%27/%3E%3Ccircle cx=%2713.5%27 cy=%2713.5%27 r=%271.6%27 fill=%27black%27 stroke=%27none%27/%3E%3Cpath d=%27M3 36c3-1 5-3 5-6M36 3c-1 3-3 5-6 5%27 stroke-width=%27.9%27/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.portal-frame .tl { top: 5px; left: 5px; }
+.portal-frame .tr { top: 5px; right: 5px; transform: scaleX(-1); }
+.portal-frame .bl { bottom: 5px; left: 5px; transform: scaleY(-1); }
+.portal-frame .br { bottom: 5px; right: 5px; transform: scale(-1, -1); }
+.portal-crest {
+  display: block; width: min(150px, 52%); height: 18px; margin: 8px auto 0; background: var(--gold); opacity: .8;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%2718%27 viewBox=%270 0 120 18%27 fill=%27none%27 stroke=%27black%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M2 9h38M80 9h38%27 stroke-width=%27.9%27/%3E%3Cpath d=%27M40 9c6 0 9-6 15-6M80 9c-6 0-9-6-15-6M40 9c6 0 9 6 15 6M80 9c-6 0-9 6-15 6%27 stroke-width=%271%27/%3E%3Cpath d=%27M60 2l4 7-4 7-4-7z%27 fill=%27black%27 stroke=%27none%27/%3E%3Ccircle cx=%2747%27 cy=%279%27 r=%271.3%27 fill=%27black%27 stroke=%27none%27/%3E%3Ccircle cx=%2773%27 cy=%279%27 r=%271.3%27 fill=%27black%27 stroke=%27none%27/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%2718%27 viewBox=%270 0 120 18%27 fill=%27none%27 stroke=%27black%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M2 9h38M80 9h38%27 stroke-width=%27.9%27/%3E%3Cpath d=%27M40 9c6 0 9-6 15-6M80 9c-6 0-9-6-15-6M40 9c6 0 9 6 15 6M80 9c-6 0-9 6-15 6%27 stroke-width=%271%27/%3E%3Cpath d=%27M60 2l4 7-4 7-4-7z%27 fill=%27black%27 stroke=%27none%27/%3E%3Ccircle cx=%2747%27 cy=%279%27 r=%271.3%27 fill=%27black%27 stroke=%27none%27/%3E%3Ccircle cx=%2773%27 cy=%279%27 r=%271.3%27 fill=%27black%27 stroke=%27none%27/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* the arch gets a second gold ring and a soft ivory halo */
+.portal-arch { margin-top: 4px; }
+.portal-arch::before {
+  content: ""; position: absolute; inset: 6% 9% 0; border-radius: 999px 999px 22px 22px; pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  box-shadow: 0 0 34px rgba(255,240,205,.12);
+}
+.portal-nebula {
+  background:
+    radial-gradient(30% 22% at 50% 44%, rgba(255,240,205,.6), transparent 70%),
+    radial-gradient(45% 35% at 62% 58%, rgba(185,166,232,.42), transparent 70%),
+    radial-gradient(50% 40% at 35% 70%, rgba(241,213,142,.22), transparent 70%),
+    radial-gradient(40% 30% at 30% 28%, rgba(233,228,242,.22), transparent 70%),
+    radial-gradient(1px 1px at 20% 30%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 70% 70%, #fff, transparent 60%),
+    radial-gradient(1.4px 1.4px at 55% 20%, #f1d58e, transparent 60%),
+    radial-gradient(1px 1px at 30% 85%, #e9e4f2, transparent 60%),
+    radial-gradient(1px 1px at 78% 38%, #fff6e0, transparent 60%),
+    linear-gradient(180deg, #1b1745, #0a0b1f);
+}
+.portal-nebula::after { background: conic-gradient(from 0deg, transparent, rgba(185,166,232,.14), transparent 30%, rgba(241,213,142,.16), transparent 60%, rgba(233,228,242,.12), transparent); }
+/* title: engraved gold capitals with a fine rule and star under it */
+.portal-title {
+  margin-top: 12px; font-size: 1.62rem; letter-spacing: .22em; padding-left: .22em;
+  background: linear-gradient(180deg, #fff3cf 0%, var(--gold-bright) 35%, var(--gold) 65%, var(--gold-deep) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.35));
+}
+[data-theme="light"] .portal-title { background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep)); -webkit-background-clip: text; background-clip: text; filter: none; }
+.portal-rule { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px auto 6px; width: min(170px, 60%); color: var(--gold); font-size: .62rem; line-height: 1; }
+.portal-rule::before, .portal-rule::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 70%, transparent)); }
+.portal-rule::after { transform: scaleX(-1); }
+.portal-sub { margin-top: 0; letter-spacing: .04em; }
+.portal-enter { box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--gold) 10%, transparent); }
+
 /* ---------- Desktop: three columns ---------- */
 @media (min-width: 1100px) {
   .app { max-width: 1520px; }
