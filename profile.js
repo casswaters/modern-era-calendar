@@ -7,8 +7,8 @@
 export const NAME_KEY = 'mec-aretoria:name';          // shared with Aretoria
 export const NAME_ASKED_KEY = 'mec-aretoria:name-asked';
 export const INITIALS_KEY = 'mec-log-initials';
-export const WORK_KEY = 'mec-log-enterprise';
-export const VENTURE_KEY = 'mec-log-venture';
+export const WORK_KEY = 'mec-log-enterprise';          // v45: the holding company (umbrella of professional activities)
+export const VENTURE_KEY = 'mec-log-venture';          // v45: the main business under it (key kept so saved values stay)
 export const BDAY_KEY = 'mec-log-birthday';
 export const WAKE_KEY = 'mec-log-wake';               // v39: daily tracker targets
 export const BED_KEY = 'mec-log-bed';
@@ -17,7 +17,7 @@ export const HOME_KEY = 'mec-log-home';               // v42: home location JSON
 export const PROFILE_KEYS = [NAME_KEY, INITIALS_KEY, WORK_KEY, VENTURE_KEY, BDAY_KEY, WAKE_KEY, BED_KEY, SUPPS_KEY, HOME_KEY];
 export const NAME_MAX = 24, INITIALS_MAX = 4, LABEL_MAX = 40, TIME_MAX = 12, SUPP_MAX = 80, SUPPS_MAX = 6;
 export const DEFAULTS = {
-  enterprise: 'Main work', venture: 'Side venture', wake: 'Wake', bed: 'Bed',
+  holding: 'Holding company', business: 'Main business', wake: 'Wake', bed: 'Bed',
   supplements: ['Morning supplements', 'Midday supplements', 'Evening supplements']
 };
 /** Saved-entry field ids for checklist lines (the first three keep the ids the old fixed list used). */
@@ -33,7 +33,7 @@ export function cleanName(raw) {
 export function cleanInitials(raw) {
   return Array.from(String(raw == null ? '' : raw).normalize('NFC').replace(/[^\p{L}]/gu, '')).slice(0, INITIALS_MAX).join('').toLocaleUpperCase();
 }
-/** Free label (enterprise / venture names): no markup characters or control codes, one line, 40 characters. */
+/** Free label (holding company / main business names): no markup characters or control codes, one line, 40 characters. */
 export function cleanLabel(raw) {
   const s = String(raw == null ? '' : raw).normalize('NFC').replace(/[\u0000-\u001f\u007f<>{}]/g, '').replace(/\s+/g, ' ').trim();
   return Array.from(s).slice(0, LABEL_MAX).join('').trim();
@@ -56,23 +56,30 @@ export function deriveInitials(name) {
 export function profileView(raw = {}) {
   const name = cleanName(raw.name);
   const initials = cleanInitials(raw.initials) || deriveInitials(name);
-  const enterprise = cleanLabel(raw.enterprise) || (initials ? `${initials} Enterprises` : DEFAULTS.enterprise);
-  const venture = cleanLabel(raw.venture) || DEFAULTS.venture;
+  // v45: names are used exactly as typed. Nothing is built from initials (v38 to v44 built a default from initials, which cut a two-letter name down to one).
+  const holdingSet = cleanLabel(raw.holding ?? raw.enterprise), businessSet = cleanLabel(raw.business ?? raw.venture);
+  const holding = holdingSet || DEFAULTS.holding;
+  const business = businessSet || DEFAULTS.business;
   const wake = cleanTime(raw.wake) || DEFAULTS.wake;
   const bed = cleanTime(raw.bed) || DEFAULTS.bed;
   const s = cleanSupplements(raw.supplements);
   const supplements = s.length ? s : DEFAULTS.supplements.slice();
-  return { name, initials, enterprise, venture, birthday: cleanDate(raw.birthday), wake, bed, supplements };
+  return { name, initials, holding, business, holdingSet: !!holdingSet, businessSet: !!businessSet, owner: ownerTitle(name), birthday: cleanDate(raw.birthday), wake, bed, supplements };
+}
+/** "Ada’s Captain’s Log"; names ending in s also take ’s ("Chris’s"); no name: "Captain’s Log". */
+export function ownerTitle(name) {
+  const n = cleanName(name);
+  return n ? `${n}’s Captain’s Log` : 'Captain’s Log';
 }
 
 const get = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
 export function readProfile() {
-  return { name: get(NAME_KEY), initials: get(INITIALS_KEY), enterprise: get(WORK_KEY), venture: get(VENTURE_KEY), birthday: get(BDAY_KEY),
+  return { name: get(NAME_KEY), initials: get(INITIALS_KEY), holding: get(WORK_KEY), business: get(VENTURE_KEY), birthday: get(BDAY_KEY),
     wake: get(WAKE_KEY), bed: get(BED_KEY), supplements: get(SUPPS_KEY), home: get(HOME_KEY) };
 }
 /** Stores one cleaned field (empty removes it). Returns the cleaned value. */
 export function saveField(field, raw) {
-  const map = { name: [NAME_KEY, cleanName], initials: [INITIALS_KEY, cleanInitials], enterprise: [WORK_KEY, cleanLabel], venture: [VENTURE_KEY, cleanLabel], birthday: [BDAY_KEY, cleanDate],
+  const map = { name: [NAME_KEY, cleanName], initials: [INITIALS_KEY, cleanInitials], holding: [WORK_KEY, cleanLabel], business: [VENTURE_KEY, cleanLabel], birthday: [BDAY_KEY, cleanDate],
     wake: [WAKE_KEY, cleanTime], bed: [BED_KEY, cleanTime], supplements: [SUPPS_KEY, (r) => cleanSupplements(r).join('\n')] };
   const [key, clean] = map[field];
   const v = clean(raw);

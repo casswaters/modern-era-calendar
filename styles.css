@@ -730,10 +730,10 @@ body::after {
   font-family: var(--display); font-size: .68rem; letter-spacing: .24em; text-transform: uppercase;
   color: var(--gold); font-weight: 600; text-align: center;
 }
-.log-datebar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.log-datebar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .log-date { flex: 1; text-align: center; min-width: 0; }
 .log-weekday { font-family: var(--serif); font-size: 1.28rem; font-weight: 600; color: var(--text); line-height: 1.15; }
-.log-meta { font-size: .76rem; color: var(--gold); margin-top: 2px; letter-spacing: .02em; }
+.log-meta { font-size: .78rem; color: var(--text-muted); margin-top: 3px; letter-spacing: .02em; }
 .log-meta .log-mec { display: block; color: var(--text-muted); font-size: .72rem; margin-top: 1px; }
 .log-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
 .log-settings { margin-top: 10px; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--bg-deep) 55%, transparent); border: 1px solid var(--border); }
@@ -897,10 +897,11 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
     display: grid;
     grid-template-columns: minmax(420px, 1.2fr) minmax(320px, 1fr) minmax(250px, .72fr);
     gap: 20px;
-    align-items: start;
+    align-items: stretch; /* v45: one equal-height row */
   }
-  .tri-log, .tri-portal { margin-top: 14px; }
-  .tri-portal { position: sticky; top: 76px; }
+  .tri-log, .tri-portal { margin-top: 14px; display: flex; flex-direction: column; }
+  .tri-cal { align-self: start; } /* its natural height sets --cal-h (no feedback from the stretched row) */
+  .tri-portal .portal-card { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
   /* Calendar column is narrower than the old single column: tighten cells, keep content. */
   .tri-cal .month-grid { gap: 5px; }
   .tri-cal .day-cell { aspect-ratio: auto; min-height: 58px; padding: 5px 2px; border-radius: 10px; }
@@ -910,9 +911,10 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
   .tri-cal .day-cell .name, .tri-cal .day-cell .greg { font-size: .56rem; }
   .tri-cal .cycle-legend { font-size: .6rem; letter-spacing: .04em; }
   .tri-cal .today-banner .mec { font-size: 1.55rem; }
-  .tri-log .log-card { max-height: calc(100dvh - 92px); display: flex; flex-direction: column; }
+  /* v45: the log fills the row, so with every section closed it is exactly as tall as the calendar column
+     (--cal-h comes from captains-log.js). Open sections grow it up to the screen height, then it scrolls inside. */
+  .tri-log .log-card { flex: 1 1 auto; max-height: max(calc(100dvh - 92px), calc(var(--cal-h, 0px) - 14px)); display: flex; flex-direction: column; }
   .tri-log .log-body { overflow-y: auto; flex: 1; min-height: 0; }
-  .tri-log { position: sticky; top: 76px; }
 }
 @media (min-width: 1360px) {
   .tri-cal .day-cell .mec-d { font-size: 1.2rem; }
@@ -1000,8 +1002,18 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 }
 
 /* ---------- v38: Captain's Log profile ---------- */
-.log-who { font-family: var(--serif); font-style: italic; letter-spacing: 0; text-transform: none; color: var(--pearl); }
-.log-who[hidden] { display: none; }
+/* v45: ownership title above the date. Real size, solid colour, no shadow or transform, so it renders crisp. */
+.log-owner {
+  margin: 0; text-align: center;
+  font-family: var(--display); font-size: 1.02rem; font-weight: 600; letter-spacing: .07em; line-height: 1.25;
+  color: var(--gold-bright); text-shadow: none; text-transform: none;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+  overflow-wrap: anywhere;
+}
+[data-theme="light"] .log-owner { color: var(--text); }
+/* v45: career heads carry a small role ("holding company", "main business under ..."); the main business sits under the holding company */
+.log-subhead .log-subhead-role { display: block; margin-top: 1px; font-family: var(--serif); font-style: italic; font-size: .8rem; letter-spacing: .02em; text-transform: none; color: var(--text-muted); font-weight: 500; }
+.log-subhead.nested { margin-left: 12px; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--gold) 40%, transparent); }
 .log-home-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
 .log-home-row input { flex: 1 1 10em; min-width: 0; } /* the button wraps below when the column is narrow, so the city never truncates */
 .log-home-row .btn { flex-shrink: 0; min-height: 36px; }

@@ -8,7 +8,7 @@ import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
 } from './mec.js?v=cl19';
-import { readProfile, profileView, saveField, clearProfile, NAME_MAX, INITIALS_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl42';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl45';
 import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl42';
 
 const KEY_PREFIX = 'mec-log:';
@@ -16,7 +16,8 @@ const OPEN_KEY = 'mec-log-open';
 
 /* ---------- Template (edit here to change prompts) ----------
    field types: cue (read-only standing prompt; optional note = one plain explanatory line under it), text, area, check, scale (1–10), head
-   A label may be a function of the profile (v38: enterprise names come from Profile, never hard-coded).
+   A label may be a function of the profile (v38: career names come from Profile, never hard-coded).
+   v45: a head may carry a role (a small descriptor shown after the name, only when the name is the user's own).
    Field ids stay as they were so saved entries keep their values. */
 const SECTIONS = [
   {
@@ -63,9 +64,9 @@ const SECTIONS = [
   {
     id: 'career', title: 'Career',
     fields: [
-      { id: 'cw_head', type: 'head', label: (p) => p.enterprise },
+      { id: 'cw_head', type: 'head', label: (p) => p.holding, role: (p) => (p.holdingSet ? 'holding company' : '') },
       { id: 'cw_checkin', type: 'area', label: 'Check in (Schedule · Emails · Deals)', rows: 3 },
-      { id: 'anam_head', type: 'head', label: (p) => p.venture },
+      { id: 'anam_head', type: 'head', nested: true, label: (p) => p.business, role: (p) => (p.businessSet ? `main business${p.holdingSet ? ` under ${p.holding}` : ''}` : '') },
       { id: 'anam_pipeline', type: 'area', label: 'Pipeline (Introductions · Submissions · Outbound · Inbound)', rows: 3 },
       { id: 'anam_other', type: 'area', label: 'Business chats · Organization · News', rows: 2 }
     ]
@@ -105,9 +106,10 @@ const pad = (n) => String(n).padStart(2, '0');
 const isoOf = (g) => `${g.year}-${pad(g.month)}-${pad(g.day)}`;
 let P = profileView(readProfile());
 const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
+const roleOf = (f) => (typeof f.role === 'function' ? f.role(P) : f.role || '');
 /** A section's fields with the Profile checklist expanded into check fields. */
 const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.map((label, i) => ({ id: SUPP_IDS[i], type: 'check', label })) : [f]));
-const formShape = () => JSON.stringify(SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f)])));
+const formShape = () => JSON.stringify(SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f), roleOf(f)])));
 function todayG() {
   const n = new Date();
   return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() };
@@ -151,7 +153,10 @@ const form = $('log-form');
 function fieldHtml(f) {
   const id = `log-f-${f.id}`;
   const cls = 'log-field' + (f.half ? ' half' : '') + (f.third ? ' third' : '');
-  if (f.type === 'head') return `<div class="log-subhead" data-head="${f.id}">${esc(labelOf(f))}</div>`;
+  if (f.type === 'head') {
+    const role = roleOf(f);
+    return `<div class="log-subhead${f.nested ? ' nested' : ''}" data-head="${f.id}"><span class="log-subhead-name">${esc(labelOf(f))}</span>${role ? `<span class="log-subhead-role">${esc(role)}</span>` : ''}</div>`;
+  }
   if (f.type === 'cue') {
     const hint = (f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '')
       + (f.note ? `<p class="log-cue-hint log-cue-note">${esc(f.note)}</p>` : '');
@@ -208,6 +213,7 @@ function updateCounts(data) {
   }
 }
 
+let fullMeta = '';
 function renderHeader() {
   const g = current;
   const greg = format_gregorian(g.year, g.month, g.day);
@@ -219,7 +225,10 @@ function renderHeader() {
   let mec = '';
   try { mec = format_mec(gregorian_to_mec(g.year, g.month, g.day)); } catch {}
   $('log-weekday').textContent = greg;
-  $('log-meta').innerHTML = esc(parts.join(' · ')) + (mec ? `<span class="log-mec">${esc(mec)}</span>` : '');
+  // v45: one calm line under the date (MEC day and day name; cycle and year stay in Copy text and the calendar)
+  const mecShort = mec.split(' · ').slice(0, / · Cycle /.test(mec) ? 2 : 1).join(' · ');
+  $('log-meta').textContent = [...parts, mecShort].filter(Boolean).join(' · ');
+  fullMeta = [...parts, mec].filter(Boolean).join(' · ');
   const t = todayG();
   $('log-today').disabled = isoOf(t) === isoOf(g);
 }
@@ -268,13 +277,13 @@ function asText() {
   const g = current;
   const data = readForm();
   const lines = [];
-  lines.push(`Captain’s Log${P.name ? ` · ${P.name}` : ''} · ${format_gregorian(g.year, g.month, g.day)}`);
-  lines.push($('log-meta').textContent.replace(/(Day \d+ of \d+)/, '$1 · '));
+  lines.push(`${P.owner} · ${format_gregorian(g.year, g.month, g.day)}`);
+  lines.push(fullMeta);
   lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
   for (const s of SECTIONS) {
     lines.push('', s.title.toUpperCase());
     for (const f of fieldsOf(s)) {
-      if (f.type === 'head') { lines.push(`[${labelOf(f)}]`); continue; }
+      if (f.type === 'head') { const r = roleOf(f); lines.push(`[${labelOf(f)}${r ? ` (${r})` : ''}]`); continue; }
       if (f.type === 'cue') {
         // v41: cue and note go on their own lines under the question (no em dash separator)
         lines.push(labelOf(f));
@@ -315,35 +324,33 @@ $('log-clear').addEventListener('click', () => {
   setStatus('Entry cleared');
 });
 
-/* ---------- Profile (v38): name, initials, enterprise names, birthday; this browser only ---------- */
+/* ---------- Profile (v38): name, holding company, main business, birthday; this browser only ---------- */
 const settingsBtn = $('log-settings-btn');
 const settings = $('log-settings');
-const FIELDS = { name: 'log-name', initials: 'log-initials', enterprise: 'log-enterprise', venture: 'log-venture', birthday: 'log-birthday',
+const FIELDS = { name: 'log-name', holding: 'log-holding', business: 'log-business', birthday: 'log-birthday',
   wake: 'log-wake', bed: 'log-bed', supplements: 'log-supplements' };
 let shape = '';
 function renderProfile() {
   const raw = readProfile();
   P = profileView(raw);
   for (const [k, id] of Object.entries(FIELDS)) { const el = $(id); if (document.activeElement !== el) el.value = raw[k] || ''; } // stored values are already clean
-  $('log-initials').placeholder = P.initials && !raw.initials ? P.initials : 'e.g. AL';
-  $('log-enterprise').placeholder = P.enterprise;
-  $('log-venture').placeholder = P.venture;
-  const who = $('log-who');
-  who.textContent = P.name ? `· ${P.name}` : '';
-  who.hidden = !P.name;
+  $('log-holding').placeholder = DEFAULTS.holding;
+  $('log-business').placeholder = DEFAULTS.business;
+  $('log-owner').textContent = P.owner; // v45: "{Name}’s Captain’s Log" above the date
+  document.title = P.owner;
   const next = formShape();
   if (shape && next !== shape) { flush(); buildForm(); fillForm(); } // labels/checklist changed: rebuild, keeping today's entry
   else form.querySelectorAll('[data-head]').forEach((el) => {
     const f = SECTIONS.flatMap((s) => s.fields).find((x) => x.id === el.dataset.head);
-    if (f) el.textContent = labelOf(f);
+    if (f) el.querySelector('.log-subhead-name').textContent = labelOf(f);
   });
   shape = next;
   $('log-wake').placeholder = P.wake; $('log-bed').placeholder = P.bed;
   $('log-supplements').placeholder = P.supplements.join('\n');
   renderHeader();
 }
-$('log-name').maxLength = NAME_MAX; $('log-initials').maxLength = INITIALS_MAX;
-$('log-enterprise').maxLength = LABEL_MAX; $('log-venture').maxLength = LABEL_MAX;
+$('log-name').maxLength = NAME_MAX;
+$('log-holding').maxLength = LABEL_MAX; $('log-business').maxLength = LABEL_MAX;
 $('log-wake').maxLength = TIME_MAX; $('log-bed').maxLength = TIME_MAX;
 settingsBtn.addEventListener('click', () => {
   settings.hidden = !settings.hidden;
@@ -355,7 +362,7 @@ for (const [k, id] of Object.entries(FIELDS)) {
   el.addEventListener('change', () => { el.value = saveField(k, el.value); renderProfile(); });
 }
 $('log-profile-clear').addEventListener('click', () => {
-  if (!confirm('Clear your Captain’s Log profile (name, initials, enterprise names, birthday, home location, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
+  if (!confirm('Clear your Captain’s Log profile (name, holding company, main business, birthday, home location, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
   clearProfile();
   Object.values(FIELDS).forEach((id) => { $(id).value = ''; });
   homeEl.value = '';
@@ -432,3 +439,13 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) flush
 show(current);
 renderProfile();
 renderHome();
+
+/* v45: desktop equal-height row. The calendar column's height lets the log match it exactly when every
+   section is closed, even on short screens (see .tri-log .log-card max-height in styles.css). */
+(() => {
+  const cal = document.querySelector('.tri-cal');
+  if (!cal || !('ResizeObserver' in window)) return;
+  const set = () => document.documentElement.style.setProperty('--cal-h', `${Math.round(cal.getBoundingClientRect().height)}px`);
+  new ResizeObserver(set).observe(cal);
+  set();
+})();

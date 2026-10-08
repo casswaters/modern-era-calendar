@@ -705,9 +705,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v44 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v44';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v45 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v45';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl44', /app\.js\?v=cl44/.test(html) && /captains-log\.js\?v=cl44/.test(html) && /scene\.js\?v=cl44/.test(html) && /styles\.css\?v=cl44/.test(html));
+  assert('scripts and styles on cl45', /app\.js\?v=cl45/.test(html) && /captains-log\.js\?v=cl45/.test(html) && /scene\.js\?v=cl45/.test(html) && /styles\.css\?v=cl45/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
@@ -720,21 +720,21 @@ console.log('\n=== ambient weather scene ===\n');
   const hits = served.filter((f) => PERSONAL.test(src(f)));
   assert('no hard-coded personal name, initials or enterprise names in served files', hits.length === 0, hits.join(', '));
   const cl = src('./captains-log.js');
-  assert('career heads come from the profile; saved field ids unchanged', /\{ id: 'cw_head', type: 'head', label: \(p\) => p\.enterprise \}/.test(cl) && /\{ id: 'anam_head', type: 'head', label: \(p\) => p\.venture \}/.test(cl) && /id: 'cw_checkin'/.test(cl) && /id: 'anam_pipeline'/.test(cl));
+  assert('career heads come from the profile (holding company, then main business nested under it); saved field ids unchanged', /\{ id: 'cw_head', type: 'head', label: \(p\) => p\.holding,/.test(cl) && /\{ id: 'anam_head', type: 'head', nested: true, label: \(p\) => p\.business,/.test(cl) && /id: 'cw_checkin'/.test(cl) && /id: 'anam_pipeline'/.test(cl));
   const v0 = profileView({});
-  assert('neutral fallbacks: Main work / Side venture, no name, no initials, no birthday', v0.enterprise === 'Main work' && v0.venture === 'Side venture' && v0.name === '' && v0.initials === '' && v0.birthday === '' && DEFAULTS.enterprise === 'Main work');
-  assert('initials derive from the name and feed the enterprise default ("AKL Enterprises")', deriveInitials('Ada King-Lovelace') === 'AKL' && profileView({ name: 'Ada King-Lovelace' }).enterprise === 'AKL Enterprises' && profileView({ name: 'Ada', initials: 'al' }).enterprise === 'AL Enterprises');
-  assert('typed values win over defaults', (() => { const v = profileView({ name: 'Ada', initials: 'AL', enterprise: 'Lovelace Labs', venture: 'Engines', birthday: '1815-12-10' }); return v.enterprise === 'Lovelace Labs' && v.venture === 'Engines' && v.birthday === '1815-12-10' && v.initials === 'AL'; })());
+  assert('neutral fallbacks: Holding company / Main business, no name, no initials, no birthday', v0.holding === 'Holding company' && v0.business === 'Main business' && !v0.holdingSet && !v0.businessSet && v0.name === '' && v0.initials === '' && v0.birthday === '' && v0.owner === 'Captain’s Log');
+  assert('v45: nothing is built from initials (a one-word name no longer makes a one-letter company)', profileView({ name: 'Ada King-Lovelace' }).holding === 'Holding company' && profileView({ name: 'Ada', initials: 'AL' }).holding === 'Holding company' && !/Enterprises/.test(JSON.stringify(profileView({ name: 'Ada' }))));
+  assert('typed values are used exactly as typed (two-letter company names stay whole)', (() => { const v = profileView({ name: 'Ada', holding: 'AL Holdings', business: 'Engines', birthday: '1815-12-10' }); return v.holding === 'AL Holdings' && v.business === 'Engines' && v.holdingSet && v.businessSet && v.birthday === '1815-12-10'; })() && profileView({ enterprise: 'XY Enterprises', venture: 'Acme' }).holding === 'XY Enterprises' && profileView({ enterprise: 'XY Enterprises', venture: 'Acme' }).business === 'Acme');
   assert('cleaning: names like Aretoria (unicode letters, spaces, - \', 24 max); initials letters ≤ 4 upper; labels ≤ 40 without markup', cleanName("  Seán O’Brien ") === "Seán O’Brien" && cleanName('<b>x</b>') === 'bxb' && Array.from(cleanName('y'.repeat(50))).length === 24 && cleanInitials('a.b-c d e') === 'ABCD' && cleanLabel('<script>Acme</script>{x}') === 'scriptAcme/scriptx' && cleanLabel('z'.repeat(80)).length === 40 && cleanDate('2026-13-99') === '2026-13-99' && cleanDate('nope') === '');
   assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 9 && PROFILE_KEYS.includes('mec-log-home'));
   const pj = src('./profile.js');
   assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
   assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
-  assert('profile renders as text (kicker via textContent; heads escaped or textContent)', /who\.textContent = P\.name \?/.test(cl) && /el\.textContent = labelOf\(f\)/.test(cl) && /esc\(labelOf\(f\)\)/.test(cl));
+  assert('profile renders as text (owner title via textContent; heads escaped or textContent)', /\$\('log-owner'\)\.textContent = P\.owner/.test(cl) && /querySelector\('\.log-subhead-name'\)\.textContent = labelOf\(f\)/.test(cl) && /esc\(labelOf\(f\)\)/.test(cl) && /esc\(role\)/.test(cl));
   const html = src('./index.html');
-  assert('Profile panel: name, initials, enterprise, venture, birthday + clear; Birthday button renamed Profile', ['log-name', 'log-initials', 'log-enterprise', 'log-venture', 'log-birthday', 'log-profile-clear'].every((id) => html.includes(`id="${id}"`)) && />Profile<\/button>/.test(html) && !/log-birthday-clear/.test(html));
+  assert('Profile panel: name, holding company, main business, birthday + clear; no side-venture wording', ['log-name', 'log-holding', 'log-business', 'log-birthday', 'log-profile-clear'].every((id) => html.includes(`id="${id}"`)) && />Profile<\/button>/.test(html) && !/log-birthday-clear|log-venture|log-enterprise|log-initials/.test(html));
   assert('clear profile keeps log entries', /clearProfile\(\)/.test(cl) && !/removeItem\(KEY_PREFIX[^)]*\)[^;]*;\s*\n\s*Object\.values\(FIELDS\)/.test(cl) && /function clearProfile\(\) \{ try \{ PROFILE_KEYS\.forEach/.test(pj));
-  assert('export header carries the name when set', /Captain’s Log\$\{P\.name \? ` · \$\{P\.name\}` : ''\}/.test(cl));
+  assert('export header is the ownership title', /lines\.push\(`\$\{P\.owner\} · \$\{format_gregorian/.test(cl));
   assert('life day reads the profile birthday', /const b = P\.birthday;/.test(cl));
 }
 
@@ -830,6 +830,24 @@ console.log('\n=== ambient weather scene ===\n');
   assert('lookup range reads "about 2024 to 2037"', html.includes('<strong>Lookups (about 2024 to 2037):</strong>'));
   assert('empty placeholders are a middle dot, sky temperature starts hidden (no number)', /id="today-mec">·</.test(html) && /id="g-result">·</.test(html) && /<span class="sky-temp" id="sky-temp" hidden><\/span>/.test(html));
   assert('Profile has an optional Home location with "Use my location"; weather strip has the set-location hint', html.includes('id="log-home"') && html.includes('id="log-home-locate"') && /id="sky-set"[^>]*hidden[^>]*>Set a location for local weather</.test(html));
+}
+
+{
+  console.log('\n--- v45: ownership title, holding company > main business, equal-height row ---');
+  const P = await import('./profile.js?v=t45');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), html = src('./index.html'), css = src('./styles.css');
+  assert('ownership title: "{Name}’s Captain’s Log", names ending in s take ’s too, plain title with no name', P.ownerTitle('Ada') === 'Ada’s Captain’s Log' && P.ownerTitle('Chris') === 'Chris’s Captain’s Log' && P.ownerTitle('') === 'Captain’s Log' && P.ownerTitle('123 <>') === 'Captain’s Log');
+  assert('owner title replaces the small name beside the kicker', html.includes('<h2 class="log-owner" id="log-owner">Captain’s Log</h2>') && !/log-who|log-kicker/.test(html));
+  assert('owner title renders crisp (real size, no text shadow or transform)', /\.log-owner \{[^}]*font-size: 1\.02rem[^}]*text-shadow: none/.test(css) && !/\.log-owner \{[^}]*[^-]transform:/.test(css));
+  const served = ['./index.html', './captains-log.js', './profile.js', './app.js'].map(src).join('\n');
+  assert('no "side venture", "Second venture" or "Main work" wording left in served files', !/side venture|second venture|main work/i.test(served));
+  const v = P.profileView({ holding: 'Umbrella Co', business: 'Shop' });
+  assert('roles appear only for the user\'s own names; main business is nested under the holding company', /role: \(p\) => \(p\.holdingSet \? 'holding company' : ''\)/.test(cl) && /main business\$\{p\.holdingSet \? ` under \$\{p\.holding\}` : ''\}/.test(cl) && v.holdingSet && v.businessSet);
+  assert('Copy text heads carry the role', /lines\.push\(`\[\$\{labelOf\(f\)\}\$\{r \? ` \(\$\{r\}\)` : ''\}\]`\)/.test(cl));
+  assert('header sub trimmed to "Year · Modern Era Calendar"', /Year <span id="header-year">·<\/span> · Modern Era Calendar<\/div>/.test(html));
+  assert('desktop row is equal height: stretch, log fills the row, capped at max(screen, calendar)', /align-items: stretch;/.test(css) && /\.tri-log \.log-card \{ flex: 1 1 auto; max-height: max\(calc\(100dvh - 92px\), calc\(var\(--cal-h, 0px\) - 14px\)\)/.test(css) && /\.tri-portal \.portal-card \{ flex: 1 1 auto;/.test(css) && /setProperty\('--cal-h'/.test(cl));
+  assert('equal heights only on desktop (inside the 1100px media query)', (() => { const i = css.indexOf('align-items: stretch; /* v45'); const m = css.lastIndexOf('@media (min-width: 1100px)', i); return m > 0 && css.indexOf('}', css.indexOf('.tri-log .log-body', m)) > i; })());
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
