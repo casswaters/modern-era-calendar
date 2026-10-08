@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=cl44" />
+  <link rel="stylesheet" href="styles.css?v=cl45" />
 </head>
 <body>
   <div class="app">
@@ -35,7 +35,7 @@
         <div class="brand-mark" aria-hidden="true">CL</div>
         <div>
           <h1>Captain’s Log</h1>
-          <div class="sub">Year <span id="header-year">·</span> · Modern Era Calendar &amp; more</div>
+          <div class="sub">Year <span id="header-year">·</span> · Modern Era Calendar</div>
         </div>
       </div>
       <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
@@ -97,7 +97,7 @@
       <aside class="tri-col tri-log" id="captains-log" aria-label="Captain's Log">
         <div class="log-card">
           <div class="log-head">
-            <div class="log-kicker">Captain’s Log <span class="log-who" id="log-who" hidden></span></div>
+            <h2 class="log-owner" id="log-owner">Captain’s Log</h2>
             <div class="log-datebar">
               <button class="icon-btn sm" id="log-prev" type="button" aria-label="Previous day">‹</button>
               <div class="log-date">
@@ -116,12 +116,10 @@
               <div class="log-settings-grid">
                 <label for="log-name">Name <span class="log-hint">shared with Aretoria</span></label>
                 <input type="text" id="log-name" autocomplete="given-name" autocapitalize="words" spellcheck="false" />
-                <label for="log-initials">Initials</label>
-                <input type="text" id="log-initials" autocapitalize="characters" spellcheck="false" />
-                <label for="log-enterprise">Main work / enterprise</label>
-                <input type="text" id="log-enterprise" />
-                <label for="log-venture">Second venture</label>
-                <input type="text" id="log-venture" />
+                <label for="log-holding">Holding company <span class="log-hint">umbrella of your professional activities</span></label>
+                <input type="text" id="log-holding" autocapitalize="words" />
+                <label for="log-business">Main business <span class="log-hint">your main business activity under it</span></label>
+                <input type="text" id="log-business" autocapitalize="words" />
                 <label for="log-birthday">Birthday <span class="log-hint">life-day count</span></label>
                 <input type="date" id="log-birthday" />
                 <label for="log-home">Home location <span class="log-hint">for local weather</span></label>
@@ -318,7 +316,7 @@
             to Apple Notes or any other device; use “Copy text” to paste an entry elsewhere.
           </p>
           <p>
-            <strong>Profile</strong> (in the log) holds your name, initials, enterprise names, birthday, home location, wake and bed
+            <strong>Profile</strong> (in the log) holds your name, your holding company and the main business under it, birthday, home location, wake and bed
             targets and a daily checklist (supplements or anything else), all
             optional and kept only in this browser; blank fields use neutral defaults. Your name is shared with
             Aretoria on this device.
@@ -347,8 +345,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=cl44"></script>
-  <script type="module" src="captains-log.js?v=cl44"></script>
-  <script type="module" src="scene.js?v=cl44"></script>
+  <script type="module" src="app.js?v=cl45"></script>
+  <script type="module" src="captains-log.js?v=cl45"></script>
+  <script type="module" src="scene.js?v=cl45"></script>
 </body>
 </html>
