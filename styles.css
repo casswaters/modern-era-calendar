@@ -808,7 +808,7 @@ body::after {
 .log-check input { accent-color: var(--gold); width: 16px; height: 16px; margin: 0; }
 /* v46: Daily Tracker, the day's overview. One quiet row per area; tap a name to open that area. */
 .trk { flex: 1 1 100%; display: grid; gap: 2px; }
-.trk-row { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 4px; border-radius: 8px; }
+.trk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 38px; padding: 0 4px; border-radius: 8px; }
 .trk-row + .trk-row { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); border-radius: 0; }
 .trk-tick { display: grid; place-items: center; width: 28px; height: 32px; flex: 0 0 auto; cursor: pointer; }
 .trk-box {
@@ -834,7 +834,15 @@ body::after {
 .trk-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trk-sub { flex: 0 1 auto; min-width: 0; font-size: .74rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trk-state { margin-left: auto; font-size: .7rem; color: var(--success); letter-spacing: .02em; }
-.trk-go { color: var(--text-muted); font-size: 1.05rem; line-height: 1; padding-left: 2px; }
+.trk-go { color: var(--text-muted); font-size: 1.05rem; line-height: 1; padding-left: 2px; transition: transform .15s; }
+/* v49: a row opens its entry fields in place */
+.trk-row.open .trk-go { transform: rotate(90deg); color: var(--gold); }
+.trk-row.open .trk-name { color: var(--gold); }
+.trk-panel { flex: 1 1 100%; padding: 2px 2px 12px 36px; }
+.trk-panel[hidden] { display: none; }
+.trk-panel .log-subhead { margin-top: 2px; }
+.trk-panel.solo .log-field > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 420px) { .trk-panel { padding-left: 4px; } }
 .trk-row.done .trk-name, .trk-row.done .trk-label { color: var(--text); }
 .trk-row:not(.done) .trk-name, .trk-row:not(.done) .trk-label { color: color-mix(in srgb, var(--text) 82%, transparent); }
 .trk-input {
@@ -844,9 +852,6 @@ body::after {
 .trk-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--accent-soft); }
 .log-sec, .log-field { scroll-margin-top: 84px; }
 @media (min-width: 1100px) { .log-sec, .log-field { scroll-margin-top: 8px; } }
-.trk-flash { animation: trk-flash 1.6s ease-out; border-radius: 8px; }
-@keyframes trk-flash { 0%, 30% { box-shadow: 0 0 0 2px var(--gold); background: var(--accent-soft); } 100% { box-shadow: 0 0 0 2px transparent; background: transparent; } }
-@media (prefers-reduced-motion: reduce) { .trk-flash { animation: none; box-shadow: 0 0 0 2px var(--gold); } }
 .log-foot {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 9px 14px; border-top: 1px solid var(--border);

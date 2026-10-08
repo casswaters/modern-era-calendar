@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-08, 8:40 AM MT
+**Last updated:** 2026-10-08, 9:45 AM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -34,6 +34,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-08 09:45: v49: one place for the day's areas. Career, Life Journal · Notes · Communication · Social · Care, and Inputs & Outputs are no longer separate dropdowns: each Daily Tracker row (Career, Life Journal / Notes, Communication, Social, Care, Inputs & Outputs) opens its entry fields in place. Main list is Gratitude exercise, Grounding exercise, Default to, Daily Tracker. Life Journal and Notes stay one row (8 rows). Same field ids and storage, so saved entries show as before; Copy text order and headings unchanged (byte-identical for the same entry); auto and hand ticks, N of 8 and Clear day unchanged. Open rows are remembered on this device.
 - 2026-10-08 08:40: v48: ornate Aretoria card in Aretoria's style: double gold rule frame with filigree corner flourishes, a small gold crest above the arch, a second gold ring and soft ivory halo around the arch, engraved gold title with a fine rule and star, gentle inner glow, marble veining kept. One ivory, gold and cosmic palette (the arch's blue and pink tints became ivory and gold). CSS and inline SVG masks only; equal-height row unchanged.
 - 2026-10-08 08:20: v47: one set of daily metrics. The Daily Tracker dropdown is the only place they show: the other sections (Career, Life Journal · Notes · Communication · Social · Care, Inputs & Outputs) no longer carry their own filled-field counts (1/3, 1/8, 1/10), and the tracker's "N of 8" appears once, on its heading (the extra "N of 8 for this day" line inside is gone). Wake/sleep, auto and hand ticks, jump to section and saved data unchanged.
 - 2026-10-08 06:50: v46: the Daily Tracker is the day's overview: Wake and Sleep (time fields with Profile targets) plus Career (shows the Profile holding company and main business), Life Journal / Notes, Communication, Social, Care, and Inputs & Outputs. A row ticks itself when that part of the log has entries for the day (the daily checklist counts toward Inputs & Outputs, so there is still one checklist), can be ticked by hand (saved per day), and a tap opens that section and scrolls to it. Progress reads "N of 8" on the section and in Copy text, which lists each row with a box.

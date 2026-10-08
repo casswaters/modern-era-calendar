@@ -4,16 +4,18 @@
  */
 import { DEFAULTS, SUPP_IDS } from './profile.js?v=cl46';
 
-/* fields: the saved-entry ids that mark the row done automatically. sec / to: where a tap jumps. */
+/* fields: the saved-entry ids that mark the row done automatically.
+   v49: sec + panel: the log section the row's entry fields come from, and which of its fields open inline under the row
+   (Career, Life Journal · Notes · Communication · Social · Care, and Inputs & Outputs are no longer separate dropdowns). */
 export const TRACKER = [
   { id: 'wake', icon: '☀️', label: 'Wake', time: 'wake', target: (p) => (p.wake !== DEFAULTS.wake ? p.wake : ''), fields: ['wake'] },
   { id: 'sleep', icon: '💤', label: 'Sleep', time: 'bed', target: (p) => (p.bed !== DEFAULTS.bed ? p.bed : ''), fields: ['bed'] },
-  { id: 'career', label: 'Career', sub: (p) => [p.holdingSet && p.holding, p.businessSet && p.business].filter(Boolean).join(' · '), sec: 'career', fields: ['cw_checkin', 'anam_pipeline', 'anam_other'] },
-  { id: 'journal', label: 'Life Journal / Notes', sec: 'notes', to: 'notes', fields: ['notes'] },
-  { id: 'comm', label: 'Communication', sec: 'notes', to: 'comm_out', fields: ['comm_out', 'comm_in'] },
-  { id: 'social', label: 'Social', sec: 'notes', to: 'social_fam', fields: ['social_fam', 'social_friends', 'social_col', 'social_adv'] },
-  { id: 'care', label: 'Care', sec: 'notes', to: 'care', fields: ['care'] },
-  { id: 'io', label: 'Inputs & Outputs', sec: 'io', fields: ['drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], checklist: true }
+  { id: 'career', label: 'Career', sub: (p) => [p.holdingSet && p.holding, p.businessSet && p.business].filter(Boolean).join(' · '), sec: 'career', panel: ['cw_head', 'cw_checkin', 'anam_head', 'anam_pipeline', 'anam_other'], fields: ['cw_checkin', 'anam_pipeline', 'anam_other'] },
+  { id: 'journal', label: 'Life Journal / Notes', sec: 'notes', panel: ['notes'], fields: ['notes'] },
+  { id: 'comm', label: 'Communication', sec: 'notes', panel: ['comm_out', 'comm_in'], fields: ['comm_out', 'comm_in'] },
+  { id: 'social', label: 'Social', sec: 'notes', panel: ['social_fam', 'social_friends', 'social_col', 'social_adv'], fields: ['social_fam', 'social_friends', 'social_col', 'social_adv'] },
+  { id: 'care', label: 'Care', sec: 'notes', panel: ['care'], fields: ['care'] },
+  { id: 'io', label: 'Inputs & Outputs', sec: 'io', panel: ['supp_head', 'supps', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], fields: ['drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], checklist: true }
 ];
 const filledVal = (v) => v === true || (typeof v === 'string' && v.trim() !== '');
 /** Pure: each row's state for a day's saved data. checklist rows also count the Profile checklist ticks. */

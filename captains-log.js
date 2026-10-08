@@ -10,7 +10,7 @@ import {
 } from './mec.js?v=cl19';
 import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl46';
 import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl42';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl46';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl49';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -65,7 +65,9 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'career', title: 'Career',
+    // v49: Career, Life Journal · Notes · Communication · Social · Care, and Inputs & Outputs open inside their Daily Tracker rows
+    // (inTracker: no dropdown of their own). They stay here so field ids, labels and the Copy text order and headings are unchanged.
+    id: 'career', title: 'Career', inTracker: true,
     fields: [
       { id: 'cw_head', type: 'head', label: (p) => p.holding, role: (p) => (p.holdingSet ? 'holding company' : '') },
       { id: 'cw_checkin', type: 'area', label: 'Check in (Schedule · Emails · Deals)', rows: 3 },
@@ -75,7 +77,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'notes', title: 'Life Journal · Notes · Communication · Social · Care',
+    id: 'notes', title: 'Life Journal · Notes · Communication · Social · Care', inTracker: true,
     fields: [
       { id: 'notes', type: 'area', label: 'Life Journal / Notes', rows: 5, placeholder: 'Freeform notes…' },
       { id: 'comm_out', type: 'area', label: 'Personal Communication (Outbound)', rows: 2 },
@@ -88,7 +90,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'io', title: 'Inputs & Outputs',
+    id: 'io', title: 'Inputs & Outputs', inTracker: true,
     fields: [
       { id: 'supp_head', type: 'head', label: 'Supplements' },
       { id: 'supps', type: 'supps' }, // v39: one check per Profile checklist line (ids from SUPP_IDS)
@@ -179,6 +181,15 @@ function fieldHtml(f) {
   return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))}</label><input type="text" id="${id}" data-k="${f.id}" placeholder="${esc(f.placeholder || '')}" /></div>`;
 }
 
+/** v49: the entry fields a tracker row opens inline (from its log section; the checklist expands to one check per line). */
+function panelFields(r) {
+  const sec = SECTIONS.find((s) => s.id === r.sec);
+  if (!sec || !r.panel) return [];
+  return fieldsOf({ fields: sec.fields.filter((f) => r.panel.includes(f.id)) });
+}
+const ROWS_KEY = 'mec-log-trk-open'; // v49: which tracker rows are open (UI state only)
+let openRows = (() => { try { return JSON.parse(localStorage.getItem(ROWS_KEY) || '{}') || {}; } catch { return {}; } })();
+
 function trackerHtml() {
   const rows = TRACKER.map((r) => {
     const box = `<input type="checkbox" class="trk-box" data-trk="${r.id}" aria-label="${esc(r.label)} done" />`;
@@ -189,8 +200,13 @@ function trackerHtml() {
         `<input type="text" class="trk-input" id="log-f-${r.time}" data-k="${r.time}" placeholder="${r.time === 'wake' ? 'Wake time' : 'Bedtime'}" autocomplete="off" /></div>`;
     }
     const sub = r.sub ? r.sub(P) : '';
-    return `<div class="trk-row" data-row="${r.id}"><label class="trk-tick">${box}</label>` +
-      `<button type="button" class="trk-jump" data-jump="${r.id}" title="Open ${esc(r.label)}"><span class="trk-name">${esc(r.label)}</span>${sub ? `<span class="trk-sub">${esc(sub)}</span>` : ''}<span class="trk-state" aria-hidden="true"></span><span class="trk-go" aria-hidden="true">›</span></button></div>`;
+    const fields = panelFields(r);
+    // a lone field whose label repeats the row name shows without its label (still read out)
+    const solo = fields.length === 1 && labelOf(fields[0]) === r.label;
+    const open = !!openRows[r.id];
+    return `<div class="trk-row${open ? ' open' : ''}" data-row="${r.id}"><label class="trk-tick">${box}</label>` +
+      `<button type="button" class="trk-jump" data-jump="${r.id}" aria-expanded="${open}" aria-controls="trk-p-${r.id}"><span class="trk-name">${esc(r.label)}</span>${sub ? `<span class="trk-sub">${esc(sub)}</span>` : ''}<span class="trk-state" aria-hidden="true"></span><span class="trk-go" aria-hidden="true">›</span></button>` +
+      `<div class="trk-panel log-grid${solo ? ' solo' : ''}" id="trk-p-${r.id}" role="region" aria-label="${esc(r.label)}"${open ? '' : ' hidden'}>${fields.map(fieldHtml).join('')}</div></div>`;
   }).join('');
   return `<div class="trk" role="group" aria-label="Daily Tracker">${rows}</div>`;
 }
@@ -203,7 +219,7 @@ function cueLines(f) {
 
 function buildForm() {
   const saved = openState() || {};
-  form.innerHTML = SECTIONS.map(s => {
+  form.innerHTML = SECTIONS.filter((s) => !s.inTracker).map(s => {
     const open = s.id in saved ? saved[s.id] : !!s.open;
     return `<details class="log-sec" data-sec="${s.id}"${open ? ' open' : ''}>` +
       `<summary><span class="log-sec-title">${esc(s.title)}</span>${s.tracker ? `<span class="log-count" data-count="${s.id}"></span>` : ''}</summary>` + // v47: the tracker carries the day's only count
@@ -358,7 +374,8 @@ function asText() {
 buildForm();
 form.addEventListener('input', () => { updateTracker(readForm()); scheduleSave(); });
 form.addEventListener('change', scheduleSave);
-// v46: tracker rows. A tick (when the area has no entries yet) is saved for the day; a tap jumps to the area.
+// v46: tracker rows. A tick (when the area has no entries yet) is saved for the day.
+// v49: tapping a row opens its entry fields in place (no separate dropdowns to jump to).
 form.addEventListener('click', (e) => {
   const box = e.target.closest('[data-trk]');
   if (box) { box.dataset.manual = box.checked ? '1' : '0'; updateCounts(readForm()); scheduleSave(); return; }
@@ -366,21 +383,25 @@ form.addEventListener('click', (e) => {
   if (jump) jumpTo(jump.dataset.jump);
 });
 function jumpTo(rowId) {
-  const r = TRACKER.find((x) => x.id === rowId);
-  if (!r || !r.sec) return;
-  const sec = form.querySelector(`details.log-sec[data-sec="${r.sec}"]`);
-  if (!sec) return;
-  if (!sec.open) sec.open = true; // the toggle listener saves the open state
-  const target = (r.to && $(`log-f-${r.to}`)?.closest('.log-field')) || sec;
+  const row = form.querySelector(`.trk-row[data-row="${rowId}"]`);
+  const panel = row && row.querySelector('.trk-panel');
+  if (!panel) return;
+  const open = panel.hidden;
+  panel.hidden = !open;
+  row.classList.toggle('open', open);
+  row.querySelector('[data-jump]').setAttribute('aria-expanded', String(open));
+  openRows[rowId] = open;
+  try { localStorage.setItem(ROWS_KEY, JSON.stringify(openRows)); } catch {}
+  if (!open) return;
+  // keep the opened fields in view: scroll the log's own body (desktop) or the page (phones, under the sticky bar)
   requestAnimationFrame(() => {
-    // scroll the log's own body when it scrolls (desktop), else the page (phones, under the sticky bar)
     const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
     const body = form, inner = body.scrollHeight > body.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(body).overflowY);
-    const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-    if (inner) body.scrollTo({ top: body.scrollTop + target.getBoundingClientRect().top - body.getBoundingClientRect().top - margin, behavior });
-    else window.scrollTo({ top: scrollY + target.getBoundingClientRect().top - margin, behavior });
-    target.classList.remove('trk-flash'); void target.offsetWidth; target.classList.add('trk-flash');
-    setTimeout(() => target.classList.remove('trk-flash'), 1600);
+    const view = inner ? body.getBoundingClientRect() : { top: 76, bottom: innerHeight - 70 };
+    const r = row.getBoundingClientRect();
+    if (r.bottom <= view.bottom && r.top >= view.top) return;
+    const dy = Math.min(r.top - view.top - 6, r.bottom - view.bottom + 6);
+    if (inner) body.scrollTo({ top: body.scrollTop + dy, behavior }); else window.scrollTo({ top: scrollY + dy, behavior });
   });
 }
 
