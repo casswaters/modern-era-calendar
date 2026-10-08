@@ -705,9 +705,9 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v45 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v45';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v46 precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v46';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
-  assert('scripts and styles on cl45', /app\.js\?v=cl45/.test(html) && /captains-log\.js\?v=cl45/.test(html) && /scene\.js\?v=cl45/.test(html) && /styles\.css\?v=cl45/.test(html));
+  assert('scripts and styles on cl46', /app\.js\?v=cl46/.test(html) && /captains-log\.js\?v=cl46/.test(html) && /scene\.js\?v=cl46/.test(html) && /styles\.css\?v=cl46/.test(html));
   assert('About points to the standalone site', /Enter Aretoria<\/strong> opens the Aretoria site/.test(html));
 }
 
@@ -715,7 +715,7 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v38: Captain\'s Log profile (name, initials, enterprise names, birthday), local only ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
   const OWNER = String.fromCharCode(67, 97, 115, 115, 105, 100, 121);
-  const served = ['./index.html', './app.js', './captains-log.js', './profile.js', './scene.js', './weather.js', './mec.js', './styles.css', './sw.js', './manifest.webmanifest', './aretoria.js', './aretoria/index.html', './mec.test.js'];
+  const served = ['./index.html', './app.js', './captains-log.js', './profile.js', './scene.js', './weather.js', './mec.js', './styles.css', './sw.js', './manifest.webmanifest', './aretoria.js', './aretoria/index.html', './tracker.js', './mec.test.js'];
   const PERSONAL = new RegExp([OWNER, ['C', 'W'].join('') + ' Enterprises', '\\b' + ['An', 'am'].join('') + '\\b', ['Optimal', 'Amino'].join(''), '\\b' + ['A', 'G1'].join('') + '\\b', ['Psyl', 'lium'].join(''), ['Crea', 'tine 10g'].join(''), '6:20' + 'am'].join('|'), 'i'); // built at runtime so this file stays clean
   const hits = served.filter((f) => PERSONAL.test(src(f)));
   assert('no hard-coded personal name, initials or enterprise names in served files', hits.length === 0, hits.join(', '));
@@ -726,7 +726,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v45: nothing is built from initials (a one-word name no longer makes a one-letter company)', profileView({ name: 'Ada King-Lovelace' }).holding === 'Holding company' && profileView({ name: 'Ada', initials: 'AL' }).holding === 'Holding company' && !/Enterprises/.test(JSON.stringify(profileView({ name: 'Ada' }))));
   assert('typed values are used exactly as typed (two-letter company names stay whole)', (() => { const v = profileView({ name: 'Ada', holding: 'AL Holdings', business: 'Engines', birthday: '1815-12-10' }); return v.holding === 'AL Holdings' && v.business === 'Engines' && v.holdingSet && v.businessSet && v.birthday === '1815-12-10'; })() && profileView({ enterprise: 'XY Enterprises', venture: 'Acme' }).holding === 'XY Enterprises' && profileView({ enterprise: 'XY Enterprises', venture: 'Acme' }).business === 'Acme');
   assert('cleaning: names like Aretoria (unicode letters, spaces, - \', 24 max); initials letters ≤ 4 upper; labels ≤ 40 without markup', cleanName("  Seán O’Brien ") === "Seán O’Brien" && cleanName('<b>x</b>') === 'bxb' && Array.from(cleanName('y'.repeat(50))).length === 24 && cleanInitials('a.b-c d e') === 'ABCD' && cleanLabel('<script>Acme</script>{x}') === 'scriptAcme/scriptx' && cleanLabel('z'.repeat(80)).length === 40 && cleanDate('2026-13-99') === '2026-13-99' && cleanDate('nope') === '');
-  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 9 && PROFILE_KEYS.includes('mec-log-home'));
+  assert('keys: name shared with Aretoria; rest under mec-log-*; birthday key unchanged', NAME_KEY === 'mec-aretoria:name' && NAME_ASKED_KEY === 'mec-aretoria:name-asked' && INITIALS_KEY === 'mec-log-initials' && WORK_KEY === 'mec-log-enterprise' && VENTURE_KEY === 'mec-log-venture' && BDAY_KEY === 'mec-log-birthday' && PROFILE_KEYS.length === 10 && PROFILE_KEYS.includes('mec-log-home') && PROFILE_KEYS.includes('mec-log-words'));
   const pj = src('./profile.js');
   assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
   assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
@@ -749,7 +749,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('typed targets and checklist win; checklist cleaned, blank lines dropped, capped at 6', v.wake === '5:30am' && v.bed === '9:30pm' && v.supplements.length === 6 && v.supplements[1] === 'Vitamin D b' && v.supplements[0] === 'Fish oil');
   assert('saved entries keep their values: first three checklist lines reuse the old ids', JSON.stringify(P.SUPP_IDS.slice(0, 3)) === JSON.stringify(['supp_620', 'supp_930', 'supp_9pm']) && P.SUPP_IDS.length === 6);
   assert('keys mec-log-wake / -bed / -supplements; times ≤ 12 chars', P.WAKE_KEY === 'mec-log-wake' && P.BED_KEY === 'mec-log-bed' && P.SUPPS_KEY === 'mec-log-supplements' && P.cleanTime('x'.repeat(30)).length === 12);
-  assert('log renders tracker labels and checklist from the profile', /label: \(p\) => `\$\{p\.wake\} ☀️`/.test(cl) && /label: \(p\) => `\$\{p\.bed\} 💤`/.test(cl) && /\{ id: 'supps', type: 'supps' \}/.test(cl) && /P\.supplements\.map\(\(label, i\) => \(\{ id: SUPP_IDS\[i\], type: 'check', label \}\)\)/.test(cl));
+  assert('log renders tracker labels and checklist from the profile', /target: \(p\) => \(p\.wake !== DEFAULTS\.wake \? p\.wake : ''\)/.test(src('./tracker.js')) && /target: \(p\) => \(p\.bed !== DEFAULTS\.bed \? p\.bed : ''\)/.test(src('./tracker.js')) && /\{ id: 'supps', type: 'supps' \}/.test(cl) && /P\.supplements\.map\(\(label, i\) => \(\{ id: SUPP_IDS\[i\], type: 'check', label \}\)\)/.test(cl));
   assert('a changed checklist rebuilds the form without losing the day\'s entry', /if \(shape && next !== shape\) \{ flush\(\); buildForm\(\); fillForm\(\); \}/.test(cl));
   assert('Profile panel has wake, bed and checklist fields', ['log-wake', 'log-bed', 'log-supplements'].every((id) => html.includes(`id="${id}"`)));
 }
@@ -758,11 +758,12 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v40: S.C.O.R.E. typed out with one plain explanatory line ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
   const cl = src('./captains-log.js'), css = src('./styles.css');
-  const g1 = cl.split('\n').find((l) => /id: 'g1'/.test(l)) || '';
-  assert('g1 cue spells out S.C.O.R.E.', g1.includes("cue: 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.'"));
-  assert('g1 note explains it plainly', g1.includes("note: 'A way to anchor in gratitude instead of breezing through it.'"));
+  const PW = await import('./profile.js?v=t40');
+  const g1 = PW.WORD_DEFAULTS.g1; // v46: default cue text lives in profile.js (editable in Profile)
+  assert('g1 cue spells out S.C.O.R.E.', g1.split('\n')[0] === 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.');
+  assert('g1 note explains it plainly', g1.split('\n')[1] === 'A way to anchor in gratitude instead of breezing through it.');
   assert('new wording has no em dashes or tildes', !/[—~]/.test(g1));
-  assert('note renders escaped as its own hint line (and in the text export)', /f\.note \? `<p class="log-cue-hint log-cue-note">\$\{esc\(f\.note\)\}<\/p>`/.test(cl) && /if \(f\.note\) lines\.push\(f\.note\);/.test(cl) && /\.log-cue-note \{/.test(css));
+  assert('note renders escaped as its own hint line (and in the text export)', /`<p class="log-cue-hint\$\{i \? ' log-cue-note' : ''\}">\$\{esc\(l\)\}<\/p>`/.test(cl) && /lines\.push\(\.\.\.cueLines\(f\)\);/.test(cl) && /\.log-cue-note \{/.test(css));
 }
 
 {
@@ -774,7 +775,7 @@ console.log('\n=== ambient weather scene ===\n');
   const bad = lits.filter((l) => /[—~]/.test(l));
   assert('no string literal in captains-log.js (labels, cues, notes, export) has an em dash or tilde', bad.length === 0, bad.join(' | '));
   const at = cl.slice(cl.indexOf('function asText()'), cl.indexOf('/* ---------- Wire up'));
-  assert('Copy text: cue and note on their own lines, no em dash separator', /lines\.push\(labelOf\(f\)\);\s*if \(f\.cue\) lines\.push\(f\.cue\);\s*if \(f\.note\) lines\.push\(f\.note\);/.test(at) && !/[—~]/.test(at));
+  assert('Copy text: cue and note on their own lines, no em dash separator', /lines\.push\(labelOf\(f\)\);\s*lines\.push\(\.\.\.cueLines\(f\)\);/.test(at) && !/[—~]/.test(at));
   const M = await import('./mec.js');
   let dateBad = '';
   for (let d = 0; d < 731 && !dateBad; d++) {
@@ -848,6 +849,49 @@ console.log('\n=== ambient weather scene ===\n');
   assert('header sub trimmed to "Year · Modern Era Calendar"', /Year <span id="header-year">·<\/span> · Modern Era Calendar<\/div>/.test(html));
   assert('desktop row is equal height: stretch, log fills the row, capped at max(screen, calendar)', /align-items: stretch;/.test(css) && /\.tri-log \.log-card \{ flex: 1 1 auto; max-height: max\(calc\(100dvh - 92px\), calc\(var\(--cal-h, 0px\) - 14px\)\)/.test(css) && /\.tri-portal \.portal-card \{ flex: 1 1 auto;/.test(css) && /setProperty\('--cal-h'/.test(cl));
   assert('equal heights only on desktop (inside the 1100px media query)', (() => { const i = css.indexOf('align-items: stretch; /* v45'); const m = css.lastIndexOf('@media (min-width: 1100px)', i); return m > 0 && css.indexOf('}', css.indexOf('.tri-log .log-body', m)) > i; })());
+}
+
+{
+  console.log('\n--- v46: Daily Tracker is the day\'s overview (wake, sleep, career, journal, comm, social, care, I/O) ---');
+  const T = await import('./tracker.js?v=t46');
+  const P = await import('./profile.js?v=t45');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), html = src('./index.html'), css = src('./styles.css'), sw = src('./sw.js');
+  assert('eight rows in order: Wake, Sleep, Career, Life Journal / Notes, Communication, Social, Care, Inputs & Outputs', T.TRACKER.map((r) => r.label).join('|') === 'Wake|Sleep|Career|Life Journal / Notes|Communication|Social|Care|Inputs & Outputs');
+  const e = T.trackerStatus({});
+  assert('blank day: 0 of 8, nothing done', e.done === 0 && e.total === 8 && e.rows.every((r) => !r.done));
+  const st = T.trackerStatus({ wake: '6:10am', cw_checkin: 'Emails', social_friends: 'Sam', supp_620: true, notes: '   ', trk_care: true });
+  const by = Object.fromEntries(st.rows.map((r) => [r.id, r]));
+  assert('rows mark done from that day\'s entries (wake time, career, any social line, a checklist tick counts for I/O)', by.wake.auto && by.career.auto && by.social.auto && by.io.auto && st.done === 5);
+  assert('whitespace is not content; a hand tick marks a row done without entries', !by.journal.done && by.care.manual && !by.care.auto && by.care.done);
+  assert('every row\'s fields exist in the log template (no orphan ids)', T.TRACKER.every((r) => r.fields.every((k) => k === 'wake' || k === 'bed' || cl.includes(`id: '${k}'`))));
+  assert('career row names come from Profile (only when typed), targets only when set', T.TRACKER[2].sub(P.profileView({ holding: 'Umbrella Co', business: 'Shop' })) === 'Umbrella Co · Shop' && T.TRACKER[2].sub(P.profileView({})) === '' && T.TRACKER[0].target(P.profileView({ wake: '6am' })) === '6am' && T.TRACKER[0].target(P.profileView({})) === '');
+  assert('jump targets: career and I/O open their sections; journal, comm, social, care open Notes at their field', by && T.TRACKER.filter((r) => r.sec).map((r) => `${r.sec}:${r.to || ''}`).join(' ') === 'career: notes:notes notes:comm_out notes:social_fam notes:care io:');
+  assert('wake / bed keep their saved field ids inline in the tracker', /data-k="\$\{r\.time\}"/.test(cl) && T.TRACKER[0].time === 'wake' && T.TRACKER[1].time === 'bed');
+  assert('only hand ticks are saved (trk_<id>); auto rows are locked done', /data\[`trk_\$\{el\.dataset\.trk\}`\] = el\.dataset\.manual === '1'/.test(cl) && /box\.disabled = r\.auto/.test(cl));
+  assert('tapping a row opens its section and scrolls to it', /function jumpTo\(rowId\)/.test(cl) && /sec\.open = true/.test(cl) && /scrollIntoView/.test(cl));
+  assert('summary chip and line read "N of 8"', /el\.textContent = `\$\{st\.done\} of \$\{st\.total\}`/.test(cl) && /`\$\{st\.done\} of \$\{st\.total\} for this day`/.test(cl));
+  assert('Copy text lists each row with a box and the progress in the heading', /lines\.push\(`\$\{row\.done \? '☑' : '☐'\} \$\{r\.label\}\$\{extra\}`\)/.test(cl) && /` \(\$\{st\.done\} of \$\{st\.total\}\)`/.test(cl));
+  assert('checklist stays in Inputs & Outputs (one checklist, counted by the tracker, not duplicated)', (cl.match(/type: 'supps'/g) || []).length === 1 && T.TRACKER.filter((r) => r.checklist).length === 1);
+  assert('tracker.js precached by SW v46; tracker rows styled; jump targets clear the sticky bar on phones', /'\.\/tracker\.js'/.test(sw) && /const CACHE = 'captains-log-v46';/.test(sw) && /\.trk-row \{/.test(css) && /scroll-margin-top/.test(css) && /tracker\.js\?v=cl46/.test(cl));
+  assert('no em dash or tilde in tracker labels', !/[\u2014~]/.test(T.TRACKER.map((r) => r.label).join(' ')));
+}
+
+{
+  console.log('\n--- v46: header beliefs and gratitude cues are editable in Profile (original text as defaults) ---');
+  const P = await import('./profile.js?v=t46w');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), html = src('./index.html');
+  const d = P.wordsView('');
+  assert('defaults are the original text (both beliefs, S.C.O.R.E., g2, g4, g8; no cue on 3, 5, 6, 7)', d.b1 === 'Belief creates consequence.' && d.b2 === 'Mutual confidence is the foundation of all satisfactory human relationships.' && d.g1.startsWith('S.C.O.R.E.: Sincerity') && d.g2.startsWith('Keep it simple.') && d.g4 === 'Navigate consciously. Don’t over promise.' && d.g8.startsWith('Stay grounded') && !d.g3 && !d.g5 && !d.g6 && !d.g7);
+  const v = P.wordsView(JSON.stringify({ b1: 'Own <b>belief</b>', g2: '', g3: 'line one\n\nline two\nthree\nfour', b2: 'a\nb' }));
+  assert('edits win; an emptied cue stays empty; markup stripped; cues up to 3 lines, beliefs 1 line', v.b1 === 'Own bbelief/b' && v.g2 === '' && v.g3 === 'line one\nline two\nthree' && v.b2 === 'a' && v.g1 === d.g1);
+  assert('bad JSON falls back to defaults', JSON.stringify(P.wordsView('{nope')) === JSON.stringify(d));
+  assert('one storage key, cleared with the profile', P.WORDS_KEY === 'mec-log-words' && P.PROFILE_KEYS.includes(P.WORDS_KEY));
+  assert('gratitude cues read from Profile, no cue text left in the log template', /function cueLines\(f\)/.test(cl) && /if \(f\.words\) return \(P\.words\[f\.id\]/.test(cl) && !/S\.C\.O\.R\.E\./.test(cl) && (cl.match(/type: 'cue', words: true/g) || []).length === 8);
+  assert('header beliefs render from Profile and hide when emptied; Copy text uses them', /id="log-belief-b1"/.test(html) && /id="log-belief-b2"/.test(html) && /el\.hidden = !P\.words\[id\]/.test(cl) && /const beliefs = \[P\.words\.b1, P\.words\.b2\]\.filter\(Boolean\)/.test(cl));
+  assert('Profile has a quiet "Header beliefs and gratitude cues" group with a restore button', /<details class="log-words" id="log-words">/.test(html) && /id="log-words-grid"/.test(html) && /id="log-words-reset"/.test(html) && /function buildWordFields\(\)/.test(cl));
+  assert('no em dash or tilde in the default words', !/[\u2014~]/.test(Object.values(d).join(' ')));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
