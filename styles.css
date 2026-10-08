@@ -808,7 +808,6 @@ body::after {
 .log-check input { accent-color: var(--gold); width: 16px; height: 16px; margin: 0; }
 /* v46: Daily Tracker, the day's overview. One quiet row per area; tap a name to open that area. */
 .trk { flex: 1 1 100%; display: grid; gap: 2px; }
-.trk-summary { margin: 0 0 4px; font-size: .72rem; color: var(--text-muted); letter-spacing: .01em; }
 .trk-row { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 4px; border-radius: 8px; }
 .trk-row + .trk-row { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); border-radius: 0; }
 .trk-tick { display: grid; place-items: center; width: 28px; height: 32px; flex: 0 0 auto; cursor: pointer; }
