@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-08, 6:16 AM MT
+**Last updated:** 2026-10-08, 6:50 AM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -17,7 +17,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Settle the open decisions below.
 
 ## Next
-- Decide on the remaining personal template content (see open decisions): standing cues and header beliefs.
+- (empty; see Ideas)
 
 ## Later
 - 3D animated companion (cross-ref: Aretoria ROADMAP, Later): the visitor's reflection guide (Irishnu for Cassidy) as a 3D animated character who hangs around the user's Captain's Log in various moods and character phases. Ties to Aretoria's reflection-guide feature (custom fantasy name + costume).
@@ -28,11 +28,14 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Link a Captain's Log entry to the Aretoria virtue reflected on that day (both sites share the casswaters.github.io origin, so the shared name and realm reflections are already visible to both).
 
 ## Open decisions (waiting on Cassidy)
-- Personal template content still in code (flagged; kept as defaults): the standing cues under the gratitude questions ("S.C.O.R.E.", typed out in v40 as Sincerity, Consistency, Originality, Reflection, Expression with the line "A way to anchor in gratitude instead of breezing through it." and still a default cue; "Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.", "Navigate consciously. Don’t over promise.", "Stay grounded in the miracle. Compound efforts. Create. Build.") and the two header beliefs. Keep as the shared template, or make them editable? (Supplements and wake/bed targets moved to Profile in v39.)
+- Daily Tracker: Life Journal and Notes share one field and one tracker row ("Life Journal / Notes", merged on 2026-10-05). Split them back into two fields and two rows (9 rows), or keep one?
+- Resolved 2026-10-08: the two header beliefs and the standing gratitude cues (S.C.O.R.E. and the rest) are editable in Profile, with Cassidy's text as the defaults (shipped in v46).
 - Resolved 2026-10-07: the St. George, UT weather default is gone (v42). Weather follows this device when shared, else the optional Profile home location, else nothing: a neutral earth vista with a "Set a location for local weather" hint and no weather numbers.
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-08 06:50: v46: the Daily Tracker is the day's overview: Wake and Sleep (time fields with Profile targets) plus Career (shows the Profile holding company and main business), Life Journal / Notes, Communication, Social, Care, and Inputs & Outputs. A row ticks itself when that part of the log has entries for the day (the daily checklist counts toward Inputs & Outputs, so there is still one checklist), can be ticked by hand (saved per day), and a tap opens that section and scrolls to it. Progress reads "N of 8" on the section and in Copy text, which lists each row with a box.
+- 2026-10-08 06:50: v46: header beliefs and gratitude cues editable in Profile ("Header beliefs and gratitude cues"; Cassidy's original text is the default; first line is the cue, more lines are notes; an emptied field shows nothing; "Restore original text" puts them back). Copy text follows the edits.
 - 2026-10-08 06:16: v45: header and Profile. Cassidy's name sits above the date as an ownership title ("Cassidy's Captain's Log"; names ending in s take 's), larger and crisp, with a calmer log header (one meta line) and a shorter topbar subtitle. Profile names are used exactly as typed (nothing is built from initials, so "CW Enterprises" stays whole): Holding company (CW Enterprises) and Main business (Anam), shown in Career as holding company > main business; neutral fallbacks "Holding company" / "Main business", never "side venture". The Initials field is retired from Profile (its saved value is kept).
 - 2026-10-08 06:16: v45: desktop equal-height row. With every section closed the log is exactly as tall as the calendar column, and Aretoria matches both; open sections grow the log up to the screen height and scroll inside. Phones keep natural stacked heights.
 - 2026-10-07 17:05: v44: the no-location earth vista is time-neutral. One fixed, softly and evenly lit Earth from orbit (slow rotation kept, still under reduced motion); it never reads the clock or time zone, so no time-of-day label, sun, moon, terminator or city lights. Caption is just "Earth vista". Real time of day returns once a device or home location is set. Test proves the scene and SVG are identical across clocks and time zones.

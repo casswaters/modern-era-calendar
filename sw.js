@@ -1,6 +1,6 @@
-/* MEC service worker — network-first app shell, offline fallback (Captain's Log; captains-log-v45).
+/* MEC service worker — network-first app shell, offline fallback (Captain's Log; captains-log-v46).
    v38: Aretoria is no longer embedded (it lives at casswaters.github.io/aretoria); activate clears the old caches with its art. */
-const CACHE = 'captains-log-v45';
+const CACHE = 'captains-log-v46';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './weather.js',
   './captains-log.js',
   './profile.js',
+  './tracker.js',
   './scene.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

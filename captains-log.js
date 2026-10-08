@@ -8,8 +8,9 @@ import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
 } from './mec.js?v=cl19';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS } from './profile.js?v=cl45';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl46';
 import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl42';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl46';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -23,14 +24,15 @@ const SECTIONS = [
   {
     id: 'gratitude', title: 'Gratitude exercise', open: true,
     fields: [
-      { id: 'g1', type: 'cue', label: '1. What am I grateful for?', cue: 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.', note: 'A way to anchor in gratitude instead of breezing through it.' },
-      { id: 'g2', type: 'cue', label: '2. Who do I love?', cue: 'Keep it simple. Don’t overclock my energy. Love isn’t a fixing agent.' },
-      { id: 'g3', type: 'cue', label: '3. Why am I so happy?' },
-      { id: 'g4', type: 'cue', label: '4. What am I committed to?', cue: 'Navigate consciously. Don’t over promise.' },
-      { id: 'g5', type: 'cue', label: '5. How committed am I?' },
-      { id: 'g6', type: 'cue', label: '6. What is my intention today?' },
-      { id: 'g7', type: 'cue', label: '7. What is my wish for today?' },
-      { id: 'g8', type: 'cue', label: '8. Why am I here?', cue: 'Stay grounded in the miracle. Compound efforts. Create. Build.' }
+      // v46: the cue under each question comes from Profile (WORD_DEFAULTS in profile.js holds the original text)
+      { id: 'g1', type: 'cue', words: true, label: '1. What am I grateful for?' },
+      { id: 'g2', type: 'cue', words: true, label: '2. Who do I love?' },
+      { id: 'g3', type: 'cue', words: true, label: '3. Why am I so happy?' },
+      { id: 'g4', type: 'cue', words: true, label: '4. What am I committed to?' },
+      { id: 'g5', type: 'cue', words: true, label: '5. How committed am I?' },
+      { id: 'g6', type: 'cue', words: true, label: '6. What is my intention today?' },
+      { id: 'g7', type: 'cue', words: true, label: '7. What is my wish for today?' },
+      { id: 'g8', type: 'cue', words: true, label: '8. Why am I here?' }
     ]
   },
   {
@@ -55,10 +57,11 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'tracker', title: 'Daily Tracker',
+    // v46: the day's overview. One row per area; a row is done when that area has entries for the day
+    // (or when ticked by hand). Wake and Sleep keep their time fields (ids wake / bed) inline.
+    id: 'tracker', title: 'Daily Tracker', tracker: true,
     fields: [
-      { id: 'wake', type: 'text', label: (p) => `${p.wake} ☀️`, placeholder: 'Wake time' },
-      { id: 'bed', type: 'text', label: (p) => `${p.bed} 💤`, placeholder: 'Bedtime' }
+      { id: 'tracker_rows', type: 'tracker' }
     ]
   },
   {
@@ -109,7 +112,7 @@ const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
 const roleOf = (f) => (typeof f.role === 'function' ? f.role(P) : f.role || '');
 /** A section's fields with the Profile checklist expanded into check fields. */
 const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.map((label, i) => ({ id: SUPP_IDS[i], type: 'check', label })) : [f]));
-const formShape = () => JSON.stringify(SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f), roleOf(f)])));
+const formShape = () => JSON.stringify([SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f), roleOf(f)])), TRACKER.map((r) => [r.target ? r.target(P) : '', r.sub ? r.sub(P) : '']), P.words]);
 function todayG() {
   const n = new Date();
   return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() };
@@ -158,10 +161,10 @@ function fieldHtml(f) {
     return `<div class="log-subhead${f.nested ? ' nested' : ''}" data-head="${f.id}"><span class="log-subhead-name">${esc(labelOf(f))}</span>${role ? `<span class="log-subhead-role">${esc(role)}</span>` : ''}</div>`;
   }
   if (f.type === 'cue') {
-    const hint = (f.cue ? `<p class="log-cue-hint">${esc(f.cue)}</p>` : '')
-      + (f.note ? `<p class="log-cue-hint log-cue-note">${esc(f.note)}</p>` : '');
+    const hint = cueLines(f).map((l, i) => `<p class="log-cue-hint${i ? ' log-cue-note' : ''}">${esc(l)}</p>`).join('');
     return `<div class="log-cue"><p class="log-cue-q">${esc(labelOf(f))}</p>${hint}</div>`;
   }
+  if (f.type === 'tracker') return trackerHtml();
   if (f.type === 'check') {
     return `<label class="${cls} log-check"><input type="checkbox" id="${id}" data-k="${f.id}" /> <span>${esc(labelOf(f))}</span></label>`;
   }
@@ -174,6 +177,28 @@ function fieldHtml(f) {
     return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))}</label><textarea id="${id}" data-k="${f.id}" rows="${f.rows || 2}" placeholder="${esc(f.placeholder || '')}"></textarea></div>`;
   }
   return `<div class="${cls}"><label for="${id}">${esc(labelOf(f))}</label><input type="text" id="${id}" data-k="${f.id}" placeholder="${esc(f.placeholder || '')}" /></div>`;
+}
+
+function trackerHtml() {
+  const rows = TRACKER.map((r) => {
+    const box = `<input type="checkbox" class="trk-box" data-trk="${r.id}" aria-label="${esc(r.label)} done" />`;
+    if (r.time) {
+      const target = r.target(P);
+      return `<div class="trk-row trk-time" data-row="${r.id}"><label class="trk-tick">${box}</label>` +
+        `<label class="trk-label" for="log-f-${r.time}"><span class="trk-icon" aria-hidden="true">${r.icon}</span>${esc(r.label)}${target ? `<span class="trk-sub">target ${esc(target)}</span>` : ''}</label>` +
+        `<input type="text" class="trk-input" id="log-f-${r.time}" data-k="${r.time}" placeholder="${r.time === 'wake' ? 'Wake time' : 'Bedtime'}" autocomplete="off" /></div>`;
+    }
+    const sub = r.sub ? r.sub(P) : '';
+    return `<div class="trk-row" data-row="${r.id}"><label class="trk-tick">${box}</label>` +
+      `<button type="button" class="trk-jump" data-jump="${r.id}" title="Open ${esc(r.label)}"><span class="trk-name">${esc(r.label)}</span>${sub ? `<span class="trk-sub">${esc(sub)}</span>` : ''}<span class="trk-state" aria-hidden="true"></span><span class="trk-go" aria-hidden="true">›</span></button></div>`;
+  }).join('');
+  return `<div class="trk" role="group" aria-label="Daily Tracker"><p class="trk-summary" data-trk-summary></p>${rows}</div>`;
+}
+
+/** Cue first, then plain notes; Profile words for gratitude questions, template text otherwise. */
+function cueLines(f) {
+  if (f.words) return (P.words[f.id] || '').split('\n').filter(Boolean);
+  return [f.cue, f.note].filter(Boolean);
 }
 
 function buildForm() {
@@ -198,11 +223,39 @@ function readForm() {
   form.querySelectorAll('[data-k]').forEach(el => {
     data[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
   });
+  // v46: only hand ticks are saved for tracker rows; automatic ones follow the day's entries
+  form.querySelectorAll('[data-trk]').forEach(el => { data[`trk_${el.dataset.trk}`] = el.dataset.manual === '1'; });
   return data;
+}
+
+function updateTracker(data) {
+  const st = trackerStatus(data);
+  for (const r of st.rows) {
+    const row = form.querySelector(`[data-row="${r.id}"]`);
+    if (!row) continue;
+    const box = row.querySelector('[data-trk]');
+    box.dataset.manual = r.manual ? '1' : '0';
+    box.checked = r.done;
+    box.disabled = r.auto; // entries already mark it done
+    box.title = r.auto ? 'Done: has entries for this day' : r.manual ? 'Ticked by hand' : 'Tick by hand';
+    row.classList.toggle('done', r.done);
+    row.classList.toggle('auto', r.auto);
+    const state = row.querySelector('.trk-state');
+    if (state) state.textContent = r.auto ? 'logged' : r.manual ? 'done' : '';
+  }
+  const sum = form.querySelector('[data-trk-summary]');
+  if (sum) sum.textContent = `${st.done} of ${st.total} for this day`;
+  return st;
 }
 
 function updateCounts(data) {
   for (const s of SECTIONS) {
+    if (s.tracker) {
+      const st = updateTracker(data);
+      const el = form.querySelector(`[data-count="${s.id}"]`);
+      if (el) { el.textContent = `${st.done} of ${st.total}`; el.classList.toggle('done', st.done === st.total); }
+      continue;
+    }
     const keys = fieldsOf(s).filter(f => f.type !== 'head' && f.type !== 'cue').map(f => f.id);
     const filled = keys.filter(k => data[k] && data[k] !== '').length;
     const el = form.querySelector(`[data-count="${s.id}"]`);
@@ -279,16 +332,26 @@ function asText() {
   const lines = [];
   lines.push(`${P.owner} · ${format_gregorian(g.year, g.month, g.day)}`);
   lines.push(fullMeta);
-  lines.push('', 'Belief creates consequence.', 'Mutual confidence is the foundation of all satisfactory human relationships.');
+  const beliefs = [P.words.b1, P.words.b2].filter(Boolean); // v46: from Profile
+  lines.push('', ...beliefs);
   for (const s of SECTIONS) {
     lines.push('', s.title.toUpperCase());
+    if (s.tracker) {
+      const st = trackerStatus(data);
+      lines[lines.length - 1] += ` (${st.done} of ${st.total})`;
+      for (const r of TRACKER) {
+        const row = st.rows.find((x) => x.id === r.id);
+        const extra = r.time ? (data[r.time] ? `: ${data[r.time]}` : '') : r.sub && r.sub(P) ? ` (${r.sub(P)})` : '';
+        lines.push(`${row.done ? '☑' : '☐'} ${r.label}${extra}`);
+      }
+      continue;
+    }
     for (const f of fieldsOf(s)) {
       if (f.type === 'head') { const r = roleOf(f); lines.push(`[${labelOf(f)}${r ? ` (${r})` : ''}]`); continue; }
       if (f.type === 'cue') {
         // v41: cue and note go on their own lines under the question (no em dash separator)
         lines.push(labelOf(f));
-        if (f.cue) lines.push(f.cue);
-        if (f.note) lines.push(f.note);
+        lines.push(...cueLines(f));
         continue;
       }
       const v = data[f.id];
@@ -301,8 +364,33 @@ function asText() {
 
 /* ---------- Wire up ---------- */
 buildForm();
-form.addEventListener('input', scheduleSave);
+form.addEventListener('input', () => { updateTracker(readForm()); scheduleSave(); });
 form.addEventListener('change', scheduleSave);
+// v46: tracker rows. A tick (when the area has no entries yet) is saved for the day; a tap jumps to the area.
+form.addEventListener('click', (e) => {
+  const box = e.target.closest('[data-trk]');
+  if (box) { box.dataset.manual = box.checked ? '1' : '0'; updateCounts(readForm()); scheduleSave(); return; }
+  const jump = e.target.closest('[data-jump]');
+  if (jump) jumpTo(jump.dataset.jump);
+});
+function jumpTo(rowId) {
+  const r = TRACKER.find((x) => x.id === rowId);
+  if (!r || !r.sec) return;
+  const sec = form.querySelector(`details.log-sec[data-sec="${r.sec}"]`);
+  if (!sec) return;
+  if (!sec.open) sec.open = true; // the toggle listener saves the open state
+  const target = (r.to && $(`log-f-${r.to}`)?.closest('.log-field')) || sec;
+  requestAnimationFrame(() => {
+    // scroll the log's own body when it scrolls (desktop), else the page (phones, under the sticky bar)
+    const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    const body = form, inner = body.scrollHeight > body.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(body).overflowY);
+    const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+    if (inner) body.scrollTo({ top: body.scrollTop + target.getBoundingClientRect().top - body.getBoundingClientRect().top - margin, behavior });
+    else window.scrollTo({ top: scrollY + target.getBoundingClientRect().top - margin, behavior });
+    target.classList.remove('trk-flash'); void target.offsetWidth; target.classList.add('trk-flash');
+    setTimeout(() => target.classList.remove('trk-flash'), 1600);
+  });
+}
 
 $('log-prev').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, -1)); });
 $('log-next').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, 1)); });
@@ -347,8 +435,30 @@ function renderProfile() {
   shape = next;
   $('log-wake').placeholder = P.wake; $('log-bed').placeholder = P.bed;
   $('log-supplements').placeholder = P.supplements.join('\n');
+  // v46: header beliefs and the Profile fields that edit them and the gratitude cues
+  ['b1', 'b2'].forEach((id) => { const el = $(`log-belief-${id}`); el.textContent = P.words[id]; el.hidden = !P.words[id]; });
+  $('log-beliefs').hidden = !P.words.b1 && !P.words.b2;
+  for (const id of WORD_IDS) { const el = $(`log-word-${id}`); if (el && document.activeElement !== el) el.value = P.words[id]; }
   renderHeader();
 }
+function buildWordFields() {
+  const qs = SECTIONS.find((s) => s.id === 'gratitude').fields;
+  const row = (id, label, multi) => `<label for="log-word-${id}">${esc(label)}</label>` + (multi
+    ? `<textarea id="log-word-${id}" data-word="${id}" rows="${id === 'g1' ? 4 : 2}" maxlength="${WORD_MAX * 3 + 2}"></textarea>`
+    : `<input type="text" id="log-word-${id}" data-word="${id}" maxlength="${WORD_MAX}" />`);
+  $('log-words-grid').innerHTML = row('b1', 'Header belief 1') + row('b2', 'Header belief 2') +
+    qs.map((f) => row(f.id, labelOf(f), true)).join('');
+  $('log-words-grid').querySelectorAll('[data-word]').forEach((el) => {
+    el.placeholder = el.dataset.word.startsWith('b') ? 'No line' : 'No cue';
+    el.addEventListener('input', () => { saveWord(el.dataset.word, el.value); renderProfile(); });
+    el.addEventListener('change', () => { el.value = saveWord(el.dataset.word, el.value); renderProfile(); });
+  });
+  $('log-words-reset').addEventListener('click', () => {
+    if (!confirm('Put the header beliefs and gratitude cues back to the original text?')) return;
+    resetWords(); renderProfile();
+  });
+}
+buildWordFields();
 $('log-name').maxLength = NAME_MAX;
 $('log-holding').maxLength = LABEL_MAX; $('log-business').maxLength = LABEL_MAX;
 $('log-wake').maxLength = TIME_MAX; $('log-bed').maxLength = TIME_MAX;
@@ -362,7 +472,7 @@ for (const [k, id] of Object.entries(FIELDS)) {
   el.addEventListener('change', () => { el.value = saveField(k, el.value); renderProfile(); });
 }
 $('log-profile-clear').addEventListener('click', () => {
-  if (!confirm('Clear your Captain’s Log profile (name, holding company, main business, birthday, home location, tracker targets, checklist)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
+  if (!confirm('Clear your Captain’s Log profile (name, holding company, main business, birthday, home location, tracker targets, checklist, edited beliefs and cues)? Log entries are kept. Your name is shared with Aretoria on this device.')) return;
   clearProfile();
   Object.values(FIELDS).forEach((id) => { $(id).value = ''; });
   homeEl.value = '';
@@ -431,7 +541,7 @@ $('sky-set')?.addEventListener('click', () => {
   setTimeout(() => homeEl.focus({ preventScroll: true }), 350);
 });
 // another tab (or Aretoria) changed the shared name
-window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday|wake|bed|supplements|home))$/.test(e.key)) { renderProfile(); renderHome(); } });
+window.addEventListener('storage', (e) => { if (!e.key || /^mec-(aretoria:name|log-(initials|enterprise|venture|birthday|wake|bed|supplements|home|words))$/.test(e.key)) { renderProfile(); renderHome(); } });
 
 window.addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
