@@ -192,7 +192,7 @@ function trackerHtml() {
     return `<div class="trk-row" data-row="${r.id}"><label class="trk-tick">${box}</label>` +
       `<button type="button" class="trk-jump" data-jump="${r.id}" title="Open ${esc(r.label)}"><span class="trk-name">${esc(r.label)}</span>${sub ? `<span class="trk-sub">${esc(sub)}</span>` : ''}<span class="trk-state" aria-hidden="true"></span><span class="trk-go" aria-hidden="true">›</span></button></div>`;
   }).join('');
-  return `<div class="trk" role="group" aria-label="Daily Tracker"><p class="trk-summary" data-trk-summary></p>${rows}</div>`;
+  return `<div class="trk" role="group" aria-label="Daily Tracker">${rows}</div>`;
 }
 
 /** Cue first, then plain notes; Profile words for gratitude questions, template text otherwise. */
@@ -206,7 +206,7 @@ function buildForm() {
   form.innerHTML = SECTIONS.map(s => {
     const open = s.id in saved ? saved[s.id] : !!s.open;
     return `<details class="log-sec" data-sec="${s.id}"${open ? ' open' : ''}>` +
-      `<summary><span class="log-sec-title">${esc(s.title)}</span><span class="log-count" data-count="${s.id}"></span></summary>` +
+      `<summary><span class="log-sec-title">${esc(s.title)}</span>${s.tracker ? `<span class="log-count" data-count="${s.id}"></span>` : ''}</summary>` + // v47: the tracker carries the day's only count
       `<div class="log-grid">${fieldsOf(s).map(fieldHtml).join('')}</div></details>`;
   }).join('');
   form.querySelectorAll('details.log-sec').forEach(d => {
@@ -243,26 +243,18 @@ function updateTracker(data) {
     const state = row.querySelector('.trk-state');
     if (state) state.textContent = r.auto ? 'logged' : r.manual ? 'done' : '';
   }
-  const sum = form.querySelector('[data-trk-summary]');
-  if (sum) sum.textContent = `${st.done} of ${st.total} for this day`;
   return st;
 }
 
+/* v47: the Daily Tracker is the one set of daily metrics. The other sections no longer show their own
+   filled-field counts (1/3, 2/8, 1/10), and the tracker's "N of 8" appears once, on its heading. */
 function updateCounts(data) {
-  for (const s of SECTIONS) {
-    if (s.tracker) {
-      const st = updateTracker(data);
-      const el = form.querySelector(`[data-count="${s.id}"]`);
-      if (el) { el.textContent = `${st.done} of ${st.total}`; el.classList.toggle('done', st.done === st.total); }
-      continue;
-    }
-    const keys = fieldsOf(s).filter(f => f.type !== 'head' && f.type !== 'cue').map(f => f.id);
-    const filled = keys.filter(k => data[k] && data[k] !== '').length;
-    const el = form.querySelector(`[data-count="${s.id}"]`);
-    if (el) {
-      el.textContent = filled ? `${filled}/${keys.length}` : '';
-      el.classList.toggle('done', filled === keys.length);
-    }
+  const st = updateTracker(data);
+  const el = form.querySelector('[data-count="tracker"]');
+  if (el) {
+    el.textContent = `${st.done} of ${st.total}`;
+    el.setAttribute('aria-label', `${st.done} of ${st.total} done for this day`);
+    el.classList.toggle('done', st.done === st.total);
   }
 }
 

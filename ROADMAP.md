@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-08, 6:50 AM MT
+**Last updated:** 2026-10-08, 8:20 AM MT
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -28,12 +28,13 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Link a Captain's Log entry to the Aretoria virtue reflected on that day (both sites share the casswaters.github.io origin, so the shared name and realm reflections are already visible to both).
 
 ## Open decisions (waiting on Cassidy)
-- Daily Tracker: Life Journal and Notes share one field and one tracker row ("Life Journal / Notes", merged on 2026-10-05). Split them back into two fields and two rows (9 rows), or keep one?
+- Resolved 2026-10-08: Life Journal and Notes stay together (one field, one Daily Tracker row "Life Journal / Notes"; the tracker keeps 8 rows).
 - Resolved 2026-10-08: the two header beliefs and the standing gratitude cues (S.C.O.R.E. and the rest) are editable in Profile, with Cassidy's text as the defaults (shipped in v46).
 - Resolved 2026-10-07: the St. George, UT weather default is gone (v42). Weather follows this device when shared, else the optional Profile home location, else nothing: a neutral earth vista with a "Set a location for local weather" hint and no weather numbers.
 - Resolved 2026-10-07: Captain's Log links to the standalone Aretoria site instead of carrying its own copy (shipped in v38). Aretoria decisions now live in the Aretoria roadmap.
 
 ## Shipped (newest first, times MT)
+- 2026-10-08 08:20: v47: one set of daily metrics. The Daily Tracker dropdown is the only place they show: the other sections (Career, Life Journal · Notes · Communication · Social · Care, Inputs & Outputs) no longer carry their own filled-field counts (1/3, 1/8, 1/10), and the tracker's "N of 8" appears once, on its heading (the extra "N of 8 for this day" line inside is gone). Wake/sleep, auto and hand ticks, jump to section and saved data unchanged.
 - 2026-10-08 06:50: v46: the Daily Tracker is the day's overview: Wake and Sleep (time fields with Profile targets) plus Career (shows the Profile holding company and main business), Life Journal / Notes, Communication, Social, Care, and Inputs & Outputs. A row ticks itself when that part of the log has entries for the day (the daily checklist counts toward Inputs & Outputs, so there is still one checklist), can be ticked by hand (saved per day), and a tap opens that section and scrolls to it. Progress reads "N of 8" on the section and in Copy text, which lists each row with a box.
 - 2026-10-08 06:50: v46: header beliefs and gratitude cues editable in Profile ("Header beliefs and gratitude cues"; Cassidy's original text is the default; first line is the cue, more lines are notes; an emptied field shows nothing; "Restore original text" puts them back). Copy text follows the edits.
 - 2026-10-08 06:16: v45: header and Profile. Cassidy's name sits above the date as an ownership title ("Cassidy's Captain's Log"; names ending in s take 's), larger and crisp, with a calmer log header (one meta line) and a shorter topbar subtitle. Profile names are used exactly as typed (nothing is built from initials, so "CW Enterprises" stays whole): Holding company (CW Enterprises) and Main business (Anam), shown in Career as holding company > main business; neutral fallbacks "Holding company" / "Main business", never "side venture". The Initials field is retired from Profile (its saved value is kept).
