@@ -14,6 +14,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
+- In progress (Oct 8, not live yet): header and Profile fixes. Cassidy's name sits above the title as an ownership title ("Cassidy's Captain's Log"), larger and crisp, with a calmer header; Profile names are used exactly as typed, so "CW Enterprises" shows in full; the two labels become holding company (CW Enterprises) and main business (Anam), never "side venture".
+- In progress (Oct 8, not live yet): with every section closed, the main window stretches to the calendar column's height and the Aretoria window matches both columns.
 - Settle the open decisions below.
 
 ## Next
