@@ -867,14 +867,14 @@ console.log('\n=== ambient weather scene ===\n');
   assert('whitespace is not content; a hand tick marks a row done without entries', !by.journal.done && by.care.manual && !by.care.auto && by.care.done);
   assert('every row\'s fields exist in the log template (no orphan ids)', T.TRACKER.every((r) => r.fields.every((k) => k === 'wake' || k === 'bed' || cl.includes(`id: '${k}'`))));
   assert('career row names come from Profile (only when typed), targets only when set', T.TRACKER[2].sub(P.profileView({ holding: 'Umbrella Co', business: 'Shop' })) === 'Umbrella Co · Shop' && T.TRACKER[2].sub(P.profileView({})) === '' && T.TRACKER[0].target(P.profileView({ wake: '6am' })) === '6am' && T.TRACKER[0].target(P.profileView({})) === '');
-  assert('jump targets: career and I/O open their sections; journal, comm, social, care open Notes at their field', by && T.TRACKER.filter((r) => r.sec).map((r) => `${r.sec}:${r.to || ''}`).join(' ') === 'career: notes:notes notes:comm_out notes:social_fam notes:care io:');
+  assert('row sources: career and I/O rows draw from their sections; journal, comm, social, care from Notes', T.TRACKER.filter((r) => r.sec).map((r) => r.sec).join(' ') === 'career notes notes notes notes io');
   assert('wake / bed keep their saved field ids inline in the tracker', /data-k="\$\{r\.time\}"/.test(cl) && T.TRACKER[0].time === 'wake' && T.TRACKER[1].time === 'bed');
   assert('only hand ticks are saved (trk_<id>); auto rows are locked done', /data\[`trk_\$\{el\.dataset\.trk\}`\] = el\.dataset\.manual === '1'/.test(cl) && /box\.disabled = r\.auto/.test(cl));
-  assert('tapping a row opens its section and scrolls to it', /function jumpTo\(rowId\)/.test(cl) && /sec\.open = true/.test(cl) && /scrollIntoView/.test(cl));
+  assert('tapping a row opens its fields in place', /function jumpTo\(rowId\)/.test(cl) && /panel\.hidden = !open/.test(cl));
   assert('tracker heading chip reads "N of 8"', /el\.textContent = `\$\{st\.done\} of \$\{st\.total\}`/.test(cl));
   assert('Copy text lists each row with a box and the progress in the heading', /lines\.push\(`\$\{row\.done \? '☑' : '☐'\} \$\{r\.label\}\$\{extra\}`\)/.test(cl) && /` \(\$\{st\.done\} of \$\{st\.total\}\)`/.test(cl));
   assert('checklist stays in Inputs & Outputs (one checklist, counted by the tracker, not duplicated)', (cl.match(/type: 'supps'/g) || []).length === 1 && T.TRACKER.filter((r) => r.checklist).length === 1);
-  assert('tracker.js precached by SW v46; tracker rows styled; jump targets clear the sticky bar on phones', /'\.\/tracker\.js'/.test(sw) && /const CACHE = 'captains-log-v4[6-9]';/.test(sw) && /\.trk-row \{/.test(css) && /scroll-margin-top/.test(css) && /tracker\.js\?v=cl46/.test(cl));
+  assert('tracker.js precached by SW v46; tracker rows styled; jump targets clear the sticky bar on phones', /'\.\/tracker\.js'/.test(sw) && /const CACHE = 'captains-log-v4[6-9]';/.test(sw) && /\.trk-row \{/.test(css) && /scroll-margin-top/.test(css) && /tracker\.js\?v=cl49/.test(cl));
   assert('no em dash or tilde in tracker labels', !/[\u2014~]/.test(T.TRACKER.map((r) => r.label).join(' ')));
 }
 
@@ -914,6 +914,22 @@ console.log('\n=== ambient weather scene ===\n');
   assert('flourishes are gold masks (follow the theme gold), with intrinsic sizes so WebKit paints them', /background: var\(--gold\)/.test(block) && /-webkit-mask: url\("data:image\/svg\+xml/.test(block) && /width=%2756%27 height=%2756%27/.test(block));
   assert('no external images and no per-realm hues (no blue or pink in the ornate block)', !/url\((?!"data:)/.test(block) && !/98,\s*181,\s*229|242,\s*184,\s*207/.test(block));
   assert('equal-height desktop rules untouched', /\.tri-portal \.portal-card \{ flex: 1 1 auto;/.test(css));
+}
+
+{
+  console.log('\n--- v49: Career, Life Journal / Notes, Communication, Social, Care and Inputs & Outputs open inside the Daily Tracker ---');
+  const T = await import('./tracker.js?v=t49');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const cl = src('./captains-log.js'), css = src('./styles.css'), sw = src('./sw.js');
+  const ids = (sec) => { const a = cl.indexOf(`id: '${sec}', title:`); const b = cl.indexOf('\n  }', a); return [...cl.slice(a, b).matchAll(/\{ id: '([a-z_0-9]+)', type:/g)].map((m) => m[1]); };
+  const panels = T.TRACKER.flatMap((r) => r.panel || []);
+  const all = [...ids('career'), ...ids('notes'), ...ids('io')];
+  assert('every field of the three old sections opens in exactly one tracker row (nothing orphaned, nothing doubled)', all.length === 22 && all.every((id) => panels.filter((x) => x === id).length === 1) && panels.length === all.length, JSON.stringify({ all, panels }));
+  assert('the three sections are marked inTracker and get no dropdown of their own; main list is Gratitude, Grounding, Default to, Daily Tracker', (cl.match(/inTracker: true/g) || []).length === 3 && /SECTIONS\.filter\(\(s\) => !s\.inTracker\)\.map/.test(cl) && ['gratitude', 'grounding', 'defaults', 'tracker'].every((id) => cl.includes(`id: '${id}', title:`)));
+  assert('field ids and labels unchanged (saved entries and Copy text headings match)', ["id: 'cw_checkin', type: 'area', label: 'Check in (Schedule · Emails · Deals)'", "id: 'notes', type: 'area', label: 'Life Journal / Notes'", "id: 'drank', type: 'area', label: '💧 Drank'"].every((x) => cl.includes(x)) && /lines\.push\('', s\.title\.toUpperCase\(\)\);/.test(cl) && /for \(const s of SECTIONS\) \{/.test(cl));
+  assert('Life Journal and Notes stay one row; still 8 rows', T.TRACKER.length === 8 && T.TRACKER.filter((r) => /Life Journal/.test(r.label)).length === 1);
+  assert('rows open in place with aria-expanded, remembered in mec-log-trk-open (UI state only)', /aria-expanded="\$\{open\}" aria-controls="trk-p-\$\{r\.id\}"/.test(cl) && /const ROWS_KEY = 'mec-log-trk-open'/.test(cl) && /\.trk-panel \{ flex: 1 1 100%;/.test(css));
+  assert('SW v49', /const CACHE = 'captains-log-v49';/.test(sw));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
