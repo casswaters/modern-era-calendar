@@ -49,6 +49,7 @@ const GHOLIDAY_ICONS = {
   labor: '🛠️',
   mexico_independence: '🇲🇽',
   canada_thanksgiving: '🍁',
+  columbus: '⛵',
   un_day: '🇺🇳',
   halloween: '🎃',
   muertos_1: '💀',
