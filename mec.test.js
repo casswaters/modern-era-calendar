@@ -705,7 +705,7 @@ console.log('\n=== ambient weather scene ===\n');
   const route = (h, q = '') => /^#!?\/?(aretoria|realms?|portal|axial|hall|creed)\b/i.test(h) || /[?&](aretoria|realms?|portal)(=|&|$)/i.test(q);
   assert('route matcher: #aretoria, #/realm/wisdom, #portal, ?aretoria, ?realm=courage redirect; #log, #2026-10-07 and ?fresh do not', route('#aretoria') && route('#/realm/wisdom') && route('#portal') && route('', '?aretoria') && route('', '?realm=courage') && !route('#log') && !route('#2026-10-07') && !route('', '?fresh=1') && !route('', '?scene=snow'));
   assert('/aretoria/ path in Captain\'s Log redirects too (meta refresh + script + link)', /http-equiv="refresh" content="0; url=https:\/\/casswaters\.github\.io\/aretoria\/"/.test(src('./aretoria/index.html')) && /location\.replace/.test(src('./aretoria/index.html')));
-  assert('SW captains-log-v4x precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v4[6-9]';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
+  assert('SW captains-log-v4x precaches no Aretoria files; precaches profile.js', /const CACHE = 'captains-log-v(4[6-9]|[5-9]\d)';/.test(sw) && !/aretoria|portal\.js/.test(sw.split('const ASSETS')[1].split('];')[0]) && /'\.\/profile\.js'/.test(sw));
   assert('activate still clears every old cache (drops the old Aretoria art cache)', /keys\.map\(\(k\) => caches\.delete\(k\)\)/.test(sw));
   const ver = (sw.match(/const CACHE = 'captains-log-v(\d+)';/) || [])[1];
   assert(`scripts and styles on cl${ver} (matches the SW version)`, ['app', 'captains-log', 'scene'].every((f) => html.includes(`${f}.js?v=cl${ver}`)) && html.includes(`styles.css?v=cl${ver}`));
@@ -874,7 +874,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('tracker heading chip reads "N of 8"', /el\.textContent = `\$\{st\.done\} of \$\{st\.total\}`/.test(cl));
   assert('Copy text lists each row with a box and the progress in the heading', /lines\.push\(`\$\{row\.done \? '☑' : '☐'\} \$\{r\.label\}\$\{extra\}`\)/.test(cl) && /` \(\$\{st\.done\} of \$\{st\.total\}\)`/.test(cl));
   assert('checklist stays in Inputs & Outputs (one checklist, counted by the tracker, not duplicated)', (cl.match(/type: 'supps'/g) || []).length === 1 && T.TRACKER.filter((r) => r.checklist).length === 1);
-  assert('tracker.js precached by SW v46; tracker rows styled; jump targets clear the sticky bar on phones', /'\.\/tracker\.js'/.test(sw) && /const CACHE = 'captains-log-v4[6-9]';/.test(sw) && /\.trk-row \{/.test(css) && /scroll-margin-top/.test(css) && /tracker\.js\?v=cl49/.test(cl));
+  assert('tracker.js precached by SW v46; tracker rows styled; jump targets clear the sticky bar on phones', /'\.\/tracker\.js'/.test(sw) && /const CACHE = 'captains-log-v(4[6-9]|[5-9]\d)';/.test(sw) && /\.trk-row \{/.test(css) && /scroll-margin-top/.test(css) && /tracker\.js\?v=cl(49|[5-9]\d)/.test(cl));
   assert('no em dash or tilde in tracker labels', !/[\u2014~]/.test(T.TRACKER.map((r) => r.label).join(' ')));
 }
 
@@ -902,7 +902,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('only the tracker heading gets a count chip (no 1/3, 2/8, 1/10 on other sections)', /\$\{s\.tracker \? `<span class="log-count" data-count="\$\{s\.id\}"><\/span>` : ''\}/.test(cl) && !/`\$\{filled\}\/\$\{keys\.length\}`/.test(cl));
   assert('no second "N of 8 for this day" line inside the tracker', !/data-trk-summary|of \$\{st\.total\} for this day/.test(cl) && !/\.trk-summary/.test(css));
   assert('wake / bed still saved under the same ids inside the tracker', /data-k="\$\{r\.time\}"/.test(cl));
-  assert('SW captains-log-v47 or later, scripts on cl47 or later', /const CACHE = 'captains-log-v4[7-9]';/.test(sw) && /captains-log\.js\?v=cl4[7-9]/.test(html));
+  assert('SW captains-log-v47 or later, scripts on cl47 or later', /const CACHE = 'captains-log-v(4[7-9]|[5-9]\d)';/.test(sw) && /captains-log\.js\?v=cl(4[7-9]|[5-9]\d)/.test(html));
 }
 
 {
@@ -929,7 +929,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('field ids and labels unchanged (saved entries and Copy text headings match)', ["id: 'cw_checkin', type: 'area', label: 'Check in (Schedule · Emails · Deals)'", "id: 'notes', type: 'area', label: 'Life Journal / Notes'", "id: 'drank', type: 'area', label: '💧 Drank'"].every((x) => cl.includes(x)) && /lines\.push\('', s\.title\.toUpperCase\(\)\);/.test(cl) && /for \(const s of SECTIONS\) \{/.test(cl));
   assert('Life Journal and Notes stay one row; still 8 rows', T.TRACKER.length === 8 && T.TRACKER.filter((r) => /Life Journal/.test(r.label)).length === 1);
   assert('rows open in place with aria-expanded, remembered in mec-log-trk-open (UI state only)', /aria-expanded="\$\{open\}" aria-controls="trk-p-\$\{r\.id\}"/.test(cl) && /const ROWS_KEY = 'mec-log-trk-open'/.test(cl) && /\.trk-panel \{ flex: 1 1 100%;/.test(css));
-  assert('SW v49', /const CACHE = 'captains-log-v49';/.test(sw));
+  assert('SW v49 or later', /const CACHE = 'captains-log-v(49|[5-9]\d)';/.test(sw));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
