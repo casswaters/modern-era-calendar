@@ -14,7 +14,8 @@ import {
   HOME_KEY, NO_PLACE, SET_HINT, geocode_url, pick_geocode, parse_home, sky_state_for,
   weather_label, open_meteo_url, parse_open_meteo,
   format_place, place_from_bigdatacloud, place_from_nominatim,
-  wttr_url, parse_wttr, place_from_wttr
+  wttr_url, parse_wttr, place_from_wttr,
+  nws_code, parse_nws_observation, merge_observation, is_us_point, open_meteo_url as om_url
 } from './weather.js';
 import {
   is_desert, season_for, format_local_iso_time, format_clock, sun_times, sun_caption_times, solar_position, time_of_day, classify_weather, pick_scene, parse_scene_override, palette, landscapeSvg
@@ -930,6 +931,27 @@ console.log('\n=== ambient weather scene ===\n');
   assert('Life Journal and Notes stay one row; still 8 rows', T.TRACKER.length === 8 && T.TRACKER.filter((r) => /Life Journal/.test(r.label)).length === 1);
   assert('rows open in place with aria-expanded, remembered in mec-log-trk-open (UI state only)', /aria-expanded="\$\{open\}" aria-controls="trk-p-\$\{r\.id\}"/.test(cl) && /const ROWS_KEY = 'mec-log-trk-open'/.test(cl) && /\.trk-panel \{ flex: 1 1 100%;/.test(css));
   assert('SW v49 or later', /const CACHE = 'captains-log-v(49|[5-9]\d)';/.test(sw));
+}
+
+{
+  console.log('\n--- v51: real current weather (rain shows as rain) ---');
+  const om = (x) => parse_open_meteo({ current: { temperature_2m: 54, weather_code: 0, is_day: 1, cloud_cover: 10, precipitation: 0, rain: 0, showers: 0, ...x }, daily: {} });
+  assert('Open-Meteo asks for current rain and showers', /rain%2Cshowers/.test(om_url(37.1, -113.57)));
+  assert('any current precipitation turns a clear code into rain', om({ precipitation: 0.02 }).code === 61 && om({ showers: 0.01 }).label === 'Light rain' && om({}).code === 0);
+  assert('nws_code maps observation text', nws_code('Light Rain') === 61 && nws_code('Thunderstorms and Rain') === 95 && nws_code('Mostly Cloudy') === 3 && nws_code('Clear') === 0 && nws_code('Fog/Mist') === 45);
+  const now = Date.parse('2026-10-13T14:10:00Z');
+  const obs = parse_nws_observation({ properties: { timestamp: '2026-10-13T14:00:00+00:00', textDescription: 'Light Rain', temperature: { value: 11.1 }, presentWeather: [] } }, now);
+  assert('KSGU 8:00 AM MT "Light Rain" parses; stale reports are dropped', obs && obs.code === 61 && obs.tempF === 52 && parse_nws_observation({ properties: { timestamp: '2026-10-13T10:00:00Z', textDescription: 'Rain' } }, now) === null);
+  const m = merge_observation(om({ weather_code: 1, cloud_cover: 39 }), obs);
+  assert('station rain overrides a model "clear" and the vista shows rain', m.code === 61 && m.observed && classify_weather(m).precip === 'rain');
+  assert('Saint George is a US point, London is not', is_us_point(37.1, -113.57) && !is_us_point(51.5, -0.12));
+  assert('golden hour ends at 6 degrees; no golden hour under rain', time_of_day(7) === 'day' && time_of_day(5) === 'dusk');
+  const sc = pick_scene({ weather: m, lat: 37.1, lon: -113.57, date: new Date('2026-10-13T14:05:00Z') });
+  assert('rainy morning scene reads rain, never golden hour', sc.precip === 'rain' && !/golden/.test(sc.label) && !/clear/.test(sc.label), sc.label);
+  const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
+  assert('SW v51+ never caches weather APIs', /const CACHE = 'captains-log-v(5[1-9]|[6-9]\d)';/.test(sw) && /open-meteo\\\.com\|weather\\\.gov/.test(sw));
+  const w = readFileSync(new URL('./weather.js', import.meta.url), 'utf8');
+  assert('weather refreshes every 15 min and on return', /MAX_AGE_MS = 15 \* 60 \* 1000/.test(w) && /refreshWeather\(false, WAKE_AGE_MS\)/.test(w));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
