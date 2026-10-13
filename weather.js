@@ -17,7 +17,8 @@ export const SET_HINT = 'Set a location for local weather';
 
 const STORE_KEY = 'mec-sky-v1';
 const OPTIN_KEY = 'mec-geo-optin';
-const MAX_AGE_MS = 30 * 60 * 1000; // refresh weather every 30 min
+const MAX_AGE_MS = 15 * 60 * 1000; // v51: refresh weather every 15 min
+const WAKE_AGE_MS = 5 * 60 * 1000; // v51: coming back to the app refreshes anything older than 5 min
 
 /** WMO weather interpretation codes → [label, day icon, night icon]. */
 const WMO = {
@@ -61,7 +62,7 @@ export function open_meteo_url(lat, lon) {
   const p = new URLSearchParams({
     latitude: lat.toFixed(4),
     longitude: lon.toFixed(4),
-    current: 'temperature_2m,apparent_temperature,weather_code,is_day,cloud_cover,precipitation,wind_speed_10m',
+    current: 'temperature_2m,apparent_temperature,weather_code,is_day,cloud_cover,precipitation,rain,showers,wind_speed_10m',
     daily: 'temperature_2m_max,temperature_2m_min,sunrise,sunset',
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
@@ -77,13 +78,16 @@ export function parse_open_meteo(json) {
   const c = json && json.current;
   if (!c || typeof c.temperature_2m !== 'number') throw new Error('No current weather');
   const d = json.daily || {};
-  const { label, icon } = weather_label(c.weather_code, c.is_day !== 0);
+  // v51: any measured precipitation right now means rain, even if the model's code says clear.
+  const wet = [c.precipitation, c.rain, c.showers].some((v) => typeof v === 'number' && v > 0);
+  const code = wet && (!(c.weather_code >= 51)) ? 61 : c.weather_code;
+  const { label, icon } = weather_label(code, c.is_day !== 0);
   return {
     tempF: Math.round(c.temperature_2m),
     feelsF: typeof c.apparent_temperature === 'number' ? Math.round(c.apparent_temperature) : null,
     hiF: Array.isArray(d.temperature_2m_max) ? Math.round(d.temperature_2m_max[0]) : null,
     loF: Array.isArray(d.temperature_2m_min) ? Math.round(d.temperature_2m_min[0]) : null,
-    code: c.weather_code,
+    code,
     label,
     icon,
     // Extra fields for the ambient scene (scene.js). Older cached readings may lack them.
@@ -290,13 +294,81 @@ export async function reverse_geocode(lat, lon) {
   return null;
 }
 
-/** Open-Meteo first; wttr.in if Open-Meteo errors or rate-limits. */
-export async function fetch_weather(lat, lon) {
-  try {
-    return parse_open_meteo(await fetchJson(open_meteo_url(lat, lon)));
-  } catch (e) {
-    return parse_wttr(await fetchJson(wttr_url(lat, lon), 10000));
+/* ---------------- NWS observations (v51, US only) ---------------- */
+
+/** Rough US boxes (lower 48, Alaska, Hawaii, Puerto Rico) where api.weather.gov has stations. */
+export function is_us_point(lat, lon) {
+  return (lat >= 24 && lat <= 50 && lon >= -125 && lon <= -66) ||
+    (lat >= 51 && lat <= 72 && lon >= -170 && lon <= -129) ||
+    (lat >= 18.5 && lat <= 22.5 && lon >= -161 && lon <= -154) ||
+    (lat >= 17.8 && lat <= 18.6 && lon >= -67.4 && lon <= -65.2);
+}
+
+/** NWS observation text ("Light Rain", "Mostly Cloudy", "Thunderstorms and Rain") to a WMO code. */
+export function nws_code(text) {
+  const t = String(text || '').toLowerCase();
+  if (!t) return null;
+  if (/thunder/.test(t)) return 95;
+  if (/freezing (rain|drizzle)/.test(t)) return 66;
+  if (/snow|sleet|ice pellets/.test(t)) return /heavy/.test(t) ? 75 : /light/.test(t) ? 71 : 73;
+  if (/drizzle/.test(t)) return /heavy/.test(t) ? 55 : /light/.test(t) ? 51 : 53;
+  if (/rain|shower/.test(t)) return /heavy/.test(t) ? 65 : /light/.test(t) ? 61 : 63;
+  if (/fog|mist|haze|smoke/.test(t)) return 45;
+  if (/overcast|^cloudy|mostly cloudy/.test(t)) return 3;
+  if (/partly/.test(t)) return 2;
+  if (/mostly (clear|sunny)|few/.test(t)) return 1;
+  if (/clear|sunny|fair/.test(t)) return 0;
+  return null;
+}
+
+/** Normalize an api.weather.gov observation. Returns null when stale (over 90 min) or unreadable. */
+export function parse_nws_observation(json, now = Date.now()) {
+  const p = json && json.properties;
+  if (!p || !p.timestamp) return null;
+  const at = Date.parse(p.timestamp);
+  if (!Number.isFinite(at) || now - at > 90 * 60 * 1000) return null;
+  const pw = Array.isArray(p.presentWeather) ? p.presentWeather.map((x) => [x.intensity, x.weather].filter(Boolean).join(' ')).join(' ') : '';
+  const code = nws_code(p.textDescription) ?? nws_code(pw);
+  if (code == null) return null;
+  const c = p.temperature && typeof p.temperature.value === 'number' ? p.temperature.value : null;
+  return { code, tempF: c == null ? null : Math.round(c * 9 / 5 + 32), text: p.textDescription || '', at };
+}
+
+/** Lay a fresh station observation over the model reading: the observed sky and precipitation win. */
+export function merge_observation(model, obs) {
+  if (!model || !obs) return model;
+  const { label, icon } = weather_label(obs.code, model.isDay !== false);
+  const out = { ...model, code: obs.code, label, icon, observed: true };
+  if (obs.tempF != null) out.tempF = obs.tempF;
+  if (obs.code >= 51) { out.precipIn = Math.max(model.precipIn || 0, 0.01); out.cloud = Math.max(model.cloud || 0, 90); }
+  else if (obs.code <= 3) out.cloud = [5, 20, 50, 95][obs.code];
+  return out;
+}
+
+const nwsStations = new Map();
+async function fetch_nws_observation(lat, lon) {
+  const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+  let station = nwsStations.get(key);
+  if (!station) {
+    const pt = await fetchJson(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, 6000);
+    const list = await fetchJson(pt.properties.observationStations, 6000);
+    station = list.features && list.features[0] && list.features[0].id;
+    if (!station) return null;
+    nwsStations.set(key, station);
   }
+  return parse_nws_observation(await fetchJson(`${station}/observations/latest`, 6000));
+}
+
+/** Open-Meteo first; wttr.in if Open-Meteo errors or rate-limits. US: a live NWS station report corrects the sky. */
+export async function fetch_weather(lat, lon) {
+  const obsP = is_us_point(lat, lon) ? fetch_nws_observation(lat, lon).catch(() => null) : Promise.resolve(null);
+  let model;
+  try {
+    model = parse_open_meteo(await fetchJson(open_meteo_url(lat, lon)));
+  } catch (e) {
+    model = parse_wttr(await fetchJson(wttr_url(lat, lon), 10000));
+  }
+  return merge_observation(model, await obsP);
 }
 
 /* ---------------- DOM wiring ---------------- */
@@ -415,9 +487,9 @@ export function initSky() {
     emitSky(state);
   }
 
-  async function refreshWeather(force = false) {
+  async function refreshWeather(force = false, maxAge = MAX_AGE_MS) {
     if (noPlace()) { paint(); return; } // nothing to look up
-    const fresh = state.weather && state.fetchedAt && (Date.now() - state.fetchedAt < MAX_AGE_MS);
+    const fresh = state.weather && state.fetchedAt && (Date.now() - state.fetchedAt < maxAge);
     if (fresh && !force) { paint(); return; }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       paint(state.weather ? 'offline · last reading' : 'Offline');
@@ -489,7 +561,8 @@ export function initSky() {
   // Keep it current while the app stays open / when it comes back to the foreground.
   setInterval(() => refreshWeather(false), MAX_AGE_MS);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshWeather(false);
+    if (document.visibilityState === 'visible') refreshWeather(false, WAKE_AGE_MS);
   });
   window.addEventListener('online', () => refreshWeather(true));
+  window.addEventListener('pageshow', (e) => { if (e.persisted) refreshWeather(false, WAKE_AGE_MS); });
 }

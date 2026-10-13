@@ -1,6 +1,6 @@
-/* MEC service worker — network-first app shell, offline fallback (Captain's Log; captains-log-v50).
+/* MEC service worker: network-first app shell, offline fallback (Captain's Log; captains-log-v51).
    v38: Aretoria is no longer embedded (it lives at casswaters.github.io/aretoria); activate clears the old caches with its art. */
-const CACHE = 'captains-log-v50';
+const CACHE = 'captains-log-v51';
 const ASSETS = [
   './',
   './index.html',
@@ -45,6 +45,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // v51: weather and geocoding APIs always go straight to the network, never the cache.
+  if (/open-meteo\.com|weather\.gov|wttr\.in|bigdatacloud|nominatim/.test(url.hostname)) return;
   if (url.origin !== self.location.origin) return;
 
   if (isShell(url)) {

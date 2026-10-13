@@ -111,7 +111,7 @@ export function sun_caption_times(sky, date = new Date()) {
 
 /** day / dusk (golden hour or twilight) / night from solar elevation. */
 export function time_of_day(elevation) {
-  if (elevation > 9) return 'day';
+  if (elevation > 6) return 'day'; // v51: golden hour is the sun below about 6 degrees
   if (elevation > -7) return 'dusk';
   return 'night';
 }
@@ -254,7 +254,8 @@ export function pick_scene({ weather = null, lat = null, lon = null, date = new 
   const skyWord = precip !== 'none'
     ? ({ drizzle: 'drizzle', rain: heavy ? 'heavy rain' : 'rain', snow: heavy ? 'heavy snow' : 'snow', storm: 'thunderstorm' }[precip])
     : ({ clear: 'clear', partly: 'drifting clouds', overcast: 'overcast', fog: 'fog' }[sky]);
-  const timeWord = time === 'dusk' ? (sun.elevation >= 0 ? 'golden hour' : 'twilight') : time === 'night' ? 'night' : (heat ? 'heat shimmer' : '');
+  const lowLight = precip !== 'none' || sky === 'overcast' || sky === 'fog'; // v51: no golden light under rain or cloud
+  const timeWord = time === 'dusk' ? (sun.elevation >= 0 ? (lowLight ? (sun.hourAngle < 0 ? 'morning' : 'evening') : 'golden hour') : 'twilight') : time === 'night' ? 'night' : (heat ? 'heat shimmer' : '');
   const label = [CAP(place), skyWord, timeWord].filter(Boolean).join(' · ');
 
   return {
