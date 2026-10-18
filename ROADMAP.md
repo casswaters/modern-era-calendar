@@ -25,6 +25,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Calendar: extend the Jewish holiday and Umm al-Qura Eid tables past 2037.
 
 ## Ideas
+- Recurring thoughts log (Cassidy, Oct 18, 2026): a small spot to jot a thought that fades and returns over years or decades, each return dated, so patterns show over time. Inspired by Jung's shadow and individuation ideas (optional reflection prompts: reflect, face your shadow, notice dreams, look for patterns, connect, become your true self), sitting beside S.C.O.R.E.
+- Full port of Cassidy's daily Apple Notes template into Captain's Log (Cassidy, Oct 18, 2026): he's excited to resume this soon, inspired by Benny's budget app.
 - Wake/bed tracker trends over a week or month.
 - Link a Captain's Log entry to the Aretoria virtue reflected on that day (both sites share the casswaters.github.io origin, so the shared name and realm reflections are already visible to both).
 
