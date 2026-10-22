@@ -11,7 +11,7 @@ import {
   islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
 } from './mec.js';
 import {
-  HOME_KEY, NO_PLACE, SET_HINT, geocode_url, pick_geocode, parse_home, sky_state_for,
+  HOME_KEY, NO_PLACE, SET_HINT, geocode_url, pick_geocode, parse_home, sky_state_for, READING_V,
   weather_label, open_meteo_url, parse_open_meteo,
   format_place, place_from_bigdatacloud, place_from_nominatim,
   wttr_url, parse_wttr, place_from_wttr,
@@ -533,8 +533,8 @@ console.log('\n=== local sky (weather helpers) ===\n');
     const home = parse_home(JSON.stringify({ q: 'Denver', name: 'Denver, CO', lat: 39.7392, lon: -104.9847 }));
     const hs = sky_state_for(oldDefault, home);
     assert('home location from Profile is used when the device location is not shared', hs.source === 'home' && hs.place === 'Denver, CO' && hs.lat === 39.7392 && hs.weather === null);
-    assert('a cached reading for the same home place is kept', sky_state_for({ source: 'home', lat: 39.7392, lon: -104.9847, weather: { tempF: 61 }, fetchedAt: 5 }, home).weather.tempF === 61);
-    const dev = { place: 'Here', lat: 40, lon: -105, source: 'device', weather: { tempF: 55 } };
+    assert('a cached reading for the same home place is kept', sky_state_for({ source: 'home', lat: 39.7392, lon: -104.9847, weather: { tempF: 61, v: READING_V }, fetchedAt: 5 }, home).weather.tempF === 61);
+    const dev = { place: 'Here', lat: 40, lon: -105, source: 'device', weather: { tempF: 55, v: READING_V } };
     assert('a shared device location wins over the home location', sky_state_for(dev, home) === dev);
     assert('parse_home rejects junk and out-of-range coordinates', parse_home('nope') === null && parse_home({ lat: 120, lon: 0 }) === null && parse_home(null) === null);
     assert('home key lives with the profile keys', HOME_KEY === 'mec-log-home');
@@ -952,6 +952,22 @@ console.log('\n=== ambient weather scene ===\n');
   assert('SW v51+ never caches weather APIs', /const CACHE = 'captains-log-v(5[1-9]|[6-9]\d)';/.test(sw) && /open-meteo\\\.com\|weather\\\.gov/.test(sw));
   const w = readFileSync(new URL('./weather.js', import.meta.url), 'utf8');
   assert('weather refreshes every 15 min and on return', /MAX_AGE_MS = 15 \* 60 \* 1000/.test(w) && /refreshWeather\(false, WAKE_AGE_MS\)/.test(w));
+}
+
+{
+  const w = readFileSync(new URL('./weather.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('./sw.js', import.meta.url), 'utf8');
+  const ver = (sw.match(/captains-log-v(\d+)/) || [])[1];
+  assert('v53: every module import carries the current version (no stale weather.js on iOS)', [app, cl].every((f) => (f.match(/\.js\?v=cl(\d+)/g) || []).every((m) => m.endsWith(`cl${ver}`))));
+  assert('v53: SW precache bypasses the HTTP cache', /cache: 'reload'/.test(sw));
+  const home = { name: 'St. George, UT', lat: 37.1041, lon: -113.5841 };
+  const old = { source: 'home', lat: 37.1041, lon: -113.5841, place: 'x', weather: { code: 0, label: 'Clear' }, fetchedAt: Date.now() };
+  assert('v53: a reading saved by an older version is not repainted', sky_state_for(old, home).weather === null && sky_state_for({ ...old, source: 'device' }, null).weather === null);
+  const cur = { ...old, weather: { code: 95, v: READING_V } };
+  assert('v53: a current reading is kept', sky_state_for(cur, home).weather.code === 95);
+  assert('v53: fetch_weather stamps readings', /v: READING_V/.test(w));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

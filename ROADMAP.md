@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-22, about 3:15 PM MT (afternoon report: no changes since morning; live site returns 200, Pages publishing green)
+**Last updated:** 2026-10-22, about 16:12 MT (v53 shipped)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -14,8 +14,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
-- Live SW captains-log-v51 matches main.
-- Weather: US places use the NWS station observation overlay on the model (v51).
+- Live SW captains-log-v53 matches main.
+- Weather: US places use the NWS station observation when fresh, else the NWS hourly forecast (rain or storms at 50% or more), plus rain chance and active alerts (v52); old cached readings and modules can no longer linger after an update (v53).
 
 ## Next
 - (empty; see Ideas)
@@ -34,6 +34,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - None open right now.
 
 ## Shipped (newest first, times MT)
+- 2026-10-22 16:12: v53 (SW captains-log-v53): update fix. The phone kept showing Clear while NWS called for 95% storms and a Flood Watch: the v52 weather logic was right, but the module import weather.js?v=cl42 had not changed since v42, so iOS could keep an older weather.js, and a reading saved by the older version within 15 min was repainted as is. All module imports now carry the current version (cl53), the SW precache bypasses the HTTP cache, and readings are stamped so any reading from an older version is refetched. Tests added.
+- 2026-10-22 16:08: v52 (SW captains-log-v52): NWS hourly rain and storm override, rain chance, active alerts, fresher station fallback.
 - 2026-10-13 08:45: v51 (SW captains-log-v51): weather fix. Open-Meteo model said clear in St. George while KSGU reported light rain; US places now lay the latest NWS station observation over the model, any current precipitation counts as rain, refresh every 15 min and on return, SW never touches weather APIs, golden hour ends at 6 degrees and never shows under rain or overcast. Assets cl51.
 - 2026-10-12 06:17: v50 (SW captains-log-v50): Columbus Day (2nd Monday of October) on the calendar; asset bump to cl50; version-tolerant tests. Live matches main.
 - 2026-10-08 09:45: v49: one place for the day's areas. Career, Life Journal · Notes · Communication · Social · Care, and Inputs & Outputs are no longer separate dropdowns: each Daily Tracker row (Career, Life Journal / Notes, Communication, Social, Care, Inputs & Outputs) opens its entry fields in place. Main list is Gratitude exercise, Grounding exercise, Default to, Daily Tracker. Life Journal and Notes stay one row (8 rows). Same field ids and storage, so saved entries show as before; Copy text order and headings unchanged (byte-identical for the same entry); auto and hand ticks, N of 8 and Clear day unchanged. Open rows are remembered on this device.
