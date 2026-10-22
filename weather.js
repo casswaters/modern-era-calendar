@@ -345,30 +345,75 @@ export function merge_observation(model, obs) {
   return out;
 }
 
-const nwsStations = new Map();
-async function fetch_nws_observation(lat, lon) {
+const nwsPoints = new Map();
+async function nws_point(lat, lon) {
   const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
-  let station = nwsStations.get(key);
-  if (!station) {
-    const pt = await fetchJson(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, 6000);
-    const list = await fetchJson(pt.properties.observationStations, 6000);
-    station = list.features && list.features[0] && list.features[0].id;
-    if (!station) return null;
-    nwsStations.set(key, station);
-  }
-  return parse_nws_observation(await fetchJson(`${station}/observations/latest`, 6000));
+  if (nwsPoints.has(key)) return nwsPoints.get(key);
+  const pt = await fetchJson(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, 6000);
+  const list = await fetchJson(pt.properties.observationStations, 6000);
+  const info = { hourly: pt.properties.forecastHourly, stations: (list.features || []).slice(0, 3).map((f) => f.id) };
+  nwsPoints.set(key, info);
+  return info;
 }
 
-/** Open-Meteo first; wttr.in if Open-Meteo errors or rate-limits. US: a live NWS station report corrects the sky. */
+/** v52: the nearest station with a report under 90 min old (the closest one often lags for hours). */
+async function fetch_nws_observation(info) {
+  for (const id of info.stations) {
+    try {
+      const o = parse_nws_observation(await fetchJson(`${id}/observations/latest`, 6000));
+      if (o) return o;
+    } catch { /* next station */ }
+  }
+  return null;
+}
+
+/** v52: NWS hourly forecast period covering `now`, as { code, pop, text }. */
+export function parse_nws_hourly(json, now = Date.now()) {
+  const ps = json && json.properties && json.properties.periods;
+  if (!Array.isArray(ps)) return null;
+  const p = ps.find((x) => Date.parse(x.startTime) <= now && now < Date.parse(x.endTime));
+  if (!p) return null;
+  const pop = p.probabilityOfPrecipitation && typeof p.probabilityOfPrecipitation.value === 'number' ? p.probabilityOfPrecipitation.value : null;
+  return { code: nws_code(p.shortForecast), pop, text: p.shortForecast || '' };
+}
+
+/** v52: active NWS alert names for a point, most severe first, e.g. ["Flood Watch"]. */
+export function parse_nws_alerts(json) {
+  const f = json && Array.isArray(json.features) ? json.features : [];
+  const out = [];
+  for (const a of f) { const e = a.properties && a.properties.event; if (e && !out.includes(e)) out.push(e); }
+  return out.slice(0, 2);
+}
+
+/**
+ * v52: when there is no fresh station report, trust the NWS hourly forecast over the global model
+ * if it calls for rain or storms at 50% or more (Open-Meteo can miss a storm the NWS sees coming).
+ */
+export function merge_hourly(model, hr) {
+  if (!model || !hr || hr.code == null || hr.code < 51 || (hr.pop != null && hr.pop < 50)) return model;
+  if (model.code >= 51) return { ...model, pop: hr.pop };
+  const { label, icon } = weather_label(hr.code, model.isDay !== false);
+  return { ...model, code: hr.code, label, icon, pop: hr.pop, cloud: Math.max(model.cloud || 0, 90), forecastSky: true };
+}
+
+/** Open-Meteo first; wttr.in if Open-Meteo errors or rate-limits. US: NWS station report, hourly forecast and alerts correct it. */
 export async function fetch_weather(lat, lon) {
-  const obsP = is_us_point(lat, lon) ? fetch_nws_observation(lat, lon).catch(() => null) : Promise.resolve(null);
+  const us = is_us_point(lat, lon);
+  const infoP = us ? nws_point(lat, lon).catch(() => null) : Promise.resolve(null);
+  const obsP = infoP.then((i) => (i ? fetch_nws_observation(i) : null)).catch(() => null);
+  const hrP = infoP.then((i) => (i && i.hourly ? fetchJson(i.hourly, 6000).then((j) => parse_nws_hourly(j)) : null)).catch(() => null);
+  const alP = us ? fetchJson(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`, 6000).then(parse_nws_alerts).catch(() => []) : Promise.resolve([]);
   let model;
   try {
     model = parse_open_meteo(await fetchJson(open_meteo_url(lat, lon)));
   } catch (e) {
     model = parse_wttr(await fetchJson(wttr_url(lat, lon), 10000));
   }
-  return merge_observation(model, await obsP);
+  const obs = await obsP;
+  let out = obs ? merge_observation(model, obs) : merge_hourly(model, await hrP);
+  const alerts = await alP;
+  if (alerts.length) out = { ...out, alerts };
+  return out;
 }
 
 /* ---------------- DOM wiring ---------------- */
@@ -383,7 +428,7 @@ function emitSky(state) {
     place: state.source === 'none' ? '' : state.place || '',
     lat: state.source === 'none' ? null : state.lat, lon: state.source === 'none' ? null : state.lon,
     source: state.source || 'none',
-    weather: state.weather || null,
+    weather: state.weather && state.fetchedAt && Date.now() - state.fetchedAt < 3 * 3600 * 1000 ? state.weather : null, // v52: never paint a sky from a reading over 3 h old
     fetchedAt: state.fetchedAt || 0,
     sunrise: (state.weather && state.weather.sunrise) || null,
     sunset: (state.weather && state.weather.sunset) || null
@@ -473,7 +518,11 @@ export function initSky() {
     if (w) {
       el.icon.textContent = w.icon;
       el.temp.textContent = `${w.tempF}°F`;
-      el.cond.textContent = w.label + (note ? ` · ${note}` : '');
+      const extra = [];
+      if (w.pop != null && w.pop >= 30) extra.push(`${w.pop}% rain`);
+      if (Array.isArray(w.alerts) && w.alerts.length) extra.push(`⚠ ${w.alerts[0]}`);
+      if (note) extra.push(note);
+      el.cond.textContent = [w.label, ...extra].join(' · ');
       const bits = [];
       if (w.hiF != null && w.loF != null) bits.push(`H ${w.hiF}° · L ${w.loF}°`);
       if (w.feelsF != null && Math.abs(w.feelsF - w.tempF) >= 3) bits.push(`feels ${w.feelsF}°`);
