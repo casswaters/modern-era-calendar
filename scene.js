@@ -109,6 +109,21 @@ export function sun_caption_times(sky, date = new Date()) {
   return null;
 }
 
+/** v52: the next sun event after `date` as { kind: 'sunrise'|'sunset', time } (display string), or null. */
+export function next_sun_event(sky, date = new Date()) {
+  if (!sky || typeof sky.lat !== 'number' || typeof sky.lon !== 'number') {
+    const st = sun_caption_times(sky, date);
+    return st ? { kind: 'sunset', time: st.set } : null;
+  }
+  const t = sun_times(date, sky.lat, sky.lon);
+  if (!t) return null;
+  const st = sun_caption_times(sky, date) || { rise: format_clock(t.sunrise), set: format_clock(t.sunset) };
+  if (date < t.sunrise) return { kind: 'sunrise', time: st.rise };
+  if (date < t.sunset) return { kind: 'sunset', time: st.set };
+  const tm = sun_times(new Date(date.getTime() + 86400000), sky.lat, sky.lon);
+  return { kind: 'sunrise', time: tm ? format_clock(tm.sunrise) : st.rise };
+}
+
 /** day / dusk (golden hour or twilight) / night from solar elevation. */
 export function time_of_day(elevation) {
   if (elevation > 6) return 'day'; // v51: golden hour is the sun below about 6 degrees
@@ -727,15 +742,15 @@ export function initScene() {
     band.classList.toggle('sc-reduced', reduced);
     band.style.setProperty('--sc-cloud-dur', `${Math.round(240 / (1 + (scene.windMph || 0) / 8))}s`);
     const where = sky && scene.hasPlace ? (sky.place || '').split(',')[0] : '';
-    const st = scene.hasPlace ? sun_caption_times(sky) : null;
+    const st = scene.hasPlace ? next_sun_event(sky) : null;
     caption.textContent = scene.label + (where ? ` · ${where}` : '');
     if (st) { // its own no-wrap span so the times drop to a second line together on narrow screens
       const sun = document.createElement('span');
       sun.className = 'sc-sun';
-      sun.textContent = `· ☀︎ ${st.rise} · ☾ ${st.set}`;
+      sun.textContent = `· ${st.kind === 'sunrise' ? '☀︎ sunrise' : '☾ sunset'} ${st.time}`;
       caption.append(' ', sun);
     }
-    band.setAttribute('aria-label', `Ambient scene: ${scene.label}${where ? `, ${sky.place}` : ''}${st ? `. Sunrise ${st.rise}, sunset ${st.set}` : ''}`);
+    band.setAttribute('aria-label', `Ambient scene: ${scene.label}${where ? `, ${sky.place}` : ''}${st ? `. Next ${st.kind} ${st.time}` : ''}`);
     band.title = scene.located ? `Ambient scene from ${sky.place} weather` : scene.hasPlace ? `Ambient seasonal scene for ${sky.place} (no weather reading yet)` : 'Earth vista (no location set, so no local weather)';
 
     const { w, h } = sizeCanvas();
