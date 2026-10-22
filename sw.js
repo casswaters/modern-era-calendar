@@ -1,6 +1,6 @@
-/* MEC service worker: network-first app shell, offline fallback (Captain's Log; captains-log-v52).
+/* MEC service worker: network-first app shell, offline fallback (Captain's Log; captains-log-v53).
    v38: Aretoria is no longer embedded (it lives at casswaters.github.io/aretoria); activate clears the old caches with its art. */
-const CACHE = 'captains-log-v52';
+const CACHE = 'captains-log-v53';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())
   );
 });
 
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.map((k) => caches.delete(k)))
-    ).then(() => caches.open(CACHE).then((c) => c.addAll(ASSETS)))
+    ).then(() => caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))))
      .then(() => self.clients.claim())
   );
 });

@@ -18,6 +18,7 @@ export const SET_HINT = 'Set a location for local weather';
 const STORE_KEY = 'mec-sky-v1';
 const OPTIN_KEY = 'mec-geo-optin';
 const MAX_AGE_MS = 15 * 60 * 1000; // v51: refresh weather every 15 min
+export const READING_V = 53; // v53: readings from older app versions are refetched, never repainted
 const WAKE_AGE_MS = 5 * 60 * 1000; // v51: coming back to the app refreshes anything older than 5 min
 
 /** WMO weather interpretation codes → [label, day icon, night icon]. */
@@ -256,9 +257,9 @@ export function read_home() {
  */
 export function sky_state_for(cached, home) {
   const c = cached && typeof cached === 'object' ? cached : null;
-  if (c && c.source === 'device' && Number.isFinite(c.lat) && Number.isFinite(c.lon)) return c;
+  if (c && c.source === 'device' && Number.isFinite(c.lat) && Number.isFinite(c.lon)) return c.weather && c.weather.v === READING_V ? c : { ...c, weather: null, fetchedAt: 0 };
   if (home) {
-    const same = c && c.source === 'home' && Math.abs(c.lat - home.lat) < 0.01 && Math.abs(c.lon - home.lon) < 0.01;
+    const same = c && c.source === 'home' && Math.abs(c.lat - home.lat) < 0.01 && Math.abs(c.lon - home.lon) < 0.01 && c.weather && c.weather.v === READING_V;
     return { place: home.name, lat: home.lat, lon: home.lon, source: 'home', weather: same ? c.weather || null : null, fetchedAt: same ? c.fetchedAt || 0 : 0 };
   }
   return { place: '', lat: null, lon: null, source: 'none', weather: null, fetchedAt: 0 };
@@ -413,7 +414,7 @@ export async function fetch_weather(lat, lon) {
   let out = obs ? merge_observation(model, obs) : merge_hourly(model, await hrP);
   const alerts = await alP;
   if (alerts.length) out = { ...out, alerts };
-  return out;
+  return { ...out, v: READING_V };
 }
 
 /* ---------------- DOM wiring ---------------- */
