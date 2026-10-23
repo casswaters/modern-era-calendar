@@ -1033,7 +1033,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v55: an expired token is reported as auth', authErr && authErr.auth);
   assert('v55: only the drive.appdata scope', S.SCOPE === 'https://www.googleapis.com/auth/drive.appdata' && !/auth\/drive(['"]|\.(?!appdata))/.test(src('./sync.js') + src('./sync-ui.js')));
   // hidden when no client ID
-  assert('v55: no client ID committed, so sync is off', DRIVE_CLIENT_ID === '');
+  assert('v56: client ID is a Google web client ID (or empty to turn sync off)', DRIVE_CLIENT_ID === '' || /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(DRIVE_CLIENT_ID));
   const cl = src('./captains-log.js'), html = src('./index.html');
   assert('v55: sync UI and Google script load only when a client ID is set', /if \(DRIVE_CLIENT_ID\) \{\s*import\('\.\/sync-ui\.js/.test(cl) && !/sync-ui|gsi\/client|log-sync/.test(html) && !/gsi\/client/.test(cl));
   assert('v55: saves record edit times for merge', /markEdit\(iso\)/.test(cl) && /EDITS_KEY/.test(cl));
