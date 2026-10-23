@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl56';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl56';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl56';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl56';
-import { parseNote, mergePlan } from './paste.js?v=cl56';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl56';
+} from './mec.js?v=cl57';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl57';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl57';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl57';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl57';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl57';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -320,10 +320,10 @@ function fillForm() {
 function setStatus(msg) { $('log-status').textContent = msg; }
 
 function show(g) {
-  if (pastePanel && !pastePanel.hidden) pasteOpen(false); // v54: a pasted note never carries over to another day
   current = { year: g.year, month: g.month, day: g.day };
   renderHeader();
   fillForm();
+  if (pastePanel && !pastePanel.hidden) { pasteReset(); pasteNote(); pastePreview(); } // v57: changing the day while pasting re-targets the preview; Save checks the day
 }
 
 /* ---------- Save (debounced) ---------- */
@@ -451,14 +451,23 @@ function pasteReset() { pastePlan = null; pastePrev.innerHTML = ''; pasteSave.hi
 function pasteOpen(open) {
   pastePanel.hidden = !open;
   pasteBtn.setAttribute('aria-expanded', String(open));
-  const g = current;
-  $('log-paste-note').textContent = `Paste a note for ${format_gregorian(g.year, g.month, g.day)}. Nothing is saved until you tap Save. It stays in this browser only.`;
+  pasteNote();
   if (!open) { pasteText.value = ''; pasteReset(); } else pasteText.focus({ preventScroll: true });
 }
-pasteBtn.addEventListener('click', () => pasteOpen(pastePanel.hidden));
+function pasteNote() {
+  const g = current;
+  $('log-paste-note').textContent = `Paste a note for ${format_gregorian(g.year, g.month, g.day)}. Use the arrows above to pick another day. Nothing is saved until you tap Save. It stays in this browser only.`;
+}
+pasteBtn.addEventListener('click', () => {
+  if (pastePanel.hidden) { const d = pasteDay(current, todayG()); if (isoOf(d) !== isoOf(current)) show(d); }
+  pasteOpen(pastePanel.hidden);
+});
 $('log-paste-cancel').addEventListener('click', () => pasteOpen(false));
-pasteText.addEventListener('input', pasteReset);
-$('log-paste-preview-btn').addEventListener('click', () => {
+let pasteTimer = null;
+pasteText.addEventListener('input', () => { pasteReset(); clearTimeout(pasteTimer); pasteTimer = setTimeout(pastePreview, 400); }); // v57: preview shows by itself, so the flow is paste then Save
+$('log-paste-preview-btn').addEventListener('click', pastePreview);
+function pastePreview() {
+  if (!pasteText.value.trim()) { pasteReset(); return; }
   flush();
   pasteIso = isoOf(current);
   const { fields } = parseNote(pasteText.value, { business: P.businessSet ? P.business : '', beliefs: [P.words.b1, P.words.b2] });
@@ -470,8 +479,9 @@ $('log-paste-preview-btn').addEventListener('click', () => {
   const g = current;
   pasteSave.textContent = `Save to ${format_gregorian(g.year, g.month, g.day)}`;
   pasteSave.hidden = false;
-});
+}
 pasteSave.addEventListener('click', () => {
+  try { window.dispatchEvent(new CustomEvent('mec-log-tap')); } catch {} // v57: a real tap lets Drive sync refresh its token (Safari allows the Google window only on a tap)
   if (!pastePlan || pasteIso !== isoOf(current)) { pasteReset(); return; }
   flush();
   const data = load(pasteIso);
@@ -632,7 +642,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl56').then((m) => m.start({
+  import('./sync-ui.js?v=cl57').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};

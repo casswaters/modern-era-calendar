@@ -122,3 +122,11 @@ export function mergePlan(existing = {}, fields = {}) {
     return { id, mode: 'add', value: `${existing[id]}${sep}${neu}` };
   });
 }
+
+/** v57: Paste a note opens on yesterday when the log is showing today (the morning flow logs the day before); any other day stays. */
+export function pasteDay(cur, today) {
+  const same = cur.year === today.year && cur.month === today.month && cur.day === today.day;
+  if (!same) return cur;
+  const dt = new Date(today.year, today.month - 1, today.day - 1);
+  return { year: dt.getFullYear(), month: dt.getMonth() + 1, day: dt.getDate() };
+}

@@ -2,11 +2,13 @@
  * Sync UI (v55). Loaded only when sync-config.js holds a client ID.
  * Adds a "Drive sync" button and panel to the log. Google sign in uses the Google Identity
  * Services token flow (popup, scope drive.appdata only); the token lives in memory only.
- * Saves sync a few seconds later while a token is valid; otherwise changes wait for Sync now.
+ * Saves sync a few seconds later while a token is valid. v57: after the first sign in, the Save tap in
+ * Paste a note quietly asks Google for a fresh token (prompt '', no consent screen; Safari allows the
+ * Google window only during a tap) and syncs. Only if that fails does a small "Sign in to Google to sync" show.
  */
-import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl56';
+import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl57';
 
-const ON_KEY = 'mec-sync-on', LAST_KEY = 'mec-sync-last', DIRTY_KEY = 'mec-sync-dirty';
+const NEED_KEY = 'mec-sync-need', ON_KEY = 'mec-sync-on', LAST_KEY = 'mec-sync-last', DIRTY_KEY = 'mec-sync-dirty';
 const GIS = 'https://accounts.google.com/gsi/client';
 
 export function start({ clientId, localDoc, apply }) {
@@ -17,6 +19,10 @@ export function start({ clientId, localDoc, apply }) {
   btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', 'log-sync');
   btn.textContent = 'Drive sync';
   actions.appendChild(btn);
+  const signin = document.createElement('button');
+  signin.className = 'btn xs'; signin.id = 'log-sync-signin'; signin.type = 'button'; signin.hidden = true;
+  signin.textContent = 'Sign in to Google to sync';
+  actions.appendChild(signin);
   const panel = document.createElement('div');
   panel.className = 'log-settings'; panel.id = 'log-sync'; panel.hidden = true;
   panel.innerHTML = `<p class="log-settings-note">Keeps your entries in a private app folder in your own Google Drive. Only you can see it, and this site can see nothing else in your Drive.</p>
@@ -34,6 +40,7 @@ export function start({ clientId, localDoc, apply }) {
   let token = '', expires = 0, busy = false, later = null, tokenClient = null, pendingResolve = null;
   const hasToken = () => token && Date.now() < expires - 60000;
 
+  function need(on) { ls(NEED_KEY, on ? '1' : null); signin.hidden = !on || ls(ON_KEY) !== '1'; }
   function idle() {
     const last = Number(ls(LAST_KEY)) || 0;
     const when = last ? new Date(last).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
@@ -61,7 +68,7 @@ export function start({ clientId, localDoc, apply }) {
             if (r && r.access_token) { token = r.access_token; expires = Date.now() + (Number(r.expires_in) || 3600) * 1000; p && p.res(token); }
             else p && p.rej(new Error('denied'));
           },
-          error_callback: () => { const p = pendingResolve; pendingResolve = null; p && p.rej(new Error('closed')); }
+          error_callback: () => { const p = pendingResolve; pendingResolve = null; p && p.rej(new Error('closed')); } // popup blocked or closed
         });
       }
       pendingResolve = { res, rej };
@@ -69,12 +76,18 @@ export function start({ clientId, localDoc, apply }) {
     });
   }
 
-  async function run(interactive) {
+  /** Must be called synchronously inside a tap: starts the Google token request before any await. */
+  function tapToken() {
+    if (hasToken() || !(window.google && google.accounts && google.accounts.oauth2)) return null;
+    return getToken();
+  }
+  async function run(interactive, pending = null) {
     if (busy) return;
     if (!navigator.onLine) { ls(DIRTY_KEY, '1'); status('Offline. Your entries are safe here and will sync when you are back online.'); return; }
     busy = true; $('log-sync-now').disabled = true;
     try {
-      if (!hasToken()) {
+      if (pending) await pending;
+      else if (!hasToken()) {
         if (!interactive) { ls(DIRTY_KEY, '1'); idle(); return; }
         status('Opening Google sign in…');
         await loadGis(); await getToken();
@@ -82,12 +95,12 @@ export function start({ clientId, localDoc, apply }) {
       status('Syncing…');
       const r = await syncOnce(driveClient(fetch.bind(window), () => token), localDoc());
       if (r.toLocal.length) apply(r.doc, r.toLocal);
-      ls(ON_KEY, '1'); ls(DIRTY_KEY, null); ls(LAST_KEY, String(Date.now()));
+      ls(ON_KEY, '1'); ls(DIRTY_KEY, null); ls(LAST_KEY, String(Date.now())); need(false);
       idle();
     } catch (e) {
       ls(DIRTY_KEY, '1');
-      if (e && e.auth) { token = ''; status('Google sign in expired. Tap Sync now.'); }
-      else if (e && /denied|closed|gis/.test(e.message)) status('Sign in did not finish. Nothing changed. Tap Sync now to try again.');
+      if (e && e.auth) { token = ''; need(true); status('Google sign in expired. Tap Sign in to Google to sync.'); }
+      else if (e && /denied|closed|gis/.test(e.message)) { if (ls(ON_KEY) === '1') need(true); status('Sign in did not finish. Nothing changed. Your entries are safe here.'); }
       else status('Could not reach Drive. Your entries are safe here. Tap Sync now to try again.');
     } finally { busy = false; $('log-sync-now').disabled = false; }
   }
@@ -97,9 +110,16 @@ export function start({ clientId, localDoc, apply }) {
     if (!panel.hidden) idle();
   });
   $('log-sync-now').addEventListener('click', () => run(true));
+  signin.addEventListener('click', () => run(true));
+  // v57: the Save tap in Paste a note refreshes the token quietly and syncs (no extra taps)
+  window.addEventListener('mec-log-tap', () => {
+    if (ls(ON_KEY) !== '1') return;
+    const p = tapToken();
+    clearTimeout(later); later = setTimeout(() => run(false, p), p ? 0 : 400);
+  });
   $('log-sync-off').addEventListener('click', () => {
     if (token && window.google && google.accounts) try { google.accounts.oauth2.revoke(token, () => {}); } catch {}
-    token = ''; expires = 0; ls(ON_KEY, null); ls(LAST_KEY, null); ls(DIRTY_KEY, null);
+    token = ''; expires = 0; ls(ON_KEY, null); need(false); ls(LAST_KEY, null); ls(DIRTY_KEY, null);
     status('Sync is off. Your entries stay in this browser, and the copy in Drive stays where it is.');
   });
   $('log-sync-export').addEventListener('click', () => {
@@ -113,8 +133,10 @@ export function start({ clientId, localDoc, apply }) {
   window.addEventListener('mec-log-saved', () => {
     if (ls(ON_KEY) !== '1') return;
     ls(DIRTY_KEY, '1');
+    if (!hasToken()) return; // waits for the next tap or Sync now
     clearTimeout(later); later = setTimeout(() => run(false), 3000);
   });
   window.addEventListener('online', () => { if (ls(ON_KEY) === '1' && ls(DIRTY_KEY) === '1') run(false); });
+  if (ls(ON_KEY) === '1') { loadGis().catch(() => {}); need(ls(NEED_KEY) === '1'); }
   idle();
 }
