@@ -7,10 +7,11 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl53';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl53';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl53';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl53';
+} from './mec.js?v=cl54';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl54';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl54';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl54';
+import { parseNote, mergePlan } from './paste.js?v=cl54';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -308,6 +309,7 @@ function fillForm() {
 function setStatus(msg) { $('log-status').textContent = msg; }
 
 function show(g) {
+  if (pastePanel && !pastePanel.hidden) pasteOpen(false); // v54: a pasted note never carries over to another day
   current = { year: g.year, month: g.month, day: g.day };
   renderHeader();
   fillForm();
@@ -423,6 +425,50 @@ $('log-clear').addEventListener('click', () => {
   try { localStorage.removeItem(KEY_PREFIX + isoOf(g)); } catch {}
   fillForm();
   setStatus('Entry cleared');
+});
+
+/* ---------- Paste a note (v54): fill the shown day from pasted plain text; preview first, save only on tap ---------- */
+const pasteBtn = $('log-paste-btn'), pastePanel = $('log-paste'), pasteText = $('log-paste-text');
+const pastePrev = $('log-paste-preview'), pasteSave = $('log-paste-save');
+let pastePlan = null, pasteIso = '';
+const pasteLabel = (id) => {
+  if (id === 'wake') return 'Wake'; if (id === 'bed') return 'Sleep';
+  for (const s of SECTIONS) for (const f of s.fields) if (f.id === id) return labelOf(f);
+  return id;
+};
+function pasteReset() { pastePlan = null; pastePrev.innerHTML = ''; pasteSave.hidden = true; }
+function pasteOpen(open) {
+  pastePanel.hidden = !open;
+  pasteBtn.setAttribute('aria-expanded', String(open));
+  const g = current;
+  $('log-paste-note').textContent = `Paste a note for ${format_gregorian(g.year, g.month, g.day)}. Nothing is saved until you tap Save. It stays in this browser only.`;
+  if (!open) { pasteText.value = ''; pasteReset(); } else pasteText.focus({ preventScroll: true });
+}
+pasteBtn.addEventListener('click', () => pasteOpen(pastePanel.hidden));
+$('log-paste-cancel').addEventListener('click', () => pasteOpen(false));
+pasteText.addEventListener('input', pasteReset);
+$('log-paste-preview-btn').addEventListener('click', () => {
+  flush();
+  pasteIso = isoOf(current);
+  const { fields } = parseNote(pasteText.value, { business: P.businessSet ? P.business : '', beliefs: [P.words.b1, P.words.b2] });
+  pastePlan = mergePlan(load(pasteIso), fields);
+  const todo = pastePlan.filter((x) => x.mode === 'fill' || x.mode === 'add');
+  if (!todo.length) { pastePrev.innerHTML = '<p class="log-settings-note">Nothing new to fill from this note.</p>'; pasteSave.hidden = true; return; }
+  const word = { fill: 'Will fill', add: 'Already has text. Your old text stays and this is added below it', same: 'Already there, no change', keep: 'Already set, kept as is' };
+  pastePrev.innerHTML = `<ul class="log-paste-list">${pastePlan.map((x) => `<li class="log-paste-${x.mode}"><b>${esc(pasteLabel(x.id))}</b> <span class="log-hint">${word[x.mode]}</span><pre>${esc(x.mode === 'keep' ? x.pasted : (x.mode === 'add' ? x.value : x.value))}</pre></li>`).join('')}</ul>`;
+  const g = current;
+  pasteSave.textContent = `Save to ${format_gregorian(g.year, g.month, g.day)}`;
+  pasteSave.hidden = false;
+});
+pasteSave.addEventListener('click', () => {
+  if (!pastePlan || pasteIso !== isoOf(current)) { pasteReset(); return; }
+  flush();
+  const data = load(pasteIso);
+  for (const x of pastePlan) if (x.mode === 'fill' || x.mode === 'add') data[x.id] = x.value;
+  const ok = store(pasteIso, data);
+  fillForm();
+  pasteOpen(false);
+  setStatus(ok ? 'Note saved to this day in this browser' : 'Could not save (storage full or blocked)');
 });
 
 /* ---------- Profile (v38): name, holding company, main business, birthday; this browser only ---------- */

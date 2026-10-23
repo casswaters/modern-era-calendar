@@ -229,6 +229,12 @@ body::after {
 }
 .sky-strip .sky-place .pin { color: var(--gold); font-size: .8em; margin-right: 3px; }
 .sky-strip .sky-cond { white-space: nowrap; }
+/* v54: on phones the condition may wrap and the location button sits on its own line, never over the weather text */
+@media (max-width: 560px) {
+  .sky-strip { flex-wrap: wrap; border-radius: 22px; }
+  .sky-strip .sky-cond { white-space: normal; }
+  .sky-btn { order: 3; margin-left: auto; }
+}
 .sky-strip .sky-hilo { white-space: nowrap; font-size: .78rem; opacity: .85; }
 .sky-strip .sky-temp {
   font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--gold-bright);
@@ -1151,3 +1157,9 @@ a.portal-link:focus-visible .portal-enter { outline: 2px solid var(--gold-bright
 .log-words .log-settings-grid label { font-size: .76rem; }
 .log-beliefs[hidden], .log-beliefs p[hidden] { display: none; }
 .log-settings-grid textarea { resize: vertical; font-size: .9rem; line-height: 1.35; }
+
+/* v54: Paste a note */
+.log-paste textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: .85rem; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-deep); color: var(--text); margin-bottom: 8px; }
+.log-paste-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; font-size: .8rem; }
+.log-paste-list pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; font: inherit; color: var(--text-muted); max-height: 9em; overflow: auto; }
+.log-paste-add b { color: var(--gold-bright); }
