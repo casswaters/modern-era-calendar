@@ -1,20 +1,29 @@
 /**
  * Captain's Log: a blank daily journal that lives beside the calendar.
  * Entries are stored only in this browser (localStorage), one record per
- * Gregorian date: key "mec-log:YYYY-MM-DD". Nothing is synced anywhere.
+ * Gregorian date: key "mec-log:YYYY-MM-DD". v55: each save also records its edit
+ * time (mec-log-edits) so an optional private Drive sync (sync.js) can merge by
+ * newest edit. Sync stays off and invisible unless sync-config.js holds a client ID.
  * Date labels reuse mec.js helpers; no calendar math is done here.
  */
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl54';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl54';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl54';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl54';
-import { parseNote, mergePlan } from './paste.js?v=cl54';
+} from './mec.js?v=cl55';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl55';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl55';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl55';
+import { parseNote, mergePlan } from './paste.js?v=cl55';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl55';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
+const EDITS_KEY = 'mec-log-edits'; // v55: { iso: last edit ms }, for sync merge
+function edits() { try { return JSON.parse(localStorage.getItem(EDITS_KEY) || '{}') || {}; } catch { return {}; } }
+function markEdit(iso, t = Date.now()) {
+  try { const e = edits(); e[iso] = t; localStorage.setItem(EDITS_KEY, JSON.stringify(e)); } catch {}
+  try { window.dispatchEvent(new CustomEvent('mec-log-saved', { detail: { iso } })); } catch {}
+}
 
 /* ---------- Template (edit here to change prompts) ----------
    field types: cue (read-only standing prompt; optional note = one plain explanatory line under it), text, area, check, scale (1–10), head
@@ -134,8 +143,10 @@ function load(iso) {
 function store(iso, data) {
   const has = Object.values(data).some(v => v !== '' && v !== false && v != null);
   try {
+    const before = localStorage.getItem(KEY_PREFIX + iso);
     if (has) localStorage.setItem(KEY_PREFIX + iso, JSON.stringify(data));
     else localStorage.removeItem(KEY_PREFIX + iso);
+    if (before !== localStorage.getItem(KEY_PREFIX + iso)) markEdit(iso);
     return true;
   } catch { return false; }
 }
@@ -422,7 +433,7 @@ $('log-clear').addEventListener('click', () => {
   const g = current;
   if (!confirm(`Clear the Captain’s Log entry for ${format_gregorian(g.year, g.month, g.day)}? This only affects this browser.`)) return;
   clearTimeout(timer); timer = null;
-  try { localStorage.removeItem(KEY_PREFIX + isoOf(g)); } catch {}
+  try { localStorage.removeItem(KEY_PREFIX + isoOf(g)); markEdit(isoOf(g)); } catch {}
   fillForm();
   setStatus('Entry cleared');
 });
@@ -618,3 +629,34 @@ renderHome();
   new ResizeObserver(set).observe(cal);
   set();
 })();
+
+/* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
+if (DRIVE_CLIENT_ID) {
+  import('./sync-ui.js?v=cl55').then((m) => m.start({
+    clientId: DRIVE_CLIENT_ID,
+    localDoc() {
+      const e = edits(), days = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith(KEY_PREFIX)) continue;
+        const iso = k.slice(KEY_PREFIX.length);
+        try { days[iso] = { t: e[iso] || 0, data: JSON.parse(localStorage.getItem(k)) }; } catch {}
+      }
+      for (const [iso, t] of Object.entries(e)) if (!days[iso]) days[iso] = { t, data: null };
+      return { format: 'captains-log', v: 1, exported: Date.now(), days };
+    },
+    apply(doc, isos) {
+      const e = edits();
+      for (const iso of isos) {
+        const rec = doc.days[iso];
+        try {
+          if (rec.data) localStorage.setItem(KEY_PREFIX + iso, JSON.stringify(rec.data));
+          else localStorage.removeItem(KEY_PREFIX + iso);
+          e[iso] = rec.t;
+        } catch {}
+      }
+      try { localStorage.setItem(EDITS_KEY, JSON.stringify(e)); } catch {}
+      if (isos.includes(isoOf(current)) && !timer) fillForm();
+    }
+  })).catch(() => {});
+}
