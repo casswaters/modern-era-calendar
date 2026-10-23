@@ -2,7 +2,7 @@
  * Captain's Log Daily Tracker (v46): the day's overview. Pure data and status, no DOM (tested in node).
  * Each row is done when its area has entries for the day, or when ticked by hand (saved as trk_<id>).
  */
-import { DEFAULTS, SUPP_IDS } from './profile.js?v=cl56';
+import { DEFAULTS, SUPP_IDS } from './profile.js?v=cl57';
 
 /* fields: the saved-entry ids that mark the row done automatically.
    v49: sec + panel: the log section the row's entry fields come from, and which of its fields open inline under the row

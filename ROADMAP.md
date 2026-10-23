@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-23, about 9:25 AM MT (v56: private Drive sync turned on)
+**Last updated:** 2026-10-23, about 9:45 AM MT (v57: no-tap sync, Paste a note opens on yesterday)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -14,7 +14,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
-- Live SW captains-log-v56 matches main.
+- Live SW captains-log-v57 matches main.
+- Daily flow (Cassidy, Oct 23, 2026): wake up, open Captain's Log, Paste a note (opens on yesterday), paste, Save. Save also syncs to Drive with no extra taps after the first sign in; a small "Sign in to Google to sync" shows only when Google needs him again (about weekly in Testing mode).
 - Private Drive sync is on (v56). Waiting on Cassidy's first Sync now on his iPhone (Drive sync, Sync now, sign in, Continue past the unverified app notice, allow). Testing mode means Google asks him to sign in again about every 7 days.
 - Next after sync is live: history search ("what did I do on this day") and wake and bed trends, reading from the synced file.
 - Paste a note (v54): fill a chosen day from a pasted daily note, preview first, save on tap; a bridge until the full Apple Notes backlog can be read.
@@ -24,6 +25,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - (empty; see Ideas)
 
 ## Later
+- Captain's Log as the main input (Cassidy, Oct 23, 2026): after the Apple Notes backlog is transferred, he logs directly in Captain's Log instead of Apple Notes.
 - Choose your calendar (Cassidy, Oct 23, 2026): when Captain's Log opens to others, each person picks their main calendar (Gregorian, MEC, others) and the rest show as translations; MEC stays Cassidy's default.
 - Own hardware (Cassidy, Oct 23, 2026): long run, keep entries on hardware Cassidy owns (MacBook or home server) so they are truly private; build the Drive sync so it can move there without a restart.
 - Private hosting for others (Cassidy, Oct 23, 2026): releasing Captain's Log to others means hosting each person's data privately and separately (server space); keep data per person and portable so this path stays open.
@@ -42,6 +44,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - None open right now.
 
 ## Shipped (newest first, times MT)
+- 2026-10-23 09:45: v57 (SW captains-log-v57): no-tap sync and morning flow. Paste a note opens on yesterday when the log shows today (arrows still change the day; preview follows), the preview appears by itself after pasting, so the flow is Paste a note, paste, Save. The Save tap quietly asks Google for a fresh token (prompt empty, no consent screen after the first sign in) and syncs; saves while a token is valid sync on their own. Safari allows the Google window only during a tap, so there is no sync on page load without a tap; a small Sign in to Google to sync button shows only when the quiet refresh fails. Sync now stays in the panel as a fallback. Tests with mocked Google and Drive.
 - 2026-10-23 09:25: v56 (SW captains-log-v56): Drive sync turned on. sync-config.js holds the Google OAuth web client ID (project Captains Log, origin https://casswaters.github.io, scope drive.appdata, consent screen in Testing with Cassidy as test user). The Drive sync button and panel now show in the log.
 - 2026-10-23 09:10: v55 (SW captains-log-v55): private Drive sync, built but off. sync.js keeps one plain JSON file (captains-log.json: per day the last edit time and fields, null for a cleared day) in the Drive appDataFolder, a hidden folder only this app can reach in the user's own Drive; scope drive.appdata only, Google Identity Services token flow in a popup, token in memory only, no server. Merge keeps the newest edit per day. Each save now records its edit time (mec-log-edits); with a valid token a save syncs a few seconds later, otherwise it waits for Sync now; offline is safe and resumes when back online. Panel: Sync now, Download backup (same plain JSON, portable to own hardware later), Turn off. With an empty DRIVE_CLIENT_ID (sync-config.js) no button, panel, Google script or Drive call exists. Tests use a mocked Drive API and invented samples.
 - 2026-10-23 07:20: v54 (SW captains-log-v54): Paste a note. A "Paste a note" button in the log takes a pasted plain-text daily note for the shown day, sorts it by section heading into the existing fields (Daily Tracker times to Wake and Sleep, Career, Communication, Social, Care, Drank, Ate, Dreams, Listened, Purchases, Workout, Health), and puts anything without its own field (gratitude answers, supplements, loose lines) into Notes so nothing is lost. A preview lists every field first; nothing is saved until Save. Filled fields are never replaced: old text stays and new text is added below, said so in the preview; Wake and Sleep keep a time already set. Fully in this browser, no network. Tests use an invented sample only (paste.js). Also: on phone width the weather strip wraps so Use my location no longer covers the weather line.

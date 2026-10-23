@@ -1042,5 +1042,23 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v55: no em dashes or tildes in sync copy', !/[\u2014~]/.test(src('./sync-ui.js') + src('./sync.js') + src('./sync-config.js')));
 }
 
+{
+  // v57: morning flow (Paste a note opens on yesterday) and tap-time token refresh. Invented data only.
+  const { pasteDay } = await import('./paste.js?v=t57');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const d = pasteDay({ year: 2026, month: 3, day: 1 }, { year: 2026, month: 3, day: 1 });
+  assert('v57: on today, Paste a note opens yesterday (across a month end)', d.year === 2026 && d.month === 2 && d.day === 28);
+  const k = pasteDay({ year: 2026, month: 1, day: 5 }, { year: 2026, month: 1, day: 9 });
+  assert('v57: on another day, Paste a note keeps that day', k.day === 5);
+  const y = pasteDay({ year: 2027, month: 1, day: 1 }, { year: 2027, month: 1, day: 1 });
+  assert('v57: yesterday across a year end', y.year === 2026 && y.month === 12 && y.day === 31);
+  const cl = src('./captains-log.js'), ui = src('./sync-ui.js');
+  assert('v57: preview shows by itself after pasting', /pasteTimer = setTimeout\(pastePreview, 400\)/.test(cl));
+  assert('v57: Save tap signals sync before saving', /pasteSave\.addEventListener\('click', \(\) => \{\s*try \{ window\.dispatchEvent\(new CustomEvent\('mec-log-tap'\)\)/.test(cl));
+  assert('v57: token is requested synchronously in the tap, with no consent prompt after first sign in', /addEventListener\('mec-log-tap', \(\) => \{[\s\S]{0,80}const p = tapToken\(\);/.test(ui) && /prompt: ls\(ON_KEY\) === '1' \? '' : 'consent'/.test(ui));
+  assert('v57: sign in prompt only after a failed refresh', /Sign in to Google to sync/.test(ui) && /signin\.hidden = true/.test(ui) && /need\(true\)/.test(ui));
+  assert('v57: no personal email in served code', !/@gmail|cass\.waters/i.test(ui + cl + src('./sync-config.js')));
+}
+
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);
