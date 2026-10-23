@@ -4,7 +4,7 @@
  * Services token flow (popup, scope drive.appdata only); the token lives in memory only.
  * Saves sync a few seconds later while a token is valid; otherwise changes wait for Sync now.
  */
-import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl55';
+import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl56';
 
 const ON_KEY = 'mec-sync-on', LAST_KEY = 'mec-sync-last', DIRTY_KEY = 'mec-sync-dirty';
 const GIS = 'https://accounts.google.com/gsi/client';
