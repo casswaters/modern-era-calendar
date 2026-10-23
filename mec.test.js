@@ -996,5 +996,51 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v54: phone weather strip wraps the location button', /max-width: 560px\)[\s\S]{0,120}flex-wrap: wrap/.test(readFileSync(new URL('./styles.css', import.meta.url), 'utf8')));
 }
 
+{
+  // v55: private Drive sync. Mocked Drive API and invented samples only.
+  const S = await import('./sync.js');
+  const { DRIVE_CLIENT_ID } = await import('./sync-config.js');
+  const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+  const a = { format: 'captains-log', v: 1, days: { '2026-01-01': { t: 5, data: { notes: 'Sample A' } }, '2026-01-02': { t: 1, data: { notes: 'Old' } }, '2026-01-03': { t: 9, data: null } } };
+  const b = { format: 'captains-log', v: 1, days: { '2026-01-02': { t: 7, data: { notes: 'New' } }, '2026-01-03': { t: 2, data: { notes: 'Gone' } }, '2026-01-04': { t: 3, data: { ate: 'Toast' } } } };
+  const m = S.mergeDocs(a, b);
+  assert('v55: merge keeps the newest edit per day', m.doc.days['2026-01-02'].data.notes === 'New' && m.doc.days['2026-01-01'].data.notes === 'Sample A');
+  assert('v55: a newer clear beats an older entry', m.doc.days['2026-01-03'].data === null && m.toB.includes('2026-01-03'));
+  assert('v55: days from Drive go to local', m.toA.sort().join() === '2026-01-02,2026-01-04');
+  assert('v55: junk input becomes an empty doc', Object.keys(S.validDoc({ days: { x: 1 } }).days).length === 0 && Object.keys(S.validDoc({ format: 'captains-log', days: { 'bad': { t: 1 } } }).days).length === 0);
+  // mocked Drive
+  const files = {}; const calls = [];
+  const res = (status, body) => ({ status, ok: status < 300, json: async () => body });
+  const mock = async (url, opt = {}) => {
+    calls.push([opt.method || 'GET', url, opt.headers && opt.headers.Authorization]);
+    if (url.includes('?spaces=appDataFolder')) return res(200, { files: Object.keys(files).map((id) => ({ id })) });
+    if (url.includes('uploadType=multipart')) { const j = opt.body.split('\r\n\r\n'); const meta = JSON.parse(j[1].split('\r\n')[0]); if (meta.parents[0] !== 'appDataFolder') return res(400, {}); files.f1 = JSON.parse(j[2].split('\r\n')[0]); return res(200, { id: 'f1' }); }
+    const id = url.match(/files\/(\w+)/)[1];
+    if (opt.method === 'PATCH') { files[id] = JSON.parse(opt.body); return res(200, {}); }
+    if (url.includes('alt=media')) return res(200, files[id]);
+    return res(404, {});
+  };
+  const c = S.driveClient(mock, () => 'tok');
+  const r1 = await S.syncOnce(c, a);
+  assert('v55: first sync creates one file in the hidden app folder', files.f1 && Object.keys(files.f1.days).length === 3 && r1.toLocal.length === 0);
+  files.f1.days['2026-01-05'] = { t: 50, data: { health: 'Good' } };
+  const r2 = await S.syncOnce(c, a);
+  assert('v55: second sync pulls a day added on another device', r2.toLocal.includes('2026-01-05'));
+  const n = calls.length; await S.syncOnce(c, r2.doc);
+  assert('v55: nothing written when already in step', !calls.slice(n).some((x) => x[0] === 'PATCH'));
+  assert('v55: every Drive call carries the token', calls.every((x) => x[2] === 'Bearer tok'));
+  let authErr = null; try { await S.driveClient(async () => res(401, {}), () => 'x').find(); } catch (e) { authErr = e; }
+  assert('v55: an expired token is reported as auth', authErr && authErr.auth);
+  assert('v55: only the drive.appdata scope', S.SCOPE === 'https://www.googleapis.com/auth/drive.appdata' && !/auth\/drive(['"]|\.(?!appdata))/.test(src('./sync.js') + src('./sync-ui.js')));
+  // hidden when no client ID
+  assert('v55: no client ID committed, so sync is off', DRIVE_CLIENT_ID === '');
+  const cl = src('./captains-log.js'), html = src('./index.html');
+  assert('v55: sync UI and Google script load only when a client ID is set', /if \(DRIVE_CLIENT_ID\) \{\s*import\('\.\/sync-ui\.js/.test(cl) && !/sync-ui|gsi\/client|log-sync/.test(html) && !/gsi\/client/.test(cl));
+  assert('v55: saves record edit times for merge', /markEdit\(iso\)/.test(cl) && /EDITS_KEY/.test(cl));
+  assert('v55: sync code never logs', !/console\./.test(src('./sync.js') + src('./sync-ui.js')));
+  assert('v55: SW precaches sync files and never caches Google', /sync\.js/.test(src('./sw.js')) && /url\.origin !== self\.location\.origin\) return/.test(src('./sw.js')));
+  assert('v55: no em dashes or tildes in sync copy', !/[\u2014~]/.test(src('./sync-ui.js') + src('./sync.js') + src('./sync-config.js')));
+}
+
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);
