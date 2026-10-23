@@ -22,6 +22,9 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - (empty; see Ideas)
 
 ## Later
+- Choose your calendar (Cassidy, Oct 23, 2026): when Captain's Log opens to others, each person picks their main calendar (Gregorian, MEC, others) and the rest show as translations; MEC stays Cassidy's default.
+- Own hardware (Cassidy, Oct 23, 2026): long run, keep entries on hardware Cassidy owns (MacBook or home server) so they are truly private; build the Drive sync so it can move there without a restart.
+- Private hosting for others (Cassidy, Oct 23, 2026): releasing Captain's Log to others means hosting each person's data privately and separately (server space); keep data per person and portable so this path stays open.
 - 3D animated companion (cross-ref: Aretoria ROADMAP, Later): the visitor's reflection guide (Irishnu for Cassidy) as a 3D animated character who hangs around the user's Captain's Log in various moods and character phases. Ties to Aretoria's reflection-guide feature (custom fantasy name + costume).
 - Calendar: extend the Jewish holiday and Umm al-Qura Eid tables past 2037.
 
