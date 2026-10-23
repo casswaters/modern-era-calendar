@@ -970,5 +970,31 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v53: fetch_weather stamps readings', /v: READING_V/.test(w));
 }
 
+{
+  // v54: Paste a note. Invented neutral sample only (never real journal content).
+  const { parseNote, mergePlan, headKey } = await import('./paste.js');
+  const SAMPLE = "Thursday October 22nd\nDay #295 of 2026\n\nBelief creates consequence.\n\nGratitude exercise:\n1. What am I grateful for?\n- A quiet morning\n2. Who do I love?\n- My sister\n8. Why am I here?\n- To learn\n\nGrounding exercise:\n- What am I being influenced by?\n- Is it sustainable?\n\nDaily Tracker\n6:15am:\nGood morning ☀️\n10:30pm:\nGood night 💤\n\nLife Journal\n- Wrote a short page\n\nCareer\nSample Holdings\n- Check in\n    - Schedule\nSample Studio\n    - Pipeline review\n        - Two intros\n\nNotes\n- Remember the library book\n\nPersonal Communication\nOutbound\n- Called the dentist\nInbound\n- Note from a neighbor\n\nSocial\nFamily\n- Dinner at home\nFriends\n- Coffee with a friend\n\nPersonal Care & Activities\nEvening stretch 🧘\n\nInputs & Outputs\nSupplements:\n8am ✅\n- Multivitamin\n\n💧Drank💧:\n- Water\n- Green tea\n\n🥩Ate🥩:\n- Oatmeal\n\n🛌Dreams🛌: 💭\n- Physical setting, mental perspective, emotional feelings, themes, messages, symbols, thoughts\n\n🔊Listened to/watched/read🔊:\n- A podcast about gardens\n\n💸Purchases💸:\n- N/a\n\n💪🏼Workout:\n- Walk\n    - 5,000 steps\n\n👨🏼‍⚕️Health:\n- Good\n";
+  const { fields: f } = parseNote(SAMPLE, { business: 'Sample Studio', beliefs: ['Belief creates consequence.'] });
+  assert('v54: heading key drops emoji and colon', headKey('💧Drank💧:') === 'drank' && headKey('👨🏼‍⚕️Health:') === 'health');
+  assert('v54: wake and sleep times from Daily Tracker', f.wake === '6:15am' && f.bed === '10:30pm');
+  assert('v54: Inputs and Outputs fill their fields', f.drank === '- Water\n- Green tea' && f.ate === '- Oatmeal' && f.media === '- A podcast about gardens' && f.health === 'Good' && f.purchases === 'N/a');
+  assert('v54: workout keeps nested indentation', f.workout === '- Walk\n    - 5,000 steps');
+  assert('v54: dream placeholder line is not copied', !f.dreams);
+  assert('v54: communication and social subheads', f.comm_out === '- Called the dentist' && f.comm_in === '- Note from a neighbor' && f.social_fam === 'Dinner at home' && f.social_friends === 'Coffee with a friend');
+  assert('v54: career splits at the main business name', /Check in/.test(f.cw_checkin) && f.anam_pipeline === '- Pipeline review\n    - Two intros');
+  assert('v54: care filled', f.care === 'Evening stretch 🧘');
+  assert('v54: gratitude answers and supplements kept in Notes; date, belief and template questions skipped', /What am I grateful for\?\n- A quiet morning/.test(f.notes) && /Supplements:\n8am/.test(f.notes) && /Remember the library book/.test(f.notes) && !/Thursday|Day #|Belief creates|influenced by/.test(f.notes));
+  const { fields: u } = parseNote('A loose line\nNotes\n- kept');
+  assert('v54: unmatched lines go to Notes', /A loose line/.test(u.notes) && /- kept/.test(u.notes));
+  const plan = mergePlan({ ate: 'Toast', drank: '- Water\n- Green tea', wake: '7am' }, f);
+  const by = (id) => plan.find((x) => x.id === id);
+  assert('v54: empty fields fill, filled fields keep old text and add below, same text unchanged, times kept', by('health').mode === 'fill' && by('ate').mode === 'add' && by('ate').value === 'Toast\n- Oatmeal' && by('drank').mode === 'same' && by('wake').mode === 'keep' && by('wake').value === '7am');
+  const src = readFileSync(new URL('./paste.js', import.meta.url), 'utf8');
+  assert('v54: paste is client side only, nothing logged', !/fetch\(|XMLHttpRequest|console\.|localStorage/.test(src));
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
+  assert('v54: saves only from the Save button after a preview', /pasteSave\.addEventListener\('click'/.test(cl) && !/pasteText\.addEventListener\('input', [^)]*store/.test(cl));
+  assert('v54: phone weather strip wraps the location button', /max-width: 560px\)[\s\S]{0,120}flex-wrap: wrap/.test(readFileSync(new URL('./styles.css', import.meta.url), 'utf8')));
+}
+
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);

@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=cl53" />
+  <link rel="stylesheet" href="styles.css?v=cl54" />
 </head>
 <body>
   <div class="app">
@@ -109,6 +109,7 @@
             <div class="log-actions">
               <button class="btn xs" id="log-today" type="button">Today</button>
               <button class="btn xs" id="log-copy" type="button" title="Copy this entry as plain text">Copy text</button>
+              <button class="btn xs" id="log-paste-btn" type="button" aria-expanded="false" aria-controls="log-paste" title="Fill this day from a note you paste">Paste a note</button>
               <button class="btn xs" id="log-settings-btn" type="button" aria-expanded="false" aria-controls="log-settings">Profile</button>
             </div>
             <div class="log-settings" id="log-settings" hidden>
@@ -142,6 +143,16 @@
                 <div class="log-settings-row"><button class="btn xs" id="log-words-reset" type="button">Restore original text</button></div>
               </details>
               <div class="log-settings-row"><button class="btn xs" id="log-profile-clear" type="button">Clear profile</button></div>
+            </div>
+            <div class="log-settings log-paste" id="log-paste" hidden>
+              <p class="log-settings-note" id="log-paste-note">Paste a note for this day. Nothing is saved until you tap Save. It stays in this browser only.</p>
+              <textarea id="log-paste-text" rows="6" aria-label="Pasted note" spellcheck="false"></textarea>
+              <div class="log-settings-row">
+                <button class="btn xs" id="log-paste-preview-btn" type="button">Preview</button>
+                <button class="btn xs ghost" id="log-paste-cancel" type="button">Cancel</button>
+              </div>
+              <div class="log-paste-preview" id="log-paste-preview" role="status" aria-live="polite"></div>
+              <div class="log-settings-row"><button class="btn xs" id="log-paste-save" type="button" hidden>Save</button></div>
             </div>
             <div class="log-beliefs" id="log-beliefs">
               <p id="log-belief-b1">Belief creates consequence.</p>
@@ -359,8 +370,8 @@
       <button class="tab" data-tab="today" type="button" id="tab-today"><span class="ti">⬤</span>Today</button>
     </nav>
   </div>
-  <script type="module" src="app.js?v=cl53"></script>
-  <script type="module" src="captains-log.js?v=cl53"></script>
-  <script type="module" src="scene.js?v=cl53"></script>
+  <script type="module" src="app.js?v=cl54"></script>
+  <script type="module" src="captains-log.js?v=cl54"></script>
+  <script type="module" src="scene.js?v=cl54"></script>
 </body>
 </html>

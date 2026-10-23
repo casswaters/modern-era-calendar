@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-23, about 6:20 AM MT (morning report: v53 live, deploys green)
+**Last updated:** 2026-10-23, about 7:20 AM MT (v54: Paste a note)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -14,7 +14,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
-- Live SW captains-log-v53 matches main.
+- Live SW captains-log-v54 matches main.
+- Paste a note (v54): fill a chosen day from a pasted daily note, preview first, save on tap; a bridge until the full Apple Notes backlog can be read.
 - Weather: US places use the NWS station observation when fresh, else the NWS hourly forecast (rain or storms at 50% or more), plus rain chance and active alerts (v52); old cached readings and modules can no longer linger after an update (v53).
 
 ## Next
@@ -34,6 +35,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - None open right now.
 
 ## Shipped (newest first, times MT)
+- 2026-10-23 07:20: v54 (SW captains-log-v54): Paste a note. A "Paste a note" button in the log takes a pasted plain-text daily note for the shown day, sorts it by section heading into the existing fields (Daily Tracker times to Wake and Sleep, Career, Communication, Social, Care, Drank, Ate, Dreams, Listened, Purchases, Workout, Health), and puts anything without its own field (gratitude answers, supplements, loose lines) into Notes so nothing is lost. A preview lists every field first; nothing is saved until Save. Filled fields are never replaced: old text stays and new text is added below, said so in the preview; Wake and Sleep keep a time already set. Fully in this browser, no network. Tests use an invented sample only (paste.js). Also: on phone width the weather strip wraps so Use my location no longer covers the weather line.
 - 2026-10-22 16:12: v53 (SW captains-log-v53): update fix. The phone kept showing Clear while NWS called for 95% storms and a Flood Watch: the v52 weather logic was right, but the module import weather.js?v=cl42 had not changed since v42, so iOS could keep an older weather.js, and a reading saved by the older version within 15 min was repainted as is. All module imports now carry the current version (cl53), the SW precache bypasses the HTTP cache, and readings are stamped so any reading from an older version is refetched. Tests added.
 - 2026-10-22 16:08: v52 (SW captains-log-v52): NWS hourly rain and storm override, rain chance, active alerts, fresher station fallback.
 - 2026-10-13 08:45: v51 (SW captains-log-v51): weather fix. Open-Meteo model said clear in St. George while KSGU reported light rain; US places now lay the latest NWS station observation over the model, any current precipitation counts as rain, refresh every 15 min and on return, SW never touches weather APIs, golden hour ends at 6 degrees and never shows under rain or overcast. Assets cl51.
