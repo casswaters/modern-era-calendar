@@ -411,6 +411,64 @@ const EID_AL_ADHA = {
   2034: [[3, 1]], 2035: [[2, 18]], 2036: [[2, 7]], 2037: [[1, 26]]
 };
 
+
+/**
+ * Full moon instants (Meeus, Astronomical Algorithms ch. 49), accurate to about a minute.
+ * Returns Date objects (UT) for full moons whose instant falls in Gregorian `year` +/- a few days.
+ */
+export function full_moons_utc(year) {
+  const R = Math.PI / 180;
+  const out = [];
+  const k0 = Math.floor((year - 2000) * 12.3685) - 1;
+  for (let i = 0; i < 16; i++) {
+    const k = k0 + i + 0.5;
+    const T = k / 1236.85;
+    let jde = 2451550.09766 + 29.530588861 * k + 0.00015437 * T * T
+      - 0.00000015 * T ** 3 + 0.00000000073 * T ** 4;
+    const E = 1 - 0.002516 * T - 0.0000074 * T * T;
+    const M = (2.5534 + 29.1053567 * k - 0.0000014 * T * T) * R;
+    const Mp = (201.5643 + 385.81693528 * k + 0.0107582 * T * T + 0.00001238 * T ** 3) * R;
+    const F = (160.7108 + 390.67050284 * k - 0.0016118 * T * T - 0.00000227 * T ** 3) * R;
+    const O = (124.7746 - 1.56375588 * k + 0.0020672 * T * T) * R;
+    const sin = Math.sin;
+    jde += -0.40614 * sin(Mp) + 0.17302 * E * sin(M) + 0.01614 * sin(2 * Mp)
+      + 0.01043 * sin(2 * F) + 0.00734 * E * sin(Mp - M) - 0.00515 * E * sin(Mp + M)
+      + 0.00209 * E * E * sin(2 * M) - 0.00111 * sin(Mp - 2 * F) - 0.00057 * sin(Mp + 2 * F)
+      + 0.00056 * E * sin(2 * Mp + M) - 0.00042 * sin(3 * Mp) + 0.00042 * E * sin(M + 2 * F)
+      + 0.00038 * E * sin(M - 2 * F) - 0.00024 * E * sin(2 * Mp - M) - 0.00017 * sin(O)
+      - 0.00007 * sin(Mp + 2 * M) + 0.00004 * sin(2 * Mp - 2 * F) + 0.00004 * sin(3 * M)
+      + 0.00003 * sin(Mp + M - 2 * F) + 0.00003 * sin(2 * Mp + 2 * F) - 0.00003 * sin(Mp + M + 2 * F)
+      + 0.00003 * sin(Mp - M + 2 * F) - 0.00002 * sin(Mp - M - 2 * F) - 0.00002 * sin(3 * Mp + M)
+      + 0.00002 * sin(4 * Mp);
+    const A = [299.77 + 0.107408 * k - 0.009173 * T * T, 251.88 + 0.016321 * k, 251.83 + 26.651886 * k,
+      349.42 + 36.412478 * k, 84.66 + 18.206239 * k, 141.74 + 53.303771 * k, 207.14 + 2.453732 * k,
+      154.84 + 7.30686 * k, 34.52 + 27.261239 * k, 207.19 + 0.121824 * k, 291.34 + 1.844379 * k,
+      161.72 + 24.198154 * k, 239.56 + 25.513099 * k, 331.55 + 3.592518 * k];
+    const C = [325, 165, 164, 126, 110, 62, 60, 56, 47, 42, 40, 37, 35, 23];
+    for (let j = 0; j < 14; j++) jde += C[j] * 1e-6 * sin(A[j] * R);
+    const deltaT = 69; // seconds, TT minus UT (mid 2020s)
+    out.push(new Date((jde - 2440587.5) * 86400000 - deltaT * 1000));
+  }
+  return out;
+}
+
+const MT_PARTS = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Denver', year: 'numeric', month: 'numeric', day: 'numeric',
+  hour: 'numeric', minute: '2-digit', hour12: true
+});
+
+/** Full moons for Gregorian `year`, dated in Mountain Time: [{ month, day, time, name, id }]. */
+export function full_moons(year) {
+  const res = [];
+  for (const d of full_moons_utc(year)) {
+    const p = Object.fromEntries(MT_PARTS.formatToParts(d).map(x => [x.type, x.value]));
+    if (+p.year !== year) continue;
+    const time = `${p.hour}:${p.minute} ${p.dayPeriod.toUpperCase()} MT`;
+    res.push({ month: +p.month, day: +p.day, time, name: `Full moon, ${time}`, id: "full_moon" });
+  }
+  return res;
+}
+
 /** Eid al-Fitr / Eid al-Adha in Gregorian `year` (empty outside ISLAMIC_RANGE). */
 export function islamic_holidays(year) {
   const out = [];
@@ -497,6 +555,7 @@ export const HOLIDAY_ORIGINS = {
   hanukkah: "Jewish",
   eid_al_fitr: "Islamic",
   eid_al_adha: "Islamic",
+  full_moon: "Astronomical",
   chinese_new_year: "Chinese",
   diwali: "Hindu"
 };
@@ -564,6 +623,7 @@ export const MARKET_NOTES = {
   hanukkah: "Banks open (US and Israel)",
   eid_al_fitr: "Banks open in the US and UK; closed in Saudi Arabia, UAE, and other Muslim-majority markets",
   eid_al_adha: "Banks open in the US and UK; closed in Saudi Arabia, UAE, and other Muslim-majority markets",
+  full_moon: "Not a holiday. Banks and markets open as usual",
   chinese_new_year: "Banks closed in China and Hong Kong",
   diwali: "Banks closed in India"
 };
@@ -634,6 +694,9 @@ export function gregorian_holidays(year) {
 
   // Islamic (Umm al-Qura lookup table)
   list.push(...islamic_holidays(year));
+
+  // Full moons (computed, Mountain Time)
+  list.push(...full_moons(year));
 
   // Lookups
   if (CHINESE_NEW_YEAR[year]) {

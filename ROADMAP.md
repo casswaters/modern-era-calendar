@@ -14,7 +14,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
-- Live SW captains-log-v57 matches main.
+- Live SW captains-log-v58 matches main.
 - Daily flow (Cassidy, Oct 23, 2026): wake up, open Captain's Log, Paste a note (opens on yesterday), paste, Save. Save also syncs to Drive with no extra taps after the first sign in; a small "Sign in to Google to sync" shows only when Google needs him again (about weekly in Testing mode).
 - Private Drive sync is on (v56). Waiting on Cassidy's first Sync now on his iPhone (Drive sync, Sync now, sign in, Continue past the unverified app notice, allow). Testing mode means Google asks him to sign in again about every 7 days.
 - Next after sync is live: history search ("what did I do on this day") and wake and bed trends, reading from the synced file.
@@ -44,6 +44,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - None open right now.
 
 ## Shipped (newest first, times MT)
+- 2026-10-25 19:10: v58 (SW captains-log-v58): full moons on the calendar. Each full moon day shows 🌕 with a tooltip like "Full moon, 10:12 PM MT". Computed in the browser (Meeus lunation formula with periodic corrections), dated in Mountain Time. Tests check five full moons against USNO times within 5 minutes. No settings or buttons added.
 - 2026-10-23 09:45: v57 (SW captains-log-v57): no-tap sync and morning flow. Paste a note opens on yesterday when the log shows today (arrows still change the day; preview follows), the preview appears by itself after pasting, so the flow is Paste a note, paste, Save. The Save tap quietly asks Google for a fresh token (prompt empty, no consent screen after the first sign in) and syncs; saves while a token is valid sync on their own. Safari allows the Google window only during a tap, so there is no sync on page load without a tap; a small Sign in to Google to sync button shows only when the quiet refresh fails. Sync now stays in the panel as a fallback. Tests with mocked Google and Drive.
 - 2026-10-23 09:25: v56 (SW captains-log-v56): Drive sync turned on. sync-config.js holds the Google OAuth web client ID (project Captains Log, origin https://casswaters.github.io, scope drive.appdata, consent screen in Testing with Cassidy as test user). The Drive sync button and panel now show in the log.
 - 2026-10-23 09:10: v55 (SW captains-log-v55): private Drive sync, built but off. sync.js keeps one plain JSON file (captains-log.json: per day the last edit time and fields, null for a cleared day) in the Drive appDataFolder, a hidden folder only this app can reach in the user's own Drive; scope drive.appdata only, Google Identity Services token flow in a popup, token in memory only, no server. Merge keeps the newest edit per day. Each save now records its edit time (mec-log-edits); with a valid token a save syncs a few seconds later, otherwise it waits for Sync now; offline is safe and resumes when back online. Panel: Sync now, Download backup (same plain JSON, portable to own hardware later), Turn off. With an empty DRIVE_CLIENT_ID (sync-config.js) no button, panel, Google script or Drive call exists. Tests use a mocked Drive API and invented samples.
