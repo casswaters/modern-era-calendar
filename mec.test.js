@@ -8,7 +8,7 @@ import {
   easter_western, nth_weekday, last_weekday, monday_on_or_before,
   gregorian_holidays, holidays_on, format_mec_html, format_mec_parts, format_gregorian,
   jewish_holidays, hebrew_to_gregorian, MARKET_NOTES, market_note, HOLIDAY_ORIGINS, holiday_origin,
-  islamic_holidays, ISLAMIC_RANGE, is_rest_day, REST_DAY
+  islamic_holidays, ISLAMIC_RANGE, full_moons, is_rest_day, REST_DAY
 } from './mec.js';
 import {
   HOME_KEY, NO_PLACE, SET_HINT, geocode_url, pick_geocode, parse_home, sky_state_for, READING_V,
@@ -365,6 +365,33 @@ function hasOn(y, m, d, id) {
   assert('Jewish market notes say US banks open',
     ['passover', 'shavuot', 'rosh_hashanah_2', 'sukkot', 'simchat_torah'].every(
       id => /Banks open in the US; closed in Israel/.test(MARKET_NOTES[id])));
+}
+
+
+console.log('\n=== Full moons (USNO reference, Mountain Time) ===\n');
+{
+  // USNO Astronomical Applications moon phases API, UTC instants converted to MT
+  const ref = [
+    [2026, 10, 25, 22, 12, 'USNO 2026-10-26 04:12 UTC'],
+    [2026, 11, 24, 7, 53, 'USNO 2026-11-24 14:53 UTC'],
+    [2026, 12, 23, 18, 28, 'USNO 2026-12-24 01:28 UTC'],
+    [2025, 1, 13, 15, 27, 'USNO 2025-01-13 22:27 UTC'],
+    [2024, 12, 15, 2, 2, 'USNO 2024-12-15 09:02 UTC']
+  ];
+  for (const [y, m, d, hh, mm, src] of ref) {
+    const fm = full_moons(y).find(f => f.month === m && f.day === d);
+    let ok = false, got = fm ? fm.time : 'none';
+    if (fm) {
+      const [, h, mi, ap] = fm.time.match(/(\d+):(\d+) (AM|PM)/);
+      const mins = (+h % 12 + (ap === 'PM' ? 12 : 0)) * 60 + +mi;
+      ok = Math.abs(mins - (hh * 60 + mm)) <= 5;
+    }
+    assert(`full moon ${y}-${m}-${d} MT within 5 min (${src})`, ok, got);
+  }
+  assert('2026 has 12 or 13 full moons', [12, 13].includes(full_moons(2026).length), full_moons(2026).length);
+  const h = holidays_on(2026, 10, 25).find(x => x.id === 'full_moon');
+  assert('holidays_on shows full moon Oct 25 2026', h && /^Full moon, 10:1\d PM MT$/.test(h.name), h && h.name);
+  assert('no full moon marker Oct 26 2026', !holidays_on(2026, 10, 26).some(x => x.id === 'full_moon'));
 }
 
 console.log('\n=== Islamic Eids (Umm al-Qura table) ===\n');

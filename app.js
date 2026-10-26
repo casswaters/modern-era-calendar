@@ -9,8 +9,8 @@ import {
   next_renaissance_day, renaissance_after_month,
   gregorian_day_of_year, ordinal_to_gregorian,
   holidays_on, holiday_map, market_note, is_rest_day
-} from './mec.js?v=cl57';
-import { initSky } from './weather.js?v=cl57';
+} from './mec.js?v=cl58';
+import { initSky } from './weather.js?v=cl58';
 
 const HOLIDAY_ICONS = {
   1: '🌐',
@@ -77,7 +77,8 @@ const GHOLIDAY_ICONS = {
   eid_al_fitr: '🌙',
   eid_al_adha: '🐑',
   chinese_new_year: '🧧',
-  diwali: '🪔'
+  diwali: '🪔',
+  full_moon: '🌕'
 };
 
 
@@ -411,7 +412,7 @@ installBtn.addEventListener('click', async () => {
 
 /* ---------- Service worker ---------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=cl57').then((reg) => {
+  navigator.serviceWorker.register('./sw.js?v=cl58').then((reg) => {
     reg.update().catch(() => {});
   }).catch(() => {});
   let refreshing = false;
