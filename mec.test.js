@@ -1098,5 +1098,11 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v59: no code writes words into the paste box', !/log-paste-text[^;]*words|pasteText\.(value|placeholder) = [^'"]/.test(cl));
 }
 
+{ // v60: tapping Today closes the paste panel
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
+  const h = cl.match(/\$\('log-today'\)\.addEventListener\('click'[^\n]*/)[0];
+  assert('v60: Today button closes Paste a note', /pasteOpen\(false\)/.test(h));
+}
+
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);

@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl59';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl59';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl59';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl59';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl59';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl59';
+} from './mec.js?v=cl60';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl60';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl60';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl60';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl60';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl60';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -420,7 +420,7 @@ function jumpTo(rowId) {
 
 $('log-prev').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, -1)); });
 $('log-next').addEventListener('click', () => { flush(); show(add_gregorian_days(current.year, current.month, current.day, 1)); });
-$('log-today').addEventListener('click', () => { flush(); show(todayG()); });
+$('log-today').addEventListener('click', () => { flush(); if (!pastePanel.hidden) pasteOpen(false); show(todayG()); });
 document.addEventListener('mec:dayselect', (e) => { flush(); show(e.detail); });
 
 $('log-copy').addEventListener('click', async () => {
@@ -643,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl59').then((m) => m.start({
+  import('./sync-ui.js?v=cl60').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};
