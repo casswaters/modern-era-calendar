@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl58';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl58';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl58';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl58';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl58';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl58';
+} from './mec.js?v=cl59';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl59';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl59';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl59';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl59';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl59';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -452,7 +452,8 @@ function pasteOpen(open) {
   pastePanel.hidden = !open;
   pasteBtn.setAttribute('aria-expanded', String(open));
   pasteNote();
-  if (!open) { pasteText.value = ''; pasteReset(); } else pasteText.focus({ preventScroll: true });
+  pasteText.value = ''; pasteText.placeholder = ''; pasteReset(); // v59: always opens and closes empty
+  if (open) pasteText.focus({ preventScroll: true });
 }
 function pasteNote() {
   const g = current;
@@ -524,8 +525,8 @@ function renderProfile() {
 function buildWordFields() {
   const qs = SECTIONS.find((s) => s.id === 'gratitude').fields;
   const row = (id, label, multi) => `<label for="log-word-${id}">${esc(label)}</label>` + (multi
-    ? `<textarea id="log-word-${id}" data-word="${id}" rows="${id === 'g1' ? 4 : 2}" maxlength="${WORD_MAX * 3 + 2}"></textarea>`
-    : `<input type="text" id="log-word-${id}" data-word="${id}" maxlength="${WORD_MAX}" />`);
+    ? `<textarea id="log-word-${id}" data-word="${id}" autocomplete="off" rows="${id === 'g1' ? 4 : 2}" maxlength="${WORD_MAX * 3 + 2}"></textarea>`
+    : `<input type="text" id="log-word-${id}" data-word="${id}" autocomplete="off" maxlength="${WORD_MAX}" />`);
   $('log-words-grid').innerHTML = row('b1', 'Header belief 1') + row('b2', 'Header belief 2') +
     qs.map((f) => row(f.id, labelOf(f), true)).join('');
   $('log-words-grid').querySelectorAll('[data-word]').forEach((el) => {
@@ -642,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl58').then((m) => m.start({
+  import('./sync-ui.js?v=cl59').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};

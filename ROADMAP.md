@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-28, about 6:20 AM MT (morning report: live and green, no new changes)
+**Last updated:** 2026-10-28, about 6:42 AM MT (v59: Paste a note box always opens empty)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -14,6 +14,8 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 - Centiday is "the rest day".
 
 ## Now
+
+- v59 (2026-10-28, 6:42 AM MT): Paste a note box opens empty every time. Safari was restoring a saved Profile cue (gratitude cue 1) into the paste box; the box and the cue fields now opt out of that, and opening the box clears it.
 - Live SW captains-log-v58 matches main.
 - Daily flow (Cassidy, Oct 23, 2026): wake up, open Captain's Log, Paste a note (opens on yesterday), paste, Save. Save also syncs to Drive with no extra taps after the first sign in; a small "Sign in to Google to sync" shows only when Google needs him again (about weekly in Testing mode).
 - Private Drive sync is on (v56). Waiting on Cassidy's first Sync now on his iPhone (Drive sync, Sync now, sign in, Continue past the unverified app notice, allow). Testing mode means Google asks him to sign in again about every 7 days.
