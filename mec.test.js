@@ -708,7 +708,7 @@ console.log('\n=== ambient weather scene ===\n');
 {
   console.log('\n--- Captain\'s Log identity ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const html = src('./index.html');
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   const man = src('./manifest.webmanifest');
   assert('document title is Captain\'s Log', /<title>Captain.s Log<\/title>/.test(html));
   assert('apple-mobile-web-app-title is Captain\'s Log', /apple-mobile-web-app-title" content="Captain.s Log"/.test(html));
@@ -717,13 +717,13 @@ console.log('\n=== ambient weather scene ===\n');
   assert('does not claim Apple Notes sync', !/sync(?:s|ed)? to Apple Notes/i.test(html) || /not synced\s+to Apple Notes/.test(html));
   assert('MEC still present as a feature', /Modern Era Calendar/.test(html) && /month-grid/.test(html));
   assert('manifest name Captain\'s Log', /"name": "Captain.s Log"/.test(man));
-  assert('localStorage Captain\'s Log keys stay mec-log:', /KEY_PREFIX = 'mec-log:'/.test(src('./captains-log.js')));
+  assert('localStorage Captain\'s Log keys stay mec-log:', /KEY_PREFIX = 'mec-log:'/.test(readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8')));
 }
 
 {
   console.log('\n--- v38: Aretoria is a link to its own site (no embedded copy) ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const html = src('./index.html'), sw = src('./sw.js');
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8'), sw = src('./sw.js');
   const AR = 'https://casswaters.github.io/aretoria/';
   assert('embedded Aretoria removed: no data, art module, CSS, portal script or art assets', ['./aretoria-data.js', './aretoria-art.js', './aretoria.css', './portal.js', './assets/aretoria'].every((f) => !existsSync(new URL(f, import.meta.url))));
   assert('aretoria.js is only a redirect stub for stale tabs (tiny, sends to the standalone site)', src('./aretoria.js').length < 700 && /export function openAretoria\(\) \{ location\.assign\(STANDALONE\); \}/.test(src('./aretoria.js')) && src('./aretoria.js').includes(AR));
@@ -748,7 +748,7 @@ console.log('\n=== ambient weather scene ===\n');
   const PERSONAL = new RegExp([OWNER, ['C', 'W'].join('') + ' Enterprises', '\\b' + ['An', 'am'].join('') + '\\b', ['Optimal', 'Amino'].join(''), '\\b' + ['A', 'G1'].join('') + '\\b', ['Psyl', 'lium'].join(''), ['Crea', 'tine 10g'].join(''), '6:20' + 'am'].join('|'), 'i'); // built at runtime so this file stays clean
   const hits = served.filter((f) => PERSONAL.test(src(f)));
   assert('no hard-coded personal name, initials or enterprise names in served files', hits.length === 0, hits.join(', '));
-  const cl = src('./captains-log.js');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
   assert('career heads come from the profile (holding company, then main business nested under it); saved field ids unchanged', /\{ id: 'cw_head', type: 'head', label: \(p\) => p\.holding,/.test(cl) && /\{ id: 'anam_head', type: 'head', nested: true, label: \(p\) => p\.business,/.test(cl) && /id: 'cw_checkin'/.test(cl) && /id: 'anam_pipeline'/.test(cl));
   const v0 = profileView({});
   assert('neutral fallbacks: Holding company / Main business, no name, no initials, no birthday', v0.holding === 'Holding company' && v0.business === 'Main business' && !v0.holdingSet && !v0.businessSet && v0.name === '' && v0.initials === '' && v0.birthday === '' && v0.owner === 'Captain’s Log');
@@ -760,7 +760,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('stored in localStorage only; nothing sent anywhere', /localStorage\.setItem\(key, v\)/.test(pj) && !/fetch\(|XMLHttpRequest|sendBeacon/.test(pj + cl));
   assert('setting a name here tells Aretoria not to ask again', /if \(field === 'name' && v\) localStorage\.setItem\(NAME_ASKED_KEY, '1'\)/.test(pj));
   assert('profile renders as text (owner title via textContent; heads escaped or textContent)', /\$\('log-owner'\)\.textContent = P\.owner/.test(cl) && /querySelector\('\.log-subhead-name'\)\.textContent = labelOf\(f\)/.test(cl) && /esc\(labelOf\(f\)\)/.test(cl) && /esc\(role\)/.test(cl));
-  const html = src('./index.html');
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   assert('Profile panel: name, holding company, main business, birthday + clear; no side-venture wording', ['log-name', 'log-holding', 'log-business', 'log-birthday', 'log-profile-clear'].every((id) => html.includes(`id="${id}"`)) && />Profile<\/button>/.test(html) && !/log-birthday-clear|log-venture|log-enterprise|log-initials/.test(html));
   assert('clear profile keeps log entries', /clearProfile\(\)/.test(cl) && !/removeItem\(KEY_PREFIX[^)]*\)[^;]*;\s*\n\s*Object\.values\(FIELDS\)/.test(cl) && /function clearProfile\(\) \{ try \{ PROFILE_KEYS\.forEach/.test(pj));
   assert('export header is the ownership title', /lines\.push\(`\$\{P\.owner\} · \$\{format_gregorian/.test(cl));
@@ -771,7 +771,7 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v39: tracker targets + daily checklist from Profile (no personal supplement list or times in code) ---');
   const P = await import('./profile.js?v=t39');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), html = src('./index.html');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   const v0 = P.profileView({});
   assert('neutral fallbacks: "Wake ☀️" / "Bed 💤" labels and a generic three-item checklist', v0.wake === 'Wake' && v0.bed === 'Bed' && JSON.stringify(v0.supplements) === JSON.stringify(['Morning supplements', 'Midday supplements', 'Evening supplements']));
   const v = P.profileView({ wake: '5:30am', bed: '9:30pm', supplements: 'Fish oil\n\n  Vitamin D <b>\nMagnesium\nA\nB\nC\nD' });
@@ -786,7 +786,7 @@ console.log('\n=== ambient weather scene ===\n');
 {
   console.log('\n--- v40: S.C.O.R.E. typed out with one plain explanatory line ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), css = src('./styles.css');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), css = src('./styles.css');
   const PW = await import('./profile.js?v=t40');
   const g1 = PW.WORD_DEFAULTS.g1; // v46: default cue text lives in profile.js (editable in Profile)
   assert('g1 cue spells out S.C.O.R.E.', g1.split('\n')[0] === 'S.C.O.R.E.: Sincerity, Consistency, Originality, Reflection, Expression.');
@@ -798,7 +798,7 @@ console.log('\n=== ambient weather scene ===\n');
 {
   console.log('\n--- v41: Copy text and visible log strings carry no em dash or tilde ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
   const code = cl.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1'); // comments are not shown
   const lits = code.match(/'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`|"(?:[^"\\\n]|\\.)*"/g) || [];
   const bad = lits.filter((l) => /[—~]/.test(l));
@@ -866,7 +866,7 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v45: ownership title, holding company > main business, equal-height row ---');
   const P = await import('./profile.js?v=t45');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), html = src('./index.html'), css = src('./styles.css');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8'), css = src('./styles.css');
   assert('ownership title: "{Name}’s Captain’s Log", names ending in s take ’s too, plain title with no name', P.ownerTitle('Ada') === 'Ada’s Captain’s Log' && P.ownerTitle('Chris') === 'Chris’s Captain’s Log' && P.ownerTitle('') === 'Captain’s Log' && P.ownerTitle('123 <>') === 'Captain’s Log');
   assert('owner title replaces the small name beside the kicker', html.includes('<h2 class="log-owner" id="log-owner">Captain’s Log</h2>') && !/log-who|log-kicker/.test(html));
   assert('owner title renders crisp (real size, no text shadow or transform)', /\.log-owner \{[^}]*font-size: 1\.02rem[^}]*text-shadow: none/.test(css) && !/\.log-owner \{[^}]*[^-]transform:/.test(css));
@@ -885,7 +885,7 @@ console.log('\n=== ambient weather scene ===\n');
   const T = await import('./tracker.js?v=t46');
   const P = await import('./profile.js?v=t45');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), html = src('./index.html'), css = src('./styles.css'), sw = src('./sw.js');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8'), css = src('./styles.css'), sw = src('./sw.js');
   assert('eight rows in order: Wake, Sleep, Career, Life Journal / Notes, Communication, Social, Care, Inputs & Outputs', T.TRACKER.map((r) => r.label).join('|') === 'Wake|Sleep|Career|Life Journal / Notes|Communication|Social|Care|Inputs & Outputs');
   const e = T.trackerStatus({});
   assert('blank day: 0 of 8, nothing done', e.done === 0 && e.total === 8 && e.rows.every((r) => !r.done));
@@ -910,7 +910,7 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v46: header beliefs and gratitude cues are editable in Profile (original text as defaults) ---');
   const P = await import('./profile.js?v=t46w');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), html = src('./index.html');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   const d = P.wordsView('');
   assert('defaults are the original text (both beliefs, S.C.O.R.E., g2, g4, g8; no cue on 3, 5, 6, 7)', d.b1 === 'Belief creates consequence.' && d.b2 === 'Mutual confidence is the foundation of all satisfactory human relationships.' && d.g1.startsWith('S.C.O.R.E.: Sincerity') && d.g2.startsWith('Keep it simple.') && d.g4 === 'Navigate consciously. Don’t over promise.' && d.g8.startsWith('Stay grounded') && !d.g3 && !d.g5 && !d.g6 && !d.g7);
   const v = P.wordsView(JSON.stringify({ b1: 'Own <b>belief</b>', g2: '', g3: 'line one\n\nline two\nthree\nfour', b2: 'a\nb' }));
@@ -926,7 +926,7 @@ console.log('\n=== ambient weather scene ===\n');
 {
   console.log('\n--- v47: the Daily Tracker is the only set of daily metrics ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), css = src('./styles.css'), sw = src('./sw.js'), html = src('./index.html');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), css = src('./styles.css'), sw = src('./sw.js'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   assert('only the tracker heading gets a count chip (no 1/3, 2/8, 1/10 on other sections)', /\$\{s\.tracker \? `<span class="log-count" data-count="\$\{s\.id\}"><\/span>` : ''\}/.test(cl) && !/`\$\{filled\}\/\$\{keys\.length\}`/.test(cl));
   assert('no second "N of 8 for this day" line inside the tracker', !/data-trk-summary|of \$\{st\.total\} for this day/.test(cl) && !/\.trk-summary/.test(css));
   assert('wake / bed still saved under the same ids inside the tracker', /data-k="\$\{r\.time\}"/.test(cl));
@@ -936,7 +936,7 @@ console.log('\n=== ambient weather scene ===\n');
 {
   console.log('\n--- v48: ornate Aretoria card (one ivory, gold, cosmic palette; CSS + inline SVG only) ---');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const html = src('./index.html'), css = src('./styles.css');
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8'), css = src('./styles.css');
   const block = css.slice(css.indexOf('v48: ornate Aretoria card'), css.indexOf('/* ---------- Desktop: three columns'));
   assert('double-rule frame, four corner flourishes, crest and title rule in the card', /<span class="portal-frame" aria-hidden="true"><i class="pc tl"><\/i><i class="pc tr"><\/i><i class="pc bl"><\/i><i class="pc br"><\/i><\/span>/.test(html) && html.includes('<span class="portal-crest" aria-hidden="true"></span>') && html.includes('<div class="portal-rule" aria-hidden="true"><span>✦</span></div>') && /\.portal-card::after \{/.test(block));
   assert('flourishes are gold masks (follow the theme gold), with intrinsic sizes so WebKit paints them', /background: var\(--gold\)/.test(block) && /-webkit-mask: url\("data:image\/svg\+xml/.test(block) && /width=%2756%27 height=%2756%27/.test(block));
@@ -948,7 +948,7 @@ console.log('\n=== ambient weather scene ===\n');
   console.log('\n--- v49: Career, Life Journal / Notes, Communication, Social, Care and Inputs & Outputs open inside the Daily Tracker ---');
   const T = await import('./tracker.js?v=t49');
   const src = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
-  const cl = src('./captains-log.js'), css = src('./styles.css'), sw = src('./sw.js');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), css = src('./styles.css'), sw = src('./sw.js');
   const ids = (sec) => { const a = cl.indexOf(`id: '${sec}', title:`); const b = cl.indexOf('\n  }', a); return [...cl.slice(a, b).matchAll(/\{ id: '([a-z_0-9]+)', type:/g)].map((m) => m[1]); };
   const panels = T.TRACKER.flatMap((r) => r.panel || []);
   const all = [...ids('career'), ...ids('notes'), ...ids('io')];
@@ -1061,7 +1061,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v55: only the drive.appdata scope', S.SCOPE === 'https://www.googleapis.com/auth/drive.appdata' && !/auth\/drive(['"]|\.(?!appdata))/.test(src('./sync.js') + src('./sync-ui.js')));
   // hidden when no client ID
   assert('v56: client ID is a Google web client ID (or empty to turn sync off)', DRIVE_CLIENT_ID === '' || /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(DRIVE_CLIENT_ID));
-  const cl = src('./captains-log.js'), html = src('./index.html');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   assert('v55: sync UI and Google script load only when a client ID is set', /if \(DRIVE_CLIENT_ID\) \{\s*import\('\.\/sync-ui\.js/.test(cl) && !/sync-ui|gsi\/client|log-sync/.test(html) && !/gsi\/client/.test(cl));
   assert('v55: saves record edit times for merge', /markEdit\(iso\)/.test(cl) && /EDITS_KEY/.test(cl));
   assert('v55: sync code never logs', !/console\./.test(src('./sync.js') + src('./sync-ui.js')));
@@ -1079,12 +1079,23 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v57: on another day, Paste a note keeps that day', k.day === 5);
   const y = pasteDay({ year: 2027, month: 1, day: 1 }, { year: 2027, month: 1, day: 1 });
   assert('v57: yesterday across a year end', y.year === 2026 && y.month === 12 && y.day === 31);
-  const cl = src('./captains-log.js'), ui = src('./sync-ui.js');
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8'), ui = src('./sync-ui.js');
   assert('v57: preview shows by itself after pasting', /pasteTimer = setTimeout\(pastePreview, 400\)/.test(cl));
   assert('v57: Save tap signals sync before saving', /pasteSave\.addEventListener\('click', \(\) => \{\s*try \{ window\.dispatchEvent\(new CustomEvent\('mec-log-tap'\)\)/.test(cl));
   assert('v57: token is requested synchronously in the tap, with no consent prompt after first sign in', /addEventListener\('mec-log-tap', \(\) => \{[\s\S]{0,80}const p = tapToken\(\);/.test(ui) && /prompt: ls\(ON_KEY\) === '1' \? '' : 'consent'/.test(ui));
   assert('v57: sign in prompt only after a failed refresh', /Sign in to Google to sync/.test(ui) && /signin\.hidden = true/.test(ui) && /need\(true\)/.test(ui));
   assert('v57: no personal email in served code', !/@gmail|cass\.waters/i.test(ui + cl + src('./sync-config.js')));
+}
+
+{ // v59: Paste a note box always opens empty (Safari form restore put the g1 cue in it)
+  const cl = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  const ta = (html.match(/<textarea id="log-paste-text"[^>]*>([^<]*)<\/textarea>/) || [])[0] || '';
+  assert('v59: paste box has autocomplete off and empty placeholder and value', /autocomplete="off"/.test(ta) && /placeholder=""/.test(ta) && />\s*<\/textarea>$/.test(ta) && !/S\.C\.O\.R\.E/.test(ta));
+  const body = (cl.match(/function pasteOpen\(open\) \{[\s\S]*?\n\}/) || [''])[0];
+  assert('v59: pasteOpen clears value and placeholder on every open and close', /pasteText\.value = ''/.test(body) && /pasteText\.placeholder = ''/.test(body) && !/if \(!open\) \{ pasteText\.value/.test(body));
+  assert('v59: profile word fields opt out of form restore', (cl.match(/data-word="\$\{id\}" autocomplete="off"/g) || []).length === 2);
+  assert('v59: no code writes words into the paste box', !/log-paste-text[^;]*words|pasteText\.(value|placeholder) = [^'"]/.test(cl));
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
