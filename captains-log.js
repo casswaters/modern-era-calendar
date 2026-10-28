@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl60';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl60';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl60';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl60';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl60';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl60';
+} from './mec.js?v=cl61';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl61';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl61';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl61';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl61';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl61';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -104,6 +104,7 @@ const SECTIONS = [
     fields: [
       { id: 'supp_head', type: 'head', label: 'Supplements' },
       { id: 'supps', type: 'supps' }, // v39: one check per Profile checklist line (ids from SUPP_IDS)
+      { id: 'supp_notes', type: 'area', label: 'Supplement notes', rows: 2 },
       { id: 'drank', type: 'area', label: '💧 Drank', rows: 2 },
       { id: 'ate', type: 'area', label: '🥩 Ate', rows: 2 },
       { id: 'dreams', type: 'area', label: '🛌 Dreams', rows: 2, placeholder: 'Physical setting, mental perspective, emotional feelings, themes, messages, symbols, thoughts' },
@@ -643,7 +644,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl60').then((m) => m.start({
+  import('./sync-ui.js?v=cl61').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};

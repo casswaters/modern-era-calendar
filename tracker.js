@@ -2,7 +2,7 @@
  * Captain's Log Daily Tracker (v46): the day's overview. Pure data and status, no DOM (tested in node).
  * Each row is done when its area has entries for the day, or when ticked by hand (saved as trk_<id>).
  */
-import { DEFAULTS, SUPP_IDS } from './profile.js?v=cl60';
+import { DEFAULTS, SUPP_IDS } from './profile.js?v=cl61';
 
 /* fields: the saved-entry ids that mark the row done automatically.
    v49: sec + panel: the log section the row's entry fields come from, and which of its fields open inline under the row
@@ -15,7 +15,7 @@ export const TRACKER = [
   { id: 'comm', label: 'Communication', sec: 'notes', panel: ['comm_out', 'comm_in'], fields: ['comm_out', 'comm_in'] },
   { id: 'social', label: 'Social', sec: 'notes', panel: ['social_fam', 'social_friends', 'social_col', 'social_adv'], fields: ['social_fam', 'social_friends', 'social_col', 'social_adv'] },
   { id: 'care', label: 'Care', sec: 'notes', panel: ['care'], fields: ['care'] },
-  { id: 'io', label: 'Inputs & Outputs', sec: 'io', panel: ['supp_head', 'supps', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], fields: ['drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], checklist: true }
+  { id: 'io', label: 'Inputs & Outputs', sec: 'io', panel: ['supp_head', 'supps', 'supp_notes', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], fields: ['supp_notes', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'], checklist: true }
 ];
 const filledVal = (v) => v === true || (typeof v === 'string' && v.trim() !== '');
 /** Pure: each row's state for a day's saved data. checklist rows also count the Profile checklist ticks. */
