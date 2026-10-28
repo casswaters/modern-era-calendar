@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** 2026-10-28, about 10:50 AM MT (v62: a notes box under each supplement check)
+**Last updated:** 2026-10-28, about 10:50 AM MT (v63: a notes box under each supplement check)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
@@ -15,7 +15,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 
 ## Now
 
-- v62 (2026-10-28, 10:50 AM MT): Each supplement check in Inputs & Outputs has its own notes box for changes (like a doubled dose). Paste a note ticks each check marked with a check mark and puts the lines under it in that check's notes box, in checklist order. Replaces the single box from v61.
+- v63 (2026-10-28, 11:00 AM MT; v62 first try kept the heading word and lost line breaks): Each supplement check in Inputs & Outputs has its own notes box for changes (like a doubled dose). Paste a note ticks each check marked with a check mark and puts the lines under it in that check's notes box, in checklist order. Replaces the single box from v61.
 - v61 (2026-10-28, 10:40 AM MT): Single Supplement notes box (replaced by v62).
 - v60 (2026-10-28, 7:00 AM MT): Tapping Today in Captain's Log now closes the Paste a note panel.
 - v59 (2026-10-28, 6:42 AM MT): Paste a note box opens empty every time. Safari was restoring a saved Profile cue (gratitude cue 1) into the paste box; the box and the cue fields now opt out of that, and opening the box clears it.
