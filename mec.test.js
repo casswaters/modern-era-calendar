@@ -1018,6 +1018,7 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v62: checks merge (already checked stays, new check fills) and sit before Drank', p2.find((x) => x.id === 'supp_620').mode === 'same' && p2.find((x) => x.id === 'supp_9pm').mode === 'fill' && p2.findIndex((x) => x.id === 'supp_9pm_note') < p2.findIndex((x) => x.id === 'drank'));
   const cl64 = readFileSync(new URL('./captains-log.js', import.meta.url), 'utf8');
   assert('v62: each checklist line gets a notes box under its check', /\{ id: `\$\{SUPP_IDS\[i\]\}_note`, type: 'area'/.test(cl64) && !/supp_notes/.test(cl64));
+  assert('v64: supplement notes boxes have no suggestion text', !/doubled dose/.test(cl62));
   assert('v54: gratitude answers kept in Notes; date, belief and template questions skipped', /What am I grateful for\?\n- A quiet morning/.test(f.notes) && /Remember the library book/.test(f.notes) && !/Thursday|Day #|Belief creates|influenced by/.test(f.notes));
   const { fields: u } = parseNote('A loose line\nNotes\n- kept');
   assert('v54: unmatched lines go to Notes', /A loose line/.test(u.notes) && /- kept/.test(u.notes));
@@ -1114,4 +1115,3 @@ console.log('\n=== ambient weather scene ===\n');
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);
-  assert('v64: supplement notes boxes have no suggestion text', !/doubled dose/.test(cl62));
