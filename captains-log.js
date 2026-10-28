@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl62';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl62';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl62';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl62';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl62';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl62';
+} from './mec.js?v=cl63';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl63';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl63';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl63';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl63';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl63';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -123,7 +123,7 @@ let P = profileView(readProfile());
 const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
 const roleOf = (f) => (typeof f.role === 'function' ? f.role(P) : f.role || '');
 /** A section's fields with the Profile checklist expanded into check fields. */
-const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.flatMap((label, i) => [{ id: SUPP_IDS[i], type: 'check', label }, { id: `${SUPP_IDS[i]}_note`, type: 'text', label: `${label} notes`, placeholder: 'Any changes, like a doubled dose' }]) : [f]));
+const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.flatMap((label, i) => [{ id: SUPP_IDS[i], type: 'check', label }, { id: `${SUPP_IDS[i]}_note`, type: 'area', rows: 1, label: `${label} notes`, placeholder: 'Any changes, like a doubled dose' }]) : [f]));
 const formShape = () => JSON.stringify([SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f), roleOf(f)])), TRACKER.map((r) => [r.target ? r.target(P) : '', r.sub ? r.sub(P) : '']), P.words]);
 function todayG() {
   const n = new Date();
@@ -643,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl62').then((m) => m.start({
+  import('./sync-ui.js?v=cl63').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};

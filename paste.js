@@ -68,7 +68,7 @@ export function parseNote(text, opts = {}) {
       if (/[✅✔☑]/u.test(t)) out[s.id] = [true];
       const rest = t.replace(/[✅✔☑\uFE0F]/gu, '').trim();
       const k = norm(rest);
-      if (isBullet || (rest && !TIME_RE.test(rest) && k !== norm(s.label))) add(`${s.id}_note`, rest);
+      if (isBullet || (rest && !TIME_RE.test(rest) && !norm(s.label).includes(k))) add(`${s.id}_note`, rest);
       return;
     }
     add(`${supps[slot].id}_note`, t);
