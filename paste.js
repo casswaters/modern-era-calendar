@@ -2,11 +2,11 @@
  * Captain's Log "Paste a note" (v54): turn a pasted plain-text daily note (same template as the log)
  * into the day's field values. Pure, no DOM, no network, nothing logged. Tested in node.
  * Lines are sorted by section heading into the existing field ids; anything without a field of its own
- * (gratitude answers, supplements, unknown lines) goes into Notes under its heading, so nothing is lost.
+ * (gratitude answers, unknown lines) goes into Notes under its heading, so nothing is lost.
  */
 const TEXT_IDS = ['social_fam', 'social_friends', 'social_col', 'social_adv', 'purchases', 'health'];
 export const PASTE_IDS = ['wake', 'bed', 'cw_checkin', 'anam_pipeline', 'anam_other', 'notes', 'comm_out', 'comm_in',
-  'social_fam', 'social_friends', 'social_col', 'social_adv', 'care', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'];
+  'social_fam', 'social_friends', 'social_col', 'social_adv', 'care', 'supp_notes', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'];
 
 /** Heading key: no emoji, no trailing colon, plain apostrophes, lower case. */
 export function headKey(line) {
@@ -22,7 +22,7 @@ const TOP = {
   'career': { to: 'cw_checkin', sec: 'career' }, 'personal communication': { sec: 'comm', label: 'Personal Communication' },
   'social': { sec: 'social', label: 'Social' }, 'personal care & activities': { to: 'care' }, 'personal care and activities': { to: 'care' },
   'personal care': { to: 'care' }, 'inputs & outputs': { sec: 'io', label: 'Inputs & Outputs' }, 'inputs and outputs': { sec: 'io', label: 'Inputs & Outputs' },
-  'supplements': { label: 'Supplements' }, 'drank': { to: 'drank' }, 'ate': { to: 'ate' }, 'dreams': { to: 'dreams' },
+  'supplements': { to: 'supp_notes' }, 'drank': { to: 'drank' }, 'ate': { to: 'ate' }, 'dreams': { to: 'dreams' },
   'listened to/watched/read': { to: 'media' }, 'listened / watched / read': { to: 'media' }, 'purchases': { to: 'purchases' },
   'workout': { to: 'workout' }, 'health': { to: 'health' }
 };
