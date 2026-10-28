@@ -6,7 +6,7 @@
  * Paste a note quietly asks Google for a fresh token (prompt '', no consent screen; Safari allows the
  * Google window only during a tap) and syncs. Only if that fails does a small "Sign in to Google to sync" show.
  */
-import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl59';
+import { SCOPE, FILE_NAME, driveClient, syncOnce, validDoc, mergeDocs } from './sync.js?v=cl60';
 
 const NEED_KEY = 'mec-sync-need', ON_KEY = 'mec-sync-on', LAST_KEY = 'mec-sync-last', DIRTY_KEY = 'mec-sync-dirty';
 const GIS = 'https://accounts.google.com/gsi/client';
