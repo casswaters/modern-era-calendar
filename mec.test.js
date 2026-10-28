@@ -1114,3 +1114,4 @@ console.log('\n=== ambient weather scene ===\n');
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);
+  assert('v64: supplement notes boxes have no suggestion text', !/doubled dose/.test(cl62));
