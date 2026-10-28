@@ -6,7 +6,7 @@
  */
 const TEXT_IDS = ['social_fam', 'social_friends', 'social_col', 'social_adv', 'purchases', 'health'];
 export const PASTE_IDS = ['wake', 'bed', 'cw_checkin', 'anam_pipeline', 'anam_other', 'notes', 'comm_out', 'comm_in',
-  'social_fam', 'social_friends', 'social_col', 'social_adv', 'care', 'supp_notes', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'];
+  'social_fam', 'social_friends', 'social_col', 'social_adv', 'care', 'drank', 'ate', 'dreams', 'media', 'purchases', 'workout', 'health'];
 
 /** Heading key: no emoji, no trailing colon, plain apostrophes, lower case. */
 export function headKey(line) {
@@ -22,7 +22,7 @@ const TOP = {
   'career': { to: 'cw_checkin', sec: 'career' }, 'personal communication': { sec: 'comm', label: 'Personal Communication' },
   'social': { sec: 'social', label: 'Social' }, 'personal care & activities': { to: 'care' }, 'personal care and activities': { to: 'care' },
   'personal care': { to: 'care' }, 'inputs & outputs': { sec: 'io', label: 'Inputs & Outputs' }, 'inputs and outputs': { sec: 'io', label: 'Inputs & Outputs' },
-  'supplements': { to: 'supp_notes' }, 'drank': { to: 'drank' }, 'ate': { to: 'ate' }, 'dreams': { to: 'dreams' },
+  'supplements': { sec: 'supps' }, 'drank': { to: 'drank' }, 'ate': { to: 'ate' }, 'dreams': { to: 'dreams' },
   'listened to/watched/read': { to: 'media' }, 'listened / watched / read': { to: 'media' }, 'purchases': { to: 'purchases' },
   'workout': { to: 'workout' }, 'health': { to: 'health' }
 };
@@ -47,7 +47,7 @@ function dedent(lines) {
   return lines.map((l) => l.slice(min).trimEnd());
 }
 
-/** Pure: pasted text to { fields: { id: value } }. opts: { business, holding, beliefs: [b1, b2] }. */
+/** Pure: pasted text to { fields: { id: value } }. opts: { business, holding, beliefs: [b1, b2], supps: [{ id, label }] }. */
 export function parseNote(text, opts = {}) {
   const raw = String(text == null ? '' : text).replace(/\r\n?/g, '\n').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
   const out = {}; const groups = []; let group = null;
@@ -58,6 +58,21 @@ export function parseNote(text, opts = {}) {
   };
   const beliefs = (opts.beliefs || []).map(norm).filter(Boolean);
   const business = opts.business ? norm(opts.business) : '';
+  const supps = opts.supps || [];
+  let slot = -1;
+  const suppLine = (t, isBullet) => {
+    if (!supps.length) { toGroup('Supplements', t); return; }
+    if (!isBullet || slot < 0) {
+      slot = Math.min(slot + 1, supps.length - 1);
+      const s = supps[slot];
+      if (/[✅✔☑]/u.test(t)) out[s.id] = [true];
+      const rest = t.replace(/[✅✔☑\uFE0F]/gu, '').trim();
+      const k = norm(rest);
+      if (isBullet || (rest && !TIME_RE.test(rest) && k !== norm(s.label))) add(`${s.id}_note`, rest);
+      return;
+    }
+    add(`${supps[slot].id}_note`, t);
+  };
   let sec = 'header', to = null, label = 'Header', times = 0;
   for (const line of raw.split('\n')) {
     const t = line.trim();
@@ -70,7 +85,7 @@ export function parseNote(text, opts = {}) {
     if (top) {
       sec = top.sec || (top.to ? 'field' : 'label');
       to = top.to || null; label = top.label || t.replace(/:$/, '');
-      if (inl && !TOP[k]) { if (to) add(to, inl[2]); else toGroup(label, inl[2]); }
+      if (inl && !TOP[k]) { if (to) add(to, inl[2]); else if (sec === 'supps') suppLine(inl[2], false); else toGroup(label, inl[2]); }
       continue;
     }
     if (!isBullet && SUB[sec] && SUB[sec][k]) { to = SUB[sec][k]; continue; }
@@ -90,6 +105,7 @@ export function parseNote(text, opts = {}) {
       if (/^good (morning|night)/i.test(t)) continue;
       toGroup('Daily Tracker', line); continue;
     }
+    if (sec === 'supps') { suppLine(t, isBullet); continue; }
     if (sec === 'career') {
       if (business && k === business) { to = 'anam_pipeline'; continue; }
       add(to, line); continue;
@@ -99,7 +115,7 @@ export function parseNote(text, opts = {}) {
   }
   const fields = {};
   for (const [id, lines] of Object.entries(out)) {
-    if (id === 'wake' || id === 'bed') { fields[id] = lines[0]; continue; }
+    if (id === 'wake' || id === 'bed' || lines[0] === true) { fields[id] = lines[0]; continue; }
     const d = dedent(lines);
     fields[id] = TEXT_IDS.includes(id) ? d.map((l) => l.trim().replace(/^[-•*]\s*/, '')).join('; ') : d.join('\n');
   }
@@ -112,9 +128,11 @@ export function parseNote(text, opts = {}) {
 
 /** Pure: what saving would do to each field. mode: fill (was empty), add (kept old text, new text added below), same (already there). */
 export function mergePlan(existing = {}, fields = {}) {
-  return PASTE_IDS.filter((id) => fields[id]).map((id) => {
-    const old = typeof existing[id] === 'string' ? existing[id].trim() : '';
+  const order = PASTE_IDS.flatMap((id) => (id === 'care' ? [id, ...Object.keys(fields).filter((k) => k.startsWith('supp_'))] : [id]));
+  return order.filter((id) => fields[id]).map((id) => {
     const neu = fields[id];
+    if (neu === true) return { id, mode: existing[id] ? 'same' : 'fill', value: true };
+    const old = typeof existing[id] === 'string' ? existing[id].trim() : '';
     if (!old) return { id, mode: 'fill', value: neu };
     if (old === neu.trim() || old.includes(neu.trim())) return { id, mode: 'same', value: existing[id] };
     if (id === 'wake' || id === 'bed') return { id, mode: 'keep', value: existing[id], pasted: neu };

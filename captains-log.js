@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl61';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl61';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl61';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl61';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl61';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl61';
+} from './mec.js?v=cl62';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl62';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl62';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl62';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl62';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl62';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -104,7 +104,6 @@ const SECTIONS = [
     fields: [
       { id: 'supp_head', type: 'head', label: 'Supplements' },
       { id: 'supps', type: 'supps' }, // v39: one check per Profile checklist line (ids from SUPP_IDS)
-      { id: 'supp_notes', type: 'area', label: 'Supplement notes', rows: 2 },
       { id: 'drank', type: 'area', label: '💧 Drank', rows: 2 },
       { id: 'ate', type: 'area', label: '🥩 Ate', rows: 2 },
       { id: 'dreams', type: 'area', label: '🛌 Dreams', rows: 2, placeholder: 'Physical setting, mental perspective, emotional feelings, themes, messages, symbols, thoughts' },
@@ -124,7 +123,7 @@ let P = profileView(readProfile());
 const labelOf = (f) => (typeof f.label === 'function' ? f.label(P) : f.label);
 const roleOf = (f) => (typeof f.role === 'function' ? f.role(P) : f.role || '');
 /** A section's fields with the Profile checklist expanded into check fields. */
-const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.map((label, i) => ({ id: SUPP_IDS[i], type: 'check', label })) : [f]));
+const fieldsOf = (s) => s.fields.flatMap((f) => (f.type === 'supps' ? P.supplements.flatMap((label, i) => [{ id: SUPP_IDS[i], type: 'check', label }, { id: `${SUPP_IDS[i]}_note`, type: 'text', label: `${label} notes`, placeholder: 'Any changes, like a doubled dose' }]) : [f]));
 const formShape = () => JSON.stringify([SECTIONS.map((s) => fieldsOf(s).map((f) => [f.id, labelOf(f), roleOf(f)])), TRACKER.map((r) => [r.target ? r.target(P) : '', r.sub ? r.sub(P) : '']), P.words]);
 function todayG() {
   const n = new Date();
@@ -445,7 +444,7 @@ const pastePrev = $('log-paste-preview'), pasteSave = $('log-paste-save');
 let pastePlan = null, pasteIso = '';
 const pasteLabel = (id) => {
   if (id === 'wake') return 'Wake'; if (id === 'bed') return 'Sleep';
-  for (const s of SECTIONS) for (const f of s.fields) if (f.id === id) return labelOf(f);
+  for (const s of SECTIONS) for (const f of fieldsOf(s)) if (f.id === id) return labelOf(f);
   return id;
 };
 function pasteReset() { pastePlan = null; pastePrev.innerHTML = ''; pasteSave.hidden = true; }
@@ -472,12 +471,12 @@ function pastePreview() {
   if (!pasteText.value.trim()) { pasteReset(); return; }
   flush();
   pasteIso = isoOf(current);
-  const { fields } = parseNote(pasteText.value, { business: P.businessSet ? P.business : '', beliefs: [P.words.b1, P.words.b2] });
+  const { fields } = parseNote(pasteText.value, { business: P.businessSet ? P.business : '', beliefs: [P.words.b1, P.words.b2], supps: P.supplements.map((label, i) => ({ id: SUPP_IDS[i], label })) });
   pastePlan = mergePlan(load(pasteIso), fields);
   const todo = pastePlan.filter((x) => x.mode === 'fill' || x.mode === 'add');
   if (!todo.length) { pastePrev.innerHTML = '<p class="log-settings-note">Nothing new to fill from this note.</p>'; pasteSave.hidden = true; return; }
   const word = { fill: 'Will fill', add: 'Already has text. Your old text stays and this is added below it', same: 'Already there, no change', keep: 'Already set, kept as is' };
-  pastePrev.innerHTML = `<ul class="log-paste-list">${pastePlan.map((x) => `<li class="log-paste-${x.mode}"><b>${esc(pasteLabel(x.id))}</b> <span class="log-hint">${word[x.mode]}</span><pre>${esc(x.mode === 'keep' ? x.pasted : (x.mode === 'add' ? x.value : x.value))}</pre></li>`).join('')}</ul>`;
+  pastePrev.innerHTML = `<ul class="log-paste-list">${pastePlan.map((x) => `<li class="log-paste-${x.mode}"><b>${esc(pasteLabel(x.id))}</b> <span class="log-hint">${word[x.mode]}</span><pre>${esc(x.value === true ? 'Checked' : x.mode === 'keep' ? x.pasted : x.value)}</pre></li>`).join('')}</ul>`;
   const g = current;
   pasteSave.textContent = `Save to ${format_gregorian(g.year, g.month, g.day)}`;
   pasteSave.hidden = false;
@@ -644,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl61').then((m) => m.start({
+  import('./sync-ui.js?v=cl62').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};
