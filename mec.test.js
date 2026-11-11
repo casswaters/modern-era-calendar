@@ -475,7 +475,7 @@ console.log('\n=== Market notes (holiday metadata) ===\n');
   assert('Halloween note is Banks open',
     MARKET_NOTES.halloween === 'Banks open', MARKET_NOTES.halloween);
   assert('Christmas note closed US and UK',
-    /Banks closed in the US and UK/.test(MARKET_NOTES.christmas), MARKET_NOTES.christmas);
+    /Banks closed in the US, UK, Canada, and Mexico/.test(MARKET_NOTES.christmas), MARKET_NOTES.christmas);
   assert('Boxing Day notes UK and Canada closed',
     /Banks closed in the UK and Canada/.test(MARKET_NOTES.boxing_day),
     MARKET_NOTES.boxing_day);
@@ -1113,5 +1113,13 @@ console.log('\n=== ambient weather scene ===\n');
   assert('v60: Today button closes Paste a note', /pasteOpen\(false\)/.test(h));
 }
 
+{
+  const fed = ['new_year','mlk','presidents','memorial','juneteenth','independence','labor','columbus','veterans','thanksgiving','christmas'];
+  const bad = fed.filter(id => !/Banks closed in the US/.test(MARKET_NOTES[id]));
+  assert('every US Federal Reserve holiday says banks closed in the US', bad.length === 0, bad.join(','));
+  const notFed = Object.keys(MARKET_NOTES).filter(id => !fed.includes(id) && /Banks closed in the US/.test(MARKET_NOTES[id]));
+  assert('no other holiday claims US banks closed', notFed.length === 0, notFed.join(','));
+  assert('Good Friday: US banks open, markets closed', /US banks open, US stock markets closed/.test(MARKET_NOTES.good_friday));
+}
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);

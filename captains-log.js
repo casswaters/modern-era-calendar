@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl64';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl64';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl64';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl64';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl64';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl64';
+} from './mec.js?v=cl65';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl65';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl65';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl65';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl65';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl65';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -643,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl64').then((m) => m.start({
+  import('./sync-ui.js?v=cl65').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};

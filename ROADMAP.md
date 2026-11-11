@@ -16,6 +16,7 @@ Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card 
 ## Now
 
 - v64 (2026-10-28, 10:40 AM MT): Removed the suggestion text from the supplement notes boxes.
+- v65 (2026-11-11, 2:40 PM MT): Veterans Day now says banks closed in the US. Also fixed Good Friday (US banks open, US stock markets closed), Labor Day (Canada too), Columbus Day and Christmas. A test now checks every US Federal Reserve holiday is marked closed and no other holiday is.
 - v63 (2026-10-28, 11:00 AM MT; v62 first try kept the heading word and lost line breaks): Each supplement check in Inputs & Outputs has its own notes box for changes (like a doubled dose). Paste a note ticks each check marked with a check mark and puts the lines under it in that check's notes box, in checklist order. Replaces the single box from v61.
 - v61 (2026-10-28, 10:40 AM MT): Single Supplement notes box (replaced by v62).
 - v60 (2026-10-28, 7:00 AM MT): Tapping Today in Captain's Log now closes the Paste a note panel.
