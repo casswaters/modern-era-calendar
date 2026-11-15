@@ -5,6 +5,7 @@
  * One file, captains-log.json: { format, v, exported, days: { 'YYYY-MM-DD': { t, data } } }.
  * t is the last edit time in ms; data null means the day was cleared. Merge keeps the newer t per day.
  * The same JSON is the portable export (plain JSON, readable anywhere).
+ * v66: profile: { key: { t, v } } backs up the Profile settings; per key, the newer t wins.
  */
 export const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 export const FILE_NAME = 'captains-log.json';
@@ -21,7 +22,11 @@ export function validDoc(doc) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !rec || typeof rec.t !== 'number') continue;
     days[iso] = { t: rec.t, data: rec.data && typeof rec.data === 'object' ? rec.data : null };
   }
-  return { format: FORMAT, v: 1, exported: doc.exported || 0, days };
+  const profile = {};
+  for (const [k, rec] of Object.entries(doc.profile && typeof doc.profile === 'object' ? doc.profile : {})) {
+    if (rec && typeof rec.t === 'number' && typeof rec.v === 'string') profile[k] = { t: rec.t, v: rec.v };
+  }
+  return { format: FORMAT, v: 1, exported: doc.exported || 0, days, profile };
 }
 
 /** Merge two docs day by day; the newer edit wins, ties keep a. Returns { doc, changedA, changedB } (days a or b must take). */
@@ -33,7 +38,13 @@ export function mergeDocs(a, b) {
     if (x && (!y || x.t >= y.t)) { days[iso] = x; if (!y || JSON.stringify(x) !== JSON.stringify(y)) toB.push(iso); }
     else { days[iso] = y; toA.push(iso); }
   }
-  return { doc: { format: FORMAT, v: 1, exported: Date.now(), days }, toA, toB };
+  const profile = {}, profA = [];
+  for (const k of new Set([...Object.keys(a.profile), ...Object.keys(b.profile)])) {
+    const x = a.profile[k], y = b.profile[k];
+    if (x && (!y || x.t >= y.t)) { profile[k] = x; if (!y || x.v !== y.v || x.t !== y.t) toB.push('profile:' + k); }
+    else { profile[k] = y; profA.push(k); }
+  }
+  return { doc: { format: FORMAT, v: 1, exported: Date.now(), days, profile }, toA, toB, profA };
 }
 
 /** Drive client over an injected fetch (tests pass a mock). token() returns a current access token. */
@@ -68,8 +79,8 @@ export function driveClient(fetchFn, token) {
 export async function syncOnce(client, localDoc) {
   const id = await client.find();
   const remote = id ? await client.read(id) : emptyDoc();
-  const { doc, toA, toB } = mergeDocs(localDoc, remote);
+  const { doc, toA, toB, profA } = mergeDocs(localDoc, remote);
   if (!id) await client.create(doc);
   else if (toB.length) await client.write(id, doc);
-  return { doc, toLocal: toA, toDrive: toB.length };
+  return { doc, toLocal: toA, profLocal: profA, toDrive: toB.length };
 }

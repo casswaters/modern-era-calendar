@@ -9,12 +9,12 @@
 import {
   format_gregorian, gregorian_day_of_year, is_leap,
   gregorian_to_mec, format_mec, add_gregorian_days
-} from './mec.js?v=cl65';
-import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords } from './profile.js?v=cl65';
-import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl65';
-import { TRACKER, trackerStatus } from './tracker.js?v=cl65';
-import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl65';
-import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl65';
+} from './mec.js?v=cl66';
+import { readProfile, profileView, saveField, clearProfile, DEFAULTS, NAME_MAX, LABEL_MAX, TIME_MAX, SUPP_IDS, WORD_IDS, WORD_DEFAULTS, WORD_MAX, saveWord, resetWords, localProfile, takeProfile } from './profile.js?v=cl66';
+import { geocode_place, parse_home, HOME_KEY } from './weather.js?v=cl66';
+import { TRACKER, trackerStatus } from './tracker.js?v=cl66';
+import { parseNote, mergePlan, pasteDay } from './paste.js?v=cl66';
+import { DRIVE_CLIENT_ID } from './sync-config.js?v=cl66';
 
 const KEY_PREFIX = 'mec-log:';
 const OPEN_KEY = 'mec-log-open';
@@ -643,7 +643,7 @@ renderHome();
 
 /* ---------- Private Drive sync (v55): loaded only when sync-config.js holds a client ID ---------- */
 if (DRIVE_CLIENT_ID) {
-  import('./sync-ui.js?v=cl65').then((m) => m.start({
+  import('./sync-ui.js?v=cl66').then((m) => m.start({
     clientId: DRIVE_CLIENT_ID,
     localDoc() {
       const e = edits(), days = {};
@@ -654,9 +654,9 @@ if (DRIVE_CLIENT_ID) {
         try { days[iso] = { t: e[iso] || 0, data: JSON.parse(localStorage.getItem(k)) }; } catch {}
       }
       for (const [iso, t] of Object.entries(e)) if (!days[iso]) days[iso] = { t, data: null };
-      return { format: 'captains-log', v: 1, exported: Date.now(), days };
+      return { format: 'captains-log', v: 1, exported: Date.now(), days, profile: localProfile() };
     },
-    apply(doc, isos) {
+    apply(doc, isos, profKeys = []) {
       const e = edits();
       for (const iso of isos) {
         const rec = doc.days[iso];
@@ -668,6 +668,8 @@ if (DRIVE_CLIENT_ID) {
       }
       try { localStorage.setItem(EDITS_KEY, JSON.stringify(e)); } catch {}
       if (isos.includes(isoOf(current)) && !timer) fillForm();
+      takeProfile(doc.profile || {}, profKeys);
+      if (profKeys.length) window.dispatchEvent(new StorageEvent('storage', { key: null }));
     }
   })).catch(() => {});
 }

@@ -128,4 +128,24 @@ export function saveField(field, raw) {
   } catch {}
   return v;
 }
+/** v66: Profile backup for Drive sync. The snapshot is the profile as of the last sync. A value that differs from it
+   was edited here (now wins); a key with no value and no snapshot (a wiped browser) sends nothing, so Drive fills it back. */
+export const PROFILE_SYNC_KEY = 'mec-log-profile-sync';
+const snap = () => { try { const o = JSON.parse(localStorage.getItem(PROFILE_SYNC_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch { return {}; } };
+export function localProfile(now = Date.now()) {
+  const s = snap(), out = {};
+  for (const k of PROFILE_KEYS) {
+    const v = get(k), r = s[k];
+    if (r && r.v === v) out[k] = r;
+    else if (r || v) out[k] = { t: now, v };
+  }
+  return out;
+}
+/** Writes the keys Drive won, then saves the merged profile as the new snapshot. */
+export function takeProfile(profile, keys) {
+  try {
+    for (const k of keys) { if (!PROFILE_KEYS.includes(k)) continue; const v = profile[k].v; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); }
+    localStorage.setItem(PROFILE_SYNC_KEY, JSON.stringify(Object.fromEntries(Object.entries(profile).filter(([k]) => PROFILE_KEYS.includes(k)))));
+  } catch {}
+}
 export function clearProfile() { try { PROFILE_KEYS.forEach((k) => localStorage.removeItem(k)); } catch {} }
