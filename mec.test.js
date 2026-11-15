@@ -1121,5 +1121,29 @@ console.log('\n=== ambient weather scene ===\n');
   assert('no other holiday claims US banks closed', notFed.length === 0, notFed.join(','));
   assert('Good Friday: US banks open, markets closed', /US banks open, US stock markets closed/.test(MARKET_NOTES.good_friday));
 }
+{
+  // v66: Profile backup in Drive sync. Invented sample values only.
+  const S = await import('./sync.js');
+  const Pm = await import('./profile.js');
+  const store = {}; const prev = globalThis.localStorage;
+  globalThis.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: (k) => { delete store[k]; } };
+  store[Pm.BDAY_KEY] = '2000-01-02'; store[Pm.SUPPS_KEY] = 'Sample A';
+  const first = Pm.localProfile(10);
+  assert('v66: set Profile values go to Drive with an edit time', first[Pm.BDAY_KEY].v === '2000-01-02' && first[Pm.BDAY_KEY].t === 10 && !first[Pm.NAME_KEY]);
+  const drive = { format: 'captains-log', days: {}, profile: first };
+  Pm.takeProfile(S.mergeDocs({ format: 'captains-log', days: {}, profile: first }, drive).doc.profile, []);
+  for (const k of Object.keys(store)) delete store[k]; // browser storage wiped
+  const m = S.mergeDocs({ format: 'captains-log', days: {}, profile: Pm.localProfile(20) }, drive);
+  Pm.takeProfile(m.doc.profile, m.profA);
+  assert('v66: a wiped browser gets its birthday and checklist back from Drive', store[Pm.BDAY_KEY] === '2000-01-02' && store[Pm.SUPPS_KEY] === 'Sample A');
+  delete store[Pm.SUPPS_KEY];
+  const m2 = S.mergeDocs({ format: 'captains-log', days: {}, profile: Pm.localProfile(30) }, m.doc);
+  assert('v66: clearing a field on purpose reaches Drive', m2.doc.profile[Pm.SUPPS_KEY].v === '' && m2.toB.length > 0 && !m2.profA.length);
+  store[Pm.BDAY_KEY] = '2000-03-04';
+  const m3 = S.mergeDocs({ format: 'captains-log', days: {}, profile: Pm.localProfile(40) }, m2.doc);
+  assert('v66: a newer edit here beats the older Drive copy', m3.doc.profile[Pm.BDAY_KEY].v === '2000-03-04');
+  assert('v66: old Drive files without a profile still load', JSON.stringify(S.validDoc({ format: 'captains-log', days: {} }).profile) === '{}');
+  globalThis.localStorage = prev;
+}
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
 if (failed > 0) process.exit(1);
