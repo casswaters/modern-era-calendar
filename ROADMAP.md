@@ -4,7 +4,7 @@ Repo: casswaters/modern-era-calendar. Repo-only planning file. It is excluded fr
 Deploy = push to main; `.github/workflows/pages.yml` publishes main to gh-pages without this file. Do not push main to gh-pages by hand.
 Since v38 Captain's Log no longer carries a copy of Aretoria: its Aretoria card links to the standalone site (casswaters/aretoria, which keeps its own ROADMAP.md). Aretoria items live there.
 
-**Last updated:** Nov 15, 2026, 5:10 PM MT (afternoon report; v66 shipped 6:18 AM MT: Profile settings now back up with Drive sync; Pages deploys green, site returns 200)
+**Last updated:** Nov 16, 2026, 5:58 AM MT (morning report; no code changes since the last report, v66 is live, Pages deploys green, site returns 200)
 
 ## House rules
 - Aretoria: one ivory/gold/cosmic palette, no realm color-coding; rough art drafts approved by Cassidy before publishing; Irishnu is Cassidy (he/him), in armor.
